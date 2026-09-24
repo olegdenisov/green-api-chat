@@ -14,7 +14,7 @@
 
 ## Стек
 
-- Vite + React + TypeScript, pnpm (Node 24).
+- Vite + React + TypeScript, pnpm, Node >= 22 (разработка на Node 24).
 - Состояние: Reatom v1001 — `@reatom/core`, `@reatom/react`
   (`reatomComponent`, `wrap`, `useAction`, `reatomContext.Provider`).
 - UI: Mantine 9 (контролы, `Notifications`, тема) + CSS Modules для вёрстки в стиле web.max.ru.

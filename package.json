@@ -15,7 +15,7 @@
     "check": "pnpm lint && pnpm format:check && pnpm lint:fsd && pnpm typecheck && pnpm test",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "node -e \"for (const d of ['dist', 'coverage', 'node_modules/.vite']) require('node:fs').rmSync(d, { recursive: true, force: true })\""
+    "clean": "rm -rf dist coverage node_modules/.vite"
   },
   "dependencies": {
     "@mantine/core": "^9.6.2",

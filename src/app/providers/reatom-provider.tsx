@@ -1,15 +1,18 @@
 import { connectLogger, context } from "@reatom/core";
 import { reatomContext } from "@reatom/react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-// Root frame of the app: https://v1001.reatom.dev/reference/react/
-// clearStack() lives in src/main.tsx so modules imported by tests stay side-effect free.
-const rootFrame = context.start();
-
+// connectLogger registers a global extension (not bound to a frame): call it once.
 if (import.meta.env.MODE === "development") {
-  rootFrame.run(connectLogger);
+  connectLogger();
 }
 
+// Root frame per provider instance: https://v1001.reatom.dev/reference/react/
+// Lazy useState keeps one frame for the provider's lifetime and gives every mounted
+// App its own isolated context (no module-level singleton shared between tests).
+// clearStack() lives in src/main.tsx so modules imported by tests stay side-effect free.
 export function ReatomProvider({ children }: { children: ReactNode }) {
-  return <reatomContext.Provider value={rootFrame}>{children}</reatomContext.Provider>;
+  const [frame] = useState(() => context.start());
+
+  return <reatomContext.Provider value={frame}>{children}</reatomContext.Provider>;
 }

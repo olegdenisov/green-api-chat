@@ -8,7 +8,7 @@ import { HomePage } from "@/pages/home";
 import { ReatomProvider } from "./providers/reatom-provider";
 import { UiProvider } from "./providers/ui-provider";
 
-function App() {
+export function App() {
   return (
     <ReatomProvider>
       <UiProvider>
@@ -17,5 +17,3 @@ function App() {
     </ReatomProvider>
   );
 }
-
-export default App;
