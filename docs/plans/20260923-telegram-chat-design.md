@@ -117,7 +117,7 @@ src/
     message/   сообщения по chatId, тип Message
   shared/
     api/       клиент GREEN-API (fetch, типы, ApiError)
-    lib/       persist в localStorage, утилиты
+    lib/       утилиты — только когда появятся (persist — встроенный withLocalStorage)
     ui/        мелкие общие компоненты
 ```
 
@@ -138,7 +138,7 @@ type Message = {
 }
 ```
 
-Атомы:
+Атомы (persist — `.extend(withLocalStorage("ga.<name>"))` из `@reatom/core`):
 
 - `credentialsAtom` — `{ idInstance, apiTokenInstance, apiUrl }`, persist, чистится при логауте.
 - `chatsAtom` — `Record<chatId, Chat>`, persist.
@@ -171,8 +171,10 @@ type Message = {
 
 ## Ошибки и UI-состояния
 
-- `ApiError { kind: 'auth' | 'network' | 'http', status? }` — единый тип в `shared/api`,
-  UI различает ошибки по `kind`.
+- `ApiError { kind: 'auth' | 'network' | 'rate-limit' | 'http', status? }` — единый тип в
+  `shared/api`, UI различает ошибки по `kind`. `rate-limit` — `469` и `rate_limit_exceeded`
+  (лимиты Telegram на `checkAccount`). Отмена запроса (`AbortSignal`) не заворачивается в
+  `ApiError` — пробрасывается исходная `AbortError`, чтобы Reatom-отмена (`isAbort`) работала.
 - Логин: `getStateInstance` → `authorized` пускаем; иной статус → «Инстанс не авторизован
   в Telegram»; `401`/`403` → «Неверный idInstance или apiTokenInstance». Лоадер, форма
   заблокирована. Включение webhook-настроек при необходимости.
@@ -199,9 +201,11 @@ type Message = {
 
 1. **Скаффолд** — git, `AGENTS.md`, Vite/React/TS/pnpm, oxlint, oxfmt, steiger, Vitest,
    Mantine, Reatom, FSD-скелет, Makefile. Спайка нет — API сверено по документации.
-2. **`shared/api` + `shared/lib`** — клиент GREEN-API, `ApiError`, `apiUrl`, persist,
-   unit-тесты на фикстурах из примеров документации. Первый ручной запрос к реальному
-   инстансу покажет, есть ли проблема с CORS.
+2. **`shared/api`** — клиент GREEN-API (фабрика `createGreenApi(creds)`), `ApiError`,
+   `apiUrl`, типы ответов и уведомлений, unit-тесты на фикстурах из примеров документации.
+   Первый ручной запрос к реальному инстансу покажет, есть ли проблема с CORS.
+   `shared/lib` не нужен: persist — встроенный `withLocalStorage` из `@reatom/core`
+   (с `version`/`migration`), подключается к атомам сущностей на этапах 3–4.
 3. **Auth** — `features/auth`, `pages/login`, проверка инстанса, webhook-настройки, логаут.
 4. **Чаты и отправка** — `entities/chat`, `entities/message`, `features/create-chat`,
    `features/send-message`, `widgets/chat-list`, `widgets/chat-window`.
