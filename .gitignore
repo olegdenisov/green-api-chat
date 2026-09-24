@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.log
+*.tsbuildinfo
+.DS_Store
+
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+.env
+.env.*
+!.env.example
