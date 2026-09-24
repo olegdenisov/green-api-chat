@@ -38,8 +38,8 @@
 ## Инструменты
 
 - oxlint (`.oxlintrc.json`): правила хуков и react-refresh — в плагине `react`
-  (`react/rules-of-hooks`, `react/exhaustive-deps` — ошибки через категорию
-  `correctness`; `react/only-export-components`, выключено для тестов); отдельных
+  (`react/exhaustive-deps` — ошибка через категорию `correctness`;
+  `react/rules-of-hooks` включено явно в `.oxlintrc.json`; `react/only-export-components`, выключено для тестов); отдельных
   плагинов нет. Запуск с `--deny-warnings`.
 - oxfmt (`.oxfmtrc.json`): стиль по умолчанию — двойные кавычки, точки с запятой;
   форматирует и корневые `.md`. `docs/` игнорируется.

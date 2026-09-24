@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+
 import { clearStack } from "@reatom/core";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";

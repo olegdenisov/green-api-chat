@@ -6,7 +6,10 @@ const mainSource = Object.values(
 )[0];
 
 describe("dev logger", () => {
+  const extensionsBefore = EXTENSIONS.length;
+
   afterEach(() => {
+    EXTENSIONS.length = extensionsBefore;
     vi.unstubAllEnvs();
     vi.resetModules();
   });
@@ -30,7 +33,5 @@ describe("dev logger", () => {
     vi.stubEnv("MODE", "development");
     await import("./logger");
     expect(EXTENSIONS.length).toBe(before + 1);
-
-    EXTENSIONS.pop();
   });
 });
