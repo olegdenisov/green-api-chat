@@ -24,7 +24,8 @@
 
 ## GREEN-API (Telegram)
 
-Источник: https://green-api.com/telegram/docs/ (сверено 2026-09-23).
+Источник: https://green-api.com/telegram/docs/ (сверено 2026-09-23, повторно 2026-09-24 на этапе 2;
+типы — `src/shared/api/types.ts`, примеры — `test/fixtures/green-api/`).
 
 ### Формат запроса
 
@@ -38,15 +39,18 @@
 | метод | запрос | ответ |
 | --- | --- | --- |
 | `getStateInstance` | `GET` | `{ stateInstance }`: `authorized`, `notAuthorized`, `blocked`, `suspended`, `starting`, `pendingPassword` |
-| `getSettings` | `GET` | настройки инстанса, в т.ч. `webhookUrl`, `incomingWebhook`, `outgoingAPIMessageWebhook`, `outgoingMessageWebhook` (`"yes"`/`"no"`) |
-| `setSettings` | `POST` любые из полей выше | `{ saveSettings: true }`; **инстанс перезапускается, применение до 5 минут** |
-| `checkAccount` | `POST { phoneNumber: number }` (только цифры, integer) | `{ exist, chatId, username?, phoneNumber?, fromCache }`; нет аккаунта — `{ exist: false, chatId: "" }` |
+| `getSettings` | `GET` | настройки инстанса, в т.ч. `webhookUrl`, `incomingWebhook`, `outgoingAPIMessageWebhook`, `outgoingMessageWebhook` (`"yes"`/`"no"`); `webhookUrl` должен быть пустым, иначе `receiveNotification`/`deleteNotification` отвечают `400` |
+| `setSettings` | `POST` любые из полей выше, кроме `wid`/`typeInstance` (хотя бы одно) | `{ saveSettings: true }`; **инстанс перезапускается, применение до 5 минут** |
+| `checkAccount` | `POST { phoneNumber: number }` (только цифры, integer; API также принимает `username`/`force` — не используем) | `{ exist, chatId, username?, phoneNumber?, fromCache }`; нет аккаунта — `{ exist: false, chatId: "" }` |
 | `sendMessage` | `POST { chatId, message }`, до 4096 символов | `{ idMessage }` |
 | `receiveNotification` | `GET ?receiveTimeout=5..60` (по умолчанию 5) | `{ receiptId, body }` или пустой ответ (`null`) |
 | `deleteNotification` | `DELETE .../deleteNotification/{token}/{receiptId}` | `{ result, reason }` |
 
 Ошибки `checkAccount`: `400` — неверный формат номера; `200` с `rate_limit_exceeded` и
 `469` — лимит Telegram (повтор через часы, не долбить); `500` — мессенджер недоступен.
+Форма `200`-ошибок: лимит — `{ status: false, data: { status: "fail", reason:
+"rate_limit_exceeded", retryAfter } }`; инстанс не готов — `{ status: false, reason:
+"instance is starting or not authorized" }` (тип `CheckAccountFailure`).
 Частые проверки несуществующих номеров приводят к временным ограничениям.
 
 ### Уведомления
@@ -65,7 +69,7 @@ Notification — событие инстанса (входящее/исходя�
   "idMessage": "1763115112345",
   "senderData": {
     "chatId": "10000000", // личный — положительное число, группа — отрицательное
-    "chatType": "user", // user | supergroup | ...
+    "chatType": "user", // user | supergroup | ...; в примере ReceiveNotification отсутствует — в типе optional
     "chatName": "...",
     "senderName": "...",
   },
@@ -79,8 +83,10 @@ Notification — событие инстанса (входящее/исходя�
 - `chatId` в Telegram — число строкой, без `@c.us`.
 - `outgoingMessageReceived` — отправлено с телефона/другого клиента, `outgoingAPIMessageReceived`
   — отправлено через API (в т.ч. нами — дедупликация по `idMessage`).
-- `extendedTextMessage` — поле с текстом сверить по странице
-  `notifications-format/incoming-message/ExtendedTextMessage` при реализации этапа 5.
+- `extendedTextMessage` — текст в `messageData.extendedTextMessageData.text` (сверено на этапе 2).
+- Примеры исходящих уведомлений на страницах `OutgoingMessage`/`OutgoingApiMessage` опускают
+  `messageData`; его форма — на странице `outgoing-message/TextMessage` (как у входящего
+  `textMessage`).
 
 ### Решения по документации
 
