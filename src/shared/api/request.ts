@@ -10,17 +10,19 @@ export type RequestParams = {
   httpMethod: HttpMethod;
   /** Serialized as JSON; sets `Content-Type: application/json`. */
   body?: unknown;
-  query?: Record<string, string | number>;
+  query?: Record<string, number>;
   /** Extra path segment after the token, e.g. `receiptId`. */
-  pathSuffix?: string | number;
+  pathSuffix?: number;
   signal?: AbortSignal;
 };
 
 function buildUrl({ creds, method, query, pathSuffix }: RequestParams): string {
   const base = creds.apiUrl.replace(/\/+$/, "");
-  let url = `${base}/waInstance${creds.idInstance}/${method}/${creds.apiTokenInstance}`;
+  const id = encodeURIComponent(creds.idInstance);
+  const token = encodeURIComponent(creds.apiTokenInstance);
+  let url = `${base}/waInstance${id}/${method}/${token}`;
   if (pathSuffix !== undefined) {
-    url += `/${encodeURIComponent(String(pathSuffix))}`;
+    url += `/${pathSuffix}`;
   }
   if (query) {
     const search = new URLSearchParams(
@@ -45,7 +47,8 @@ function statusError(status: number): ApiError {
 
 /**
  * The only place that calls `fetch` for GREEN-API. Resolves with the parsed JSON body
- * (`null` for an empty body). Aborts are rethrown as is; other failures become `ApiError`.
+ * (`null` for an empty body). Once the signal is aborted, its reason is thrown as is;
+ * other failures become `ApiError`.
  */
 export async function request<T>(params: RequestParams): Promise<T | null> {
   const { httpMethod, body, signal } = params;
@@ -58,22 +61,26 @@ export async function request<T>(params: RequestParams): Promise<T | null> {
   signal?.throwIfAborted();
 
   let response: Response;
-  let text: string;
   try {
     response = await fetch(buildUrl(params), init);
   } catch (error) {
-    if (signal?.aborted) throw error;
+    signal?.throwIfAborted();
     throw new ApiError("network", { cause: error });
   }
 
+  signal?.throwIfAborted();
+
   if (!response.ok) {
+    // The body is not used: release the connection instead of waiting for GC.
+    response.body?.cancel().catch(() => undefined);
     throw statusError(response.status);
   }
 
+  let text: string;
   try {
     text = await response.text();
   } catch (error) {
-    if (signal?.aborted) throw error;
+    signal?.throwIfAborted();
     throw new ApiError("network", { status: response.status, cause: error });
   }
 

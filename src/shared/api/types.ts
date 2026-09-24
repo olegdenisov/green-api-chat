@@ -53,11 +53,6 @@ export type SetSettingsResponse = {
 
 // --- Service methods ---
 
-export type CheckAccountRequest = {
-  /** International format, digits only. */
-  phoneNumber: number;
-};
-
 export type CheckAccountResult =
   | {
       exist: true;

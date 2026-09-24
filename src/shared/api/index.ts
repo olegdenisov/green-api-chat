@@ -5,19 +5,15 @@ export { createGreenApi } from "./green-api";
 export type { GreenApi, ReceiveNotificationOptions, RequestOptions } from "./green-api";
 export type {
   CheckAccountFailure,
-  CheckAccountRequest,
   CheckAccountResponse,
   CheckAccountResult,
   Credentials,
   DeleteNotificationResponse,
-  ExtendedTextMessageData,
   GetStateInstanceResponse,
   IncomingMessageNotification,
-  InstanceData,
   MessageData,
   Notification,
   OutgoingMessageNotification,
-  QuotedMessage,
   ReceivedNotification,
   SendMessageRequest,
   SendMessageResponse,
@@ -26,6 +22,4 @@ export type {
   Settings,
   SettingsPatch,
   StateInstance,
-  TextMessageData,
-  YesNo,
 } from "./types";

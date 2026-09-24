@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   checkAccountExists,
   checkAccountInstanceNotReady,
   checkAccountNotExists,
+  checkAccountRateLimitedByMessenger,
   checkAccountRateLimitExceeded,
-  checkAccountRequest,
 } from "@test/fixtures/green-api/check-account";
 import { deleteNotificationResponse } from "@test/fixtures/green-api/delete-notification";
 import { getSettingsResponse } from "@test/fixtures/green-api/get-settings";
@@ -13,31 +13,22 @@ import { getStateInstanceResponse } from "@test/fixtures/green-api/get-state-ins
 import { receiveNotificationResponse } from "@test/fixtures/green-api/receive-notification";
 import { sendMessageRequest, sendMessageResponse } from "@test/fixtures/green-api/send-message";
 import { setSettingsRequest, setSettingsResponse } from "@test/fixtures/green-api/set-settings";
+import {
+  BASE,
+  creds,
+  fetchMock,
+  hangUntilAbort,
+  respond,
+  respondJson,
+  stubFetch,
+  TOKEN,
+} from "@test/green-api";
 
 import { ApiError } from "./api-error";
-import { createGreenApi } from "./green-api";
-import type { Credentials } from "./types";
+import { createGreenApi, type GreenApi } from "./green-api";
+import type { SendMessageRequest } from "./types";
 
-const TOKEN = "d75b3a66374942c5b3c019c698abc2067e151558acbd412345";
-
-const creds: Credentials = {
-  idInstance: "1101000001",
-  apiTokenInstance: TOKEN,
-  apiUrl: "https://1101.api.green-api.com",
-};
-
-const BASE = "https://1101.api.green-api.com/waInstance1101000001";
-
-const fetchMock = vi.fn<typeof fetch>();
-
-beforeEach(() => {
-  fetchMock.mockReset();
-  vi.stubGlobal("fetch", fetchMock);
-});
-
-function respondJson(body: unknown, status = 200) {
-  fetchMock.mockImplementation(async () => new Response(JSON.stringify(body), { status }));
-}
+beforeEach(stubFetch);
 
 function lastCall() {
   const [url, init] = fetchMock.mock.calls.at(-1)!;
@@ -82,28 +73,18 @@ describe("createGreenApi: account", () => {
     expect(call.headers).toEqual({ "Content-Type": "application/json" });
     expect(call.body).toEqual(setSettingsRequest);
   });
-
-  it("rejects with an http error on an empty body", async () => {
-    fetchMock.mockImplementation(async () => new Response("", { status: 200 }));
-
-    const error = await api.getStateInstance().catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(ApiError);
-    expect((error as ApiError).kind).toBe("http");
-  });
 });
 
 describe("createGreenApi: checkAccount", () => {
   it("sends the phone number as a JSON number", async () => {
     respondJson(checkAccountExists);
 
-    await expect(api.checkAccount(checkAccountRequest.phoneNumber)).resolves.toEqual(
-      checkAccountExists,
-    );
+    await expect(api.checkAccount(79876543210)).resolves.toEqual(checkAccountExists);
     const call = lastCall();
     expect(call.url).toBe(`${BASE}/checkAccount/${TOKEN}`);
     expect(call.method).toBe("POST");
     expect(call.headers).toEqual({ "Content-Type": "application/json" });
-    expect(call.body).toEqual(checkAccountRequest);
+    expect(call.body).toEqual({ phoneNumber: 79876543210 });
   });
 
   it("returns exist: false as is", async () => {
@@ -115,9 +96,10 @@ describe("createGreenApi: checkAccount", () => {
   it("maps rate_limit_exceeded with HTTP 200 to a rate-limit error", async () => {
     respondJson(checkAccountRateLimitExceeded);
 
-    const error = await api.checkAccount(79876543210).catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(ApiError);
-    expect((error as ApiError).kind).toBe("rate-limit");
+    const promise = api.checkAccount(79876543210);
+    await expect(promise).rejects.toBeInstanceOf(ApiError);
+    await expect(promise).rejects.toMatchObject({ kind: "rate-limit", status: undefined });
+    await expect(promise).rejects.toHaveProperty("cause", checkAccountRateLimitExceeded);
   });
 
   it("returns other HTTP 200 failures as is", async () => {
@@ -126,12 +108,19 @@ describe("createGreenApi: checkAccount", () => {
     await expect(api.checkAccount(79876543210)).resolves.toEqual(checkAccountInstanceNotReady);
   });
 
-  it("maps HTTP 469 to a rate-limit error", async () => {
-    respondJson({ status: false, reason: "Rate limited by messenger" }, 469);
+  it("returns an HTTP 200 failure with another data.reason as is", async () => {
+    const failure = { status: false, data: { status: "fail", reason: "other" } };
+    respondJson(failure);
 
-    const error = await api.checkAccount(79876543210).catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(ApiError);
-    expect(error).toMatchObject({ kind: "rate-limit", status: 469 });
+    await expect(api.checkAccount(79876543210)).resolves.toEqual(failure);
+  });
+
+  it("maps HTTP 469 to a rate-limit error", async () => {
+    respondJson(checkAccountRateLimitedByMessenger, 469);
+
+    const promise = api.checkAccount(79876543210);
+    await expect(promise).rejects.toBeInstanceOf(ApiError);
+    await expect(promise).rejects.toMatchObject({ kind: "rate-limit", status: 469 });
   });
 });
 
@@ -145,6 +134,13 @@ describe("createGreenApi: sendMessage", () => {
     expect(call.method).toBe("POST");
     expect(call.headers).toEqual({ "Content-Type": "application/json" });
     expect(call.body).toEqual(sendMessageRequest);
+  });
+
+  it("sends only chatId and message", async () => {
+    respondJson(sendMessageResponse);
+
+    await api.sendMessage({ ...sendMessageRequest, quotedMessageId: "x" } as SendMessageRequest);
+    expect(lastCall().body).toEqual(sendMessageRequest);
   });
 });
 
@@ -171,6 +167,12 @@ describe("createGreenApi: notifications", () => {
     await expect(api.receiveNotification()).resolves.toBeNull();
   });
 
+  it("receiveNotification returns null for an empty body", async () => {
+    respond("");
+
+    await expect(api.receiveNotification()).resolves.toBeNull();
+  });
+
   it("deleteNotification puts receiptId into the path", async () => {
     respondJson(deleteNotificationResponse);
 
@@ -182,23 +184,47 @@ describe("createGreenApi: notifications", () => {
   });
 });
 
+const calls: [string, (client: GreenApi, signal?: AbortSignal) => Promise<unknown>][] = [
+  ["getStateInstance", (client, signal) => client.getStateInstance({ signal })],
+  ["getSettings", (client, signal) => client.getSettings({ signal })],
+  ["setSettings", (client, signal) => client.setSettings(setSettingsRequest, { signal })],
+  ["checkAccount", (client, signal) => client.checkAccount(79876543210, { signal })],
+  ["sendMessage", (client, signal) => client.sendMessage(sendMessageRequest, { signal })],
+  [
+    "receiveNotification",
+    (client, signal) => client.receiveNotification({ receiveTimeout: 20, signal }),
+  ],
+  ["deleteNotification", (client, signal) => client.deleteNotification(1, { signal })],
+];
+
+const bodyRequired = calls.filter(([name]) => name !== "receiveNotification");
+
+describe("createGreenApi: empty body", () => {
+  it.each(bodyRequired)("%s rejects with an http error on an empty body", async (_name, call) => {
+    respond("");
+
+    const promise = call(api);
+    await expect(promise).rejects.toBeInstanceOf(ApiError);
+    await expect(promise).rejects.toMatchObject({ kind: "http", status: undefined });
+  });
+});
+
 describe("createGreenApi: signal", () => {
-  it.each([
-    ["getStateInstance", (signal: AbortSignal) => api.getStateInstance({ signal })],
-    ["getSettings", (signal: AbortSignal) => api.getSettings({ signal })],
-    ["setSettings", (signal: AbortSignal) => api.setSettings(setSettingsRequest, { signal })],
-    ["checkAccount", (signal: AbortSignal) => api.checkAccount(79876543210, { signal })],
-    ["sendMessage", (signal: AbortSignal) => api.sendMessage(sendMessageRequest, { signal })],
-    [
-      "receiveNotification",
-      (signal: AbortSignal) => api.receiveNotification({ receiveTimeout: 20, signal }),
-    ],
-    ["deleteNotification", (signal: AbortSignal) => api.deleteNotification(1, { signal })],
-  ])("%s passes the signal to fetch", async (_name, call) => {
+  it.each(calls)("%s passes the signal to fetch", async (_name, call) => {
     respondJson({});
     const controller = new AbortController();
 
-    await call(controller.signal);
+    await call(api, controller.signal);
     expect(lastCall().signal).toBe(controller.signal);
+  });
+
+  it.each(calls)("%s rejects with the abort reason", async (_name, call) => {
+    hangUntilAbort();
+    const controller = new AbortController();
+    const reason = new Error("stop");
+
+    const promise = call(api, controller.signal);
+    controller.abort(reason);
+    await expect(promise).rejects.toBe(reason);
   });
 });

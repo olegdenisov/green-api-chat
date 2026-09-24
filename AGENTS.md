@@ -47,8 +47,11 @@
   причина в `cause`), `rate-limit` (`469` и `rate_limit_exceeded` в `200` у `checkAccount`),
   `http` (прочие статусы, битый JSON, пустое тело там, где оно обязательно). `message` — без
   URL и токена.
-- Отмена: все методы принимают `{ signal }`; при отменённом `signal` пробрасывается исходная
-  ошибка (не `ApiError`) — чтобы работала отмена Reatom.
+- Отмена: все методы принимают `{ signal }`; при отменённом `signal` пробрасывается
+  `signal.reason` (не `ApiError`) — чтобы работала отмена Reatom.
+- Форматы запросов/ответов сверять по https://green-api.com/telegram/docs/ (страницы
+  методов), не по WhatsApp-версии; новые примеры — фикстурами в `test/fixtures/green-api/`
+  с `satisfies`.
 - Типы ответов и уведомлений — `types.ts`, по документации Telegram; рантайм-валидации нет.
   Union уведомлений без «ловушки»: неизвестные `typeWebhook`/`typeMessage` — ветка `default`.
 - Persist атомов — встроенный `withLocalStorage` из `@reatom/core`; `shared/lib` под это не
@@ -111,7 +114,10 @@
   тест); вызов атома вне кадра бросает ошибку, как в проде.
 - Взаимодействия — через `userEvent.setup()`, не `fireEvent`.
 - `fetch` мокать через `vi.stubGlobal("fetch", vi.fn<typeof fetch>())`; снимать вручную не
-  нужно — в `vite.config.ts` включено `test.unstubGlobals: true`.
+  нужно — в `vite.config.ts` включено `test.unstubGlobals: true`. Для клиента GREEN-API —
+  хелпер `@test/green-api`: `beforeEach(stubFetch)`, `respond`/`respondJson`, `creds`/`TOKEN`/
+  `BASE`; `hangUntilAbort()` — мок, который отклоняется с `signal.reason` при отмене (тесты
+  отмены).
 - Примеры ответов GREEN-API — `.ts`-фикстуры в `test/fixtures/green-api/`:
   `export const x = { ... } satisfies <Тип>`, данные из документации (вымышленные).
   `tsc -b` сверяет их с типами.

@@ -1,48 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { BASE, creds, fetchMock, hangUntilAbort, respond, stubFetch, TOKEN } from "@test/green-api";
+
 import { ApiError } from "./api-error";
 import { request } from "./request";
-import type { Credentials } from "./types";
 
-const TOKEN = "d75b3a66374942c5b3c019c698abc2067e151558acbd412345";
+beforeEach(stubFetch);
 
-const creds: Credentials = {
-  idInstance: "1101000001",
-  apiTokenInstance: TOKEN,
-  apiUrl: "https://1101.api.green-api.com",
-};
-
-const BASE = `https://1101.api.green-api.com/waInstance1101000001`;
-
-const fetchMock = vi.fn<typeof fetch>();
-
-beforeEach(() => {
-  fetchMock.mockReset();
-  vi.stubGlobal("fetch", fetchMock);
-});
-
-function respond(body: string | null, status = 200) {
-  fetchMock.mockImplementation(async () => new Response(body, { status }));
-}
-
-/** Mock that never settles on its own and rejects with the signal's reason on abort. */
-function hangUntilAbort() {
-  fetchMock.mockImplementation(
-    (_, init) =>
-      new Promise((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
-      }),
-  );
-}
-
-async function catchError(promise: Promise<unknown>): Promise<unknown> {
-  try {
-    await promise;
-  } catch (error) {
-    return error;
-  }
-  throw new Error("expected the promise to reject");
-}
+const get = (signal?: AbortSignal) => request({ creds, method: "m", httpMethod: "GET", signal });
 
 describe("request: success", () => {
   it("sends a GET without body and headers", async () => {
@@ -76,7 +41,7 @@ describe("request: success", () => {
     expect(init?.body).toBe('{"chatId":"12345","message":"hi"}');
   });
 
-  it("adds query and path suffix", async () => {
+  it("adds the query", async () => {
     respond("null");
 
     await request({
@@ -85,18 +50,41 @@ describe("request: success", () => {
       httpMethod: "GET",
       query: { receiveTimeout: 20 },
     });
-    await request({
-      creds,
-      method: "deleteNotification",
-      httpMethod: "DELETE",
-      pathSuffix: 42,
-    });
 
     expect(fetchMock.mock.calls[0]![0]).toBe(
       `${BASE}/receiveNotification/${TOKEN}?receiveTimeout=20`,
     );
-    expect(fetchMock.mock.calls[1]![0]).toBe(`${BASE}/deleteNotification/${TOKEN}/42`);
-    expect(fetchMock.mock.calls[1]![1]?.method).toBe("DELETE");
+  });
+
+  it("adds no '?' for an empty query", async () => {
+    respond("null");
+
+    await request({ creds, method: "receiveNotification", httpMethod: "GET", query: {} });
+
+    expect(fetchMock.mock.calls[0]![0]).toBe(`${BASE}/receiveNotification/${TOKEN}`);
+  });
+
+  it("adds the path suffix", async () => {
+    respond("{}");
+
+    await request({ creds, method: "deleteNotification", httpMethod: "DELETE", pathSuffix: 42 });
+
+    expect(fetchMock.mock.calls[0]![0]).toBe(`${BASE}/deleteNotification/${TOKEN}/42`);
+    expect(fetchMock.mock.calls[0]![1]?.method).toBe("DELETE");
+  });
+
+  it("encodes idInstance and the token", async () => {
+    respond("{}");
+
+    await request({
+      creds: { ...creds, idInstance: "1/2", apiTokenInstance: "a/b#c?d" },
+      method: "getSettings",
+      httpMethod: "GET",
+    });
+
+    expect(fetchMock.mock.calls[0]![0]).toBe(
+      "https://1101.api.green-api.com/waInstance1%2F2/getSettings/a%2Fb%23c%3Fd",
+    );
   });
 
   it("strips a trailing slash from apiUrl", async () => {
@@ -115,19 +103,24 @@ describe("request: success", () => {
     respond("{}");
     const controller = new AbortController();
 
-    await request({ creds, method: "getSettings", httpMethod: "GET", signal: controller.signal });
+    await get(controller.signal);
 
     expect(fetchMock.mock.calls[0]![1]?.signal).toBe(controller.signal);
   });
 
   it("returns null for an empty body", async () => {
     respond("");
-    await expect(request({ creds, method: "m", httpMethod: "GET" })).resolves.toBeNull();
+    await expect(get()).resolves.toBeNull();
   });
 
   it("returns null for a null body", async () => {
     respond("null");
-    await expect(request({ creds, method: "m", httpMethod: "GET" })).resolves.toBeNull();
+    await expect(get()).resolves.toBeNull();
+  });
+
+  it("returns null for 204 without a body", async () => {
+    respond(null, 204);
+    await expect(get()).resolves.toBeNull();
   });
 });
 
@@ -136,11 +129,16 @@ describe("request: errors", () => {
     const cause = new TypeError("Failed to fetch");
     fetchMock.mockRejectedValue(cause);
 
-    const error = await catchError(request({ creds, method: "m", httpMethod: "GET" }));
+    const promise = get();
 
-    expect(error).toBeInstanceOf(ApiError);
-    expect(error).toMatchObject({ name: "ApiError", kind: "network", status: undefined });
-    expect((error as ApiError).cause).toBe(cause);
+    await expect(promise).rejects.toBeInstanceOf(ApiError);
+    await expect(promise).rejects.toMatchObject({
+      name: "ApiError",
+      kind: "network",
+      status: undefined,
+      message: "GREEN-API: network request failed",
+    });
+    await expect(promise).rejects.toHaveProperty("cause", cause);
   });
 
   it.each([
@@ -152,31 +150,74 @@ describe("request: errors", () => {
   ] as const)("maps HTTP %i to %s", async (status, kind) => {
     respond("error", status);
 
-    const error = await catchError(request({ creds, method: "m", httpMethod: "GET" }));
+    const promise = get();
 
-    expect(error).toBeInstanceOf(ApiError);
-    expect(error).toMatchObject({ kind, status });
+    await expect(promise).rejects.toBeInstanceOf(ApiError);
+    await expect(promise).rejects.toMatchObject({ kind, status });
+  });
+
+  it("adds the HTTP status to the message", async () => {
+    respond("error", 500);
+    await expect(get()).rejects.toThrow("GREEN-API: unexpected response (HTTP 500)");
+  });
+
+  it("cancels the unread body of a non-2xx response", async () => {
+    const response = new Response("error", { status: 500 });
+    const cancel = vi.spyOn(response.body!, "cancel");
+    fetchMock.mockResolvedValue(response);
+
+    await expect(get()).rejects.toBeInstanceOf(ApiError);
+    expect(cancel).toHaveBeenCalledTimes(1);
   });
 
   it("maps invalid JSON to an http error", async () => {
     respond("{not json");
 
-    const error = await catchError(request({ creds, method: "m", httpMethod: "GET" }));
+    const promise = get();
 
-    expect(error).toBeInstanceOf(ApiError);
-    expect(error).toMatchObject({ kind: "http", status: 200 });
-    expect((error as ApiError).cause).toBeInstanceOf(SyntaxError);
+    await expect(promise).rejects.toBeInstanceOf(ApiError);
+    await expect(promise).rejects.toMatchObject({ kind: "http", status: 200 });
+    await expect(promise).rejects.toHaveProperty("cause", expect.any(SyntaxError));
+  });
+
+  it("maps a failed body read to a network error with status and cause", async () => {
+    const cause = new TypeError("terminated");
+    const response = new Response("{}");
+    vi.spyOn(response, "text").mockRejectedValue(cause);
+    fetchMock.mockResolvedValue(response);
+
+    const promise = get(new AbortController().signal);
+
+    await expect(promise).rejects.toBeInstanceOf(ApiError);
+    await expect(promise).rejects.toMatchObject({ kind: "network", status: 200 });
+    await expect(promise).rejects.toHaveProperty("cause", cause);
   });
 
   it("never exposes the token in the error", async () => {
+    const errors: unknown[] = [];
     fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
-    const network = await catchError(request({ creds, method: "m", httpMethod: "GET" }));
-    respond("", 401);
-    const auth = await catchError(request({ creds, method: "m", httpMethod: "GET" }));
+    errors.push(await get().catch((e: unknown) => e));
+    for (const [body, status] of [
+      ["", 401],
+      ["", 469],
+      ["", 500],
+      ["{not json", 200],
+    ] as const) {
+      respond(body, status);
+      errors.push(await get().catch((e: unknown) => e));
+    }
 
-    for (const error of [network, auth]) {
+    expect(errors.map((e) => (e as ApiError).kind)).toEqual([
+      "network",
+      "auth",
+      "rate-limit",
+      "http",
+      "http",
+    ]);
+    for (const error of errors) {
       expect((error as Error).message).not.toContain(TOKEN);
       expect(String(error)).not.toContain(TOKEN);
+      expect(String((error as Error).cause)).not.toContain(TOKEN);
     }
   });
 });
@@ -187,11 +228,7 @@ describe("request: abort", () => {
     const reason = new DOMException("Aborted", "AbortError");
     controller.abort(reason);
 
-    const error = await catchError(
-      request({ creds, method: "m", httpMethod: "GET", signal: controller.signal }),
-    );
-
-    expect(error).toBe(reason);
+    await expect(get(controller.signal)).rejects.toBe(reason);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -200,12 +237,32 @@ describe("request: abort", () => {
     const controller = new AbortController();
     const reason = new Error("stop polling");
 
-    const promise = request({ creds, method: "m", httpMethod: "GET", signal: controller.signal });
+    const promise = get(controller.signal);
     controller.abort(reason);
-    const error = await catchError(promise);
 
-    expect(error).toBe(reason);
-    expect(error).not.toBeInstanceOf(ApiError);
+    await expect(promise).rejects.toBe(reason);
+  });
+
+  it("rethrows the abort reason when fetch failed for another reason", async () => {
+    const controller = new AbortController();
+    const reason = new Error("stop polling");
+    fetchMock.mockImplementation(async () => {
+      controller.abort(reason);
+      throw new TypeError("Failed to fetch");
+    });
+
+    await expect(get(controller.signal)).rejects.toBe(reason);
+  });
+
+  it("rethrows the reason when aborted after a non-2xx response", async () => {
+    const controller = new AbortController();
+    const reason = new Error("stop polling");
+    fetchMock.mockImplementation(async () => {
+      controller.abort(reason);
+      return new Response("error", { status: 500 });
+    });
+
+    await expect(get(controller.signal)).rejects.toBe(reason);
   });
 
   it("rethrows the reason when aborted while reading the body", async () => {
@@ -218,11 +275,6 @@ describe("request: abort", () => {
     });
     fetchMock.mockResolvedValue(response);
 
-    const error = await catchError(
-      request({ creds, method: "m", httpMethod: "GET", signal: controller.signal }),
-    );
-
-    expect(error).toBe(reason);
-    expect(error).not.toBeInstanceOf(ApiError);
+    await expect(get(controller.signal)).rejects.toBe(reason);
   });
 });

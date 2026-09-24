@@ -29,8 +29,10 @@ export type GreenApi = {
   setSettings(patch: SettingsPatch, opts?: RequestOptions): Promise<SetSettingsResponse>;
   /**
    * Resolves with a result or a non-rate-limit failure reported with HTTP 200.
-   * Telegram's `rate_limit_exceeded` (HTTP 200) rejects with `ApiError { kind: "rate-limit" }`.
+   * Telegram's `rate_limit_exceeded` (HTTP 200) rejects with `ApiError { kind: "rate-limit" }`
+   * without `status`; the raw `CheckAccountFailure` (with `data.retryAfter`) is its `cause`.
    */
+  /** `phoneNumber`: international format, digits only. */
   checkAccount(phoneNumber: number, opts?: RequestOptions): Promise<CheckAccountResponse>;
   sendMessage(params: SendMessageRequest, opts?: RequestOptions): Promise<SendMessageResponse>;
   /** Resolves with `null` when the queue is empty. */
@@ -79,7 +81,8 @@ export function createGreenApi(creds: Credentials): GreenApi {
         signal: opts?.signal,
       });
       if (isRateLimitExceeded(response)) {
-        throw new ApiError("rate-limit");
+        // Raw failure in `cause`: `data.retryAfter` tells how long to wait.
+        throw new ApiError("rate-limit", { cause: response });
       }
       return response;
     },

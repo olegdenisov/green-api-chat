@@ -179,10 +179,15 @@ type Message = {
 
 - `ApiError { kind: 'auth' | 'network' | 'rate-limit' | 'http', status? }` — единый тип в
   `shared/api`, UI различает ошибки по `kind`. `rate-limit` — `469` и `rate_limit_exceeded`
-  (лимиты Telegram на `checkAccount`). Отмена запроса (`AbortSignal`) не заворачивается в
-  `ApiError` — пробрасывается исходная `AbortError`, чтобы Reatom-отмена (`isAbort`) работала.
+  (лимиты Telegram на `checkAccount`): из `469` — `status: 469`; из `200`/`rate_limit_exceeded`
+  — без `status`, исходный ответ (`CheckAccountFailure` с `data.retryAfter`) — в `cause`.
+  Отмена запроса (`AbortSignal`) не заворачивается в `ApiError` — пробрасывается причина
+  отмены (`signal.reason`, обычно `AbortError`) без изменений, чтобы Reatom-отмена
+  (`isAbort`) работала.
 - Прочие случаи клиента (этап 2): сбой `fetch` или чтения тела → `network` (исходная ошибка
   в `cause`); `401`/`403` → `auth`; прочие не-2xx и невалидный JSON → `http` со `status`.
+  `466` (лимит тарифа/квоты GREEN-API) — тоже `http` со `status: 466`, отдельного `kind` нет;
+  UI может показать его отдельно по `status`.
   Пустое тело `2xx` — `null` только у `receiveNotification` (пустая очередь); у остальных
   методов — `ApiError { kind: 'http' }`. `checkAccount` с `200`-ошибкой, кроме лимита,
   возвращается как есть (`CheckAccountFailure`) — разбирает этап 4.

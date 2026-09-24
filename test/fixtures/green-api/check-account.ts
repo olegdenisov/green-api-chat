@@ -1,9 +1,5 @@
 // https://green-api.com/telegram/docs/api/service/CheckAccount/
-import type { CheckAccountFailure, CheckAccountRequest, CheckAccountResult } from "@/shared/api";
-
-export const checkAccountRequest = {
-  phoneNumber: 79876543210,
-} satisfies CheckAccountRequest;
+import type { CheckAccountFailure, CheckAccountResult } from "@/shared/api";
 
 export const checkAccountExists = {
   exist: true,
