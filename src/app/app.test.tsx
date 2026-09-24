@@ -1,15 +1,15 @@
-import { render } from "@test/render";
-import { screen } from "@testing-library/react";
+// App brings its own providers, so it is rendered with plain Testing Library
+// render (not @test/render) to avoid nested providers. Page behaviour is tested
+// in the page's own tests via @test/render.
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import App from "./app";
 
 describe("App", () => {
-  it("renders the stub title with Mantine", () => {
+  it("mounts the home page inside the app providers", () => {
     render(<App />);
 
-    const title = screen.getByRole("heading", { level: 1, name: "GREEN-API chat" });
-    expect(title).toBeInTheDocument();
-    expect(title).toHaveClass("mantine-Title-root");
+    expect(screen.getByRole("heading", { level: 1, name: "GREEN-API chat" })).toBeInTheDocument();
   });
 });
