@@ -1,12 +1,15 @@
-import { render, screen } from "@testing-library/react";
+import { render } from "@test/render";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import App from "./app";
 
 describe("App", () => {
-  it("renders the stub title", () => {
+  it("renders the stub title with Mantine", () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "GREEN-API chat" })).toBeInTheDocument();
+    const title = screen.getByRole("heading", { level: 1, name: "GREEN-API chat" });
+    expect(title).toBeInTheDocument();
+    expect(title).toHaveClass("mantine-Title-root");
   });
 });
