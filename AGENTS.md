@@ -35,6 +35,25 @@
 - Входящие — через очередь уведомлений (`receiveNotification` + `deleteNotification`).
 - Подробности, ошибки и принятые решения — в дизайн-документе.
 
+### `shared/api`
+
+- `src/shared/api` — сегмент слоя `shared` (без слайсов). Файлы лежат плоско; папки
+  `ui`/`api`/`lib`/`model`/`config` внутри сегмента запрещает steiger
+  (`fsd/no-reserved-folder-names`). Публичный API — `index.ts`; внутренний `request()`
+  наружу не экспортируется.
+- `createGreenApi(creds)` — фабрика клиента с 7 методами; экземпляр без состояния, при смене
+  кредов создаётся новый. `request()` — единственное место с `fetch`.
+- Ошибки — `ApiError` с `kind`: `auth` (`401`/`403`), `network` (сбой `fetch`/чтения тела,
+  причина в `cause`), `rate-limit` (`469` и `rate_limit_exceeded` в `200` у `checkAccount`),
+  `http` (прочие статусы, битый JSON, пустое тело там, где оно обязательно). `message` — без
+  URL и токена.
+- Отмена: все методы принимают `{ signal }`; при отменённом `signal` пробрасывается исходная
+  ошибка (не `ApiError`) — чтобы работала отмена Reatom.
+- Типы ответов и уведомлений — `types.ts`, по документации Telegram; рантайм-валидации нет.
+  Union уведомлений без «ловушки»: неизвестные `typeWebhook`/`typeMessage` — ветка `default`.
+- Persist атомов — встроенный `withLocalStorage` из `@reatom/core`; `shared/lib` под это не
+  заводить.
+
 ## Инструменты
 
 - oxlint (`.oxlintrc.json`): правила хуков и react-refresh — в плагине `react`
@@ -91,6 +110,11 @@
 - Тесты без рендера: код с атомами — внутри `context.start(() => ...)` (свой кадр на
   тест); вызов атома вне кадра бросает ошибку, как в проде.
 - Взаимодействия — через `userEvent.setup()`, не `fireEvent`.
+- `fetch` мокать через `vi.stubGlobal("fetch", vi.fn<typeof fetch>())`; снимать вручную не
+  нужно — в `vite.config.ts` включено `test.unstubGlobals: true`.
+- Примеры ответов GREEN-API — `.ts`-фикстуры в `test/fixtures/green-api/`:
+  `export const x = { ... } satisfies <Тип>`, данные из документации (вымышленные).
+  `tsc -b` сверяет их с типами.
 - Исключения: `App` и `ReatomProvider` содержат свои провайдеры и рендерятся обычным
   `render` из RTL.
 - `vitest.setup.ts`: `clearStack()`, очистка `localStorage`/`sessionStorage` после

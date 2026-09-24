@@ -181,6 +181,11 @@ type Message = {
   `shared/api`, UI различает ошибки по `kind`. `rate-limit` — `469` и `rate_limit_exceeded`
   (лимиты Telegram на `checkAccount`). Отмена запроса (`AbortSignal`) не заворачивается в
   `ApiError` — пробрасывается исходная `AbortError`, чтобы Reatom-отмена (`isAbort`) работала.
+- Прочие случаи клиента (этап 2): сбой `fetch` или чтения тела → `network` (исходная ошибка
+  в `cause`); `401`/`403` → `auth`; прочие не-2xx и невалидный JSON → `http` со `status`.
+  Пустое тело `2xx` — `null` только у `receiveNotification` (пустая очередь); у остальных
+  методов — `ApiError { kind: 'http' }`. `checkAccount` с `200`-ошибкой, кроме лимита,
+  возвращается как есть (`CheckAccountFailure`) — разбирает этап 4.
 - Логин: `getStateInstance` → `authorized` пускаем; иной статус → «Инстанс не авторизован
   в Telegram»; `401`/`403` → «Неверный idInstance или apiTokenInstance». Лоадер, форма
   заблокирована. Включение webhook-настроек при необходимости.
