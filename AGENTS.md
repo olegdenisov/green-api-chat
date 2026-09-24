@@ -45,4 +45,13 @@
 
 ## Команды
 
-TBD — появятся в Task 3/8 плана `docs/plans/20260923-01-scaffold.md`.
+`Makefile` — тонкая обёртка над скриптами `package.json`; логика только в скриптах.
+Полный список целей — `make help`.
+
+- `make install` — установить зависимости.
+- `make dev` — dev-сервер; `make build` — сборка; `make preview` — просмотр сборки.
+- `make test` — тесты один раз; `make test-watch` — в watch-режиме.
+- `make lint`, `make format`, `make format-check`, `make lint-fsd`, `make typecheck`.
+- `make check` — lint → format-check → lint-fsd → typecheck → test. Должен быть зелёным
+  перед каждым коммитом.
+- `make clean` — удалить `dist`, `coverage`, `node_modules/.vite`.
