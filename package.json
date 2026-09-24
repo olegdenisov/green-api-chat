@@ -12,7 +12,9 @@
     "format:check": "oxfmt --check",
     "lint:fsd": "steiger ./src",
     "typecheck": "tsc -b",
-    "check": "pnpm lint && pnpm format:check && pnpm lint:fsd && pnpm typecheck"
+    "check": "pnpm lint && pnpm format:check && pnpm lint:fsd && pnpm typecheck && pnpm test",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -20,15 +22,21 @@
   },
   "devDependencies": {
     "@feature-sliced/steiger-plugin": "^0.7.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.1.1",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
     "steiger": "^0.6.0",
     "typescript": "~6.0.2",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
   },
   "engines": {
     "node": ">=22"
