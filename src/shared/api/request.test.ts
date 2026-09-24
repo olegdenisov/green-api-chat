@@ -7,7 +7,8 @@ import { request } from "./request";
 
 beforeEach(stubFetch);
 
-const get = (signal?: AbortSignal) => request({ creds, method: "m", httpMethod: "GET", signal });
+const get = (signal?: AbortSignal) =>
+  request({ creds, method: "getStateInstance", httpMethod: "GET", signal });
 
 describe("request: success", () => {
   it("sends a GET without body and headers", async () => {

@@ -24,20 +24,23 @@ export type ReceiveNotificationOptions = RequestOptions & {
 
 /** GREEN-API client bound to one set of credentials. Stateless: recreate on credential change. */
 export type GreenApi = {
-  getStateInstance(opts?: RequestOptions): Promise<GetStateInstanceResponse>;
-  getSettings(opts?: RequestOptions): Promise<Settings>;
-  setSettings(patch: SettingsPatch, opts?: RequestOptions): Promise<SetSettingsResponse>;
+  getStateInstance(options?: RequestOptions): Promise<GetStateInstanceResponse>;
+  getSettings(options?: RequestOptions): Promise<Settings>;
+  setSettings(patch: SettingsPatch, options?: RequestOptions): Promise<SetSettingsResponse>;
   /**
    * Resolves with a result or a non-rate-limit failure reported with HTTP 200.
    * Telegram's `rate_limit_exceeded` (HTTP 200) rejects with `ApiError { kind: "rate-limit" }`
    * without `status`; the raw `CheckAccountFailure` (with `data.retryAfter`) is its `cause`.
+   * @param phoneNumber International format, digits only.
    */
-  /** `phoneNumber`: international format, digits only. */
-  checkAccount(phoneNumber: number, opts?: RequestOptions): Promise<CheckAccountResponse>;
-  sendMessage(params: SendMessageRequest, opts?: RequestOptions): Promise<SendMessageResponse>;
+  checkAccount(phoneNumber: number, options?: RequestOptions): Promise<CheckAccountResponse>;
+  sendMessage(params: SendMessageRequest, options?: RequestOptions): Promise<SendMessageResponse>;
   /** Resolves with `null` when the queue is empty. */
-  receiveNotification(opts?: ReceiveNotificationOptions): Promise<ReceivedNotification | null>;
-  deleteNotification(receiptId: number, opts?: RequestOptions): Promise<DeleteNotificationResponse>;
+  receiveNotification(options?: ReceiveNotificationOptions): Promise<ReceivedNotification | null>;
+  deleteNotification(
+    receiptId: number,
+    options?: RequestOptions,
+  ): Promise<DeleteNotificationResponse>;
 };
 
 function isRateLimitExceeded(response: CheckAccountResponse): boolean {
@@ -59,26 +62,26 @@ export function createGreenApi(creds: Credentials): GreenApi {
   }
 
   return {
-    getStateInstance: (opts) =>
-      requestBody({ method: "getStateInstance", httpMethod: "GET", signal: opts?.signal }),
+    getStateInstance: (options) =>
+      requestBody({ method: "getStateInstance", httpMethod: "GET", signal: options?.signal }),
 
-    getSettings: (opts) =>
-      requestBody({ method: "getSettings", httpMethod: "GET", signal: opts?.signal }),
+    getSettings: (options) =>
+      requestBody({ method: "getSettings", httpMethod: "GET", signal: options?.signal }),
 
-    setSettings: (patch, opts) =>
+    setSettings: (patch, options) =>
       requestBody({
         method: "setSettings",
         httpMethod: "POST",
         body: patch,
-        signal: opts?.signal,
+        signal: options?.signal,
       }),
 
-    async checkAccount(phoneNumber, opts) {
+    checkAccount: async (phoneNumber, options) => {
       const response = await requestBody<CheckAccountResponse>({
         method: "checkAccount",
         httpMethod: "POST",
         body: { phoneNumber },
-        signal: opts?.signal,
+        signal: options?.signal,
       });
       if (isRateLimitExceeded(response)) {
         // Raw failure in `cause`: `data.retryAfter` tells how long to wait.
@@ -87,30 +90,32 @@ export function createGreenApi(creds: Credentials): GreenApi {
       return response;
     },
 
-    sendMessage: ({ chatId, message }, opts) =>
+    sendMessage: ({ chatId, message }, options) =>
       requestBody({
         method: "sendMessage",
         httpMethod: "POST",
         body: { chatId, message },
-        signal: opts?.signal,
+        signal: options?.signal,
       }),
 
-    receiveNotification: (opts) =>
+    receiveNotification: (options) =>
       request<ReceivedNotification>({
         creds,
         method: "receiveNotification",
         httpMethod: "GET",
         query:
-          opts?.receiveTimeout === undefined ? undefined : { receiveTimeout: opts.receiveTimeout },
-        signal: opts?.signal,
+          options?.receiveTimeout === undefined
+            ? undefined
+            : { receiveTimeout: options.receiveTimeout },
+        signal: options?.signal,
       }),
 
-    deleteNotification: (receiptId, opts) =>
+    deleteNotification: (receiptId, options) =>
       requestBody({
         method: "deleteNotification",
         httpMethod: "DELETE",
         pathSuffix: receiptId,
-        signal: opts?.signal,
+        signal: options?.signal,
       }),
   };
 }

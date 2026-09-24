@@ -1,12 +1,21 @@
 import { ApiError } from "./api-error";
 import type { Credentials } from "./types";
 
-export type HttpMethod = "GET" | "POST" | "DELETE";
+type HttpMethod = "GET" | "POST" | "DELETE";
+
+/** GREEN-API methods the client calls. */
+type GreenApiMethod =
+  | "getStateInstance"
+  | "getSettings"
+  | "setSettings"
+  | "checkAccount"
+  | "sendMessage"
+  | "receiveNotification"
+  | "deleteNotification";
 
 export type RequestParams = {
   creds: Credentials;
-  /** GREEN-API method name, e.g. `getStateInstance`. */
-  method: string;
+  method: GreenApiMethod;
   httpMethod: HttpMethod;
   /** Serialized as JSON; sets `Content-Type: application/json`. */
   body?: unknown;
