@@ -5,13 +5,16 @@ import "./styles/index.css";
 
 import { Title } from "@mantine/core";
 
+import { ReatomProvider } from "./providers/reatom-provider";
 import { UiProvider } from "./providers/ui-provider";
 
 function App() {
   return (
-    <UiProvider>
-      <Title order={1}>GREEN-API chat</Title>
-    </UiProvider>
+    <ReatomProvider>
+      <UiProvider>
+        <Title order={1}>GREEN-API chat</Title>
+      </UiProvider>
+    </ReatomProvider>
   );
 }
 
