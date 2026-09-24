@@ -1,11 +1,6 @@
-import { connectLogger, context } from "@reatom/core";
+import { context } from "@reatom/core";
 import { reatomContext } from "@reatom/react";
 import { useState, type ReactNode } from "react";
-
-// connectLogger registers a global extension (not bound to a frame): call it once.
-if (import.meta.env.MODE === "development") {
-  connectLogger();
-}
 
 // Root frame per provider instance: https://v1001.reatom.dev/reference/react/
 // Lazy useState keeps one frame for the provider's lifetime and gives every mounted

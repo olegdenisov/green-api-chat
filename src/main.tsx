@@ -1,3 +1,6 @@
+// Must stay first: the dev logger only sees atoms created after it is connected.
+import "@/app/logger";
+
 import { clearStack } from "@reatom/core";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
