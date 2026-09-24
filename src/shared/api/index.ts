@@ -1,6 +1,8 @@
 export { ApiError } from "./api-error";
 export type { ApiErrorKind } from "./api-error";
 export { resolveApiUrl } from "./api-url";
+export { createGreenApi } from "./green-api";
+export type { GreenApi, ReceiveNotificationOptions, RequestOptions } from "./green-api";
 export type {
   CheckAccountFailure,
   CheckAccountRequest,
