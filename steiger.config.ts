@@ -11,4 +11,12 @@ export default defineConfig([
       "fsd/segments-by-purpose": "off",
     },
   },
+  {
+    // Temporary, until Task 5 of stage 3: the slices have no consumers yet, so the rule
+    // flags them as insignificant. Remove once pages and app import them.
+    files: ["./src/entities/session/**", "./src/features/auth/**"],
+    rules: {
+      "fsd/insignificant-slice": "off",
+    },
+  },
 ]);
