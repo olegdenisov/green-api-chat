@@ -1,0 +1,53 @@
+.row {
+  display: flex;
+  justify-content: flex-start;
+
+  &[data-direction="out"] {
+    justify-content: flex-end;
+  }
+}
+
+.bubble {
+  max-width: min(75%, rem(560px));
+  padding: rem(6px) var(--mantine-spacing-sm);
+  border-radius: rem(16px) rem(16px) rem(16px) rem(4px);
+  background: var(--mantine-color-body);
+  box-shadow: 0 rem(1px) rem(1px) rgb(0 0 0 / 8%);
+
+  .row[data-direction="out"] & {
+    border-radius: rem(16px) rem(16px) rem(4px) rem(16px);
+
+    @mixin light {
+      background: var(--mantine-color-blue-1);
+    }
+
+    @mixin dark {
+      background: var(--mantine-color-blue-9);
+    }
+  }
+}
+
+.text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: rem(4px);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.failed {
+  color: var(--mantine-color-red-text);
+}
+
+.retry {
+  height: auto;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+}

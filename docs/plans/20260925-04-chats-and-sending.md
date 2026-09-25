@@ -567,18 +567,23 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 - Create: `src/pages/chat/ui/composer.tsx` (+ `.module.css`, тест)
 - Modify: `src/pages/chat/ui/chat-page.tsx`
 
-- [ ] `ChatWindow`: шапка («←» на узком экране, название, `DeleteChatButton`), лента с
+- [x] `ChatWindow`: шапка («←» на узком экране, название, `DeleteChatButton`), лента с
       автоскроллом, `Composer`; без чата — «Выберите чат или создайте новый», пустая
       лента — «Сообщений пока нет»; `key` пузыря — `message.id`
-- [ ] `MessageBubble`: сторона по `direction`, время `HH:MM`, статус; `failed` и
+      (➕ лента — `role="log"` «Сообщения»; автоскролл — `scrollTop = scrollHeight` по числу
+      сообщений; стили окна переехали из `chat-page.module.css` в `chat-window.module.css`)
+- [x] `MessageBubble`: сторона по `direction`, время `HH:MM`, статус; `failed` и
       `isSendingStale(message, Date.now())` — «Не отправлено» + «Повторить»
       (`retryChatMessage`)
-- [ ] `Composer`: `Textarea` (`bindField(draftField)`, `autosize`, `maxLength={4096}`),
+      (➕ статусы с `aria-label` «Отправляется» / «Отправлено»; у входящих статуса нет;
+      ⚠️ зависание `sending` проверяется при рендере — живая отправка своей вкладки станет
+      `failed` по таймауту, чужая/после перезагрузки — при следующем рендере)
+- [x] `Composer`: `Textarea` (`bindField(draftField)`, `autosize`, `maxLength={4096}`),
       `Enter` / `Shift+Enter` / IME, кнопка неактивна при пустом тексте
-- [ ] тесты: `Enter` отправляет и очищает поле, `Shift+Enter` — перенос; пустое — кнопка
+- [x] тесты: `Enter` отправляет и очищает поле, `Shift+Enter` — перенос; пустое — кнопка
       неактивна; `failed` → «Повторить» → `sent`; «←» возвращает к списку; удаление чата
       через `DeleteChatButton` возвращает к заглушке
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный
 
 ### Task 10: Verify acceptance criteria
 

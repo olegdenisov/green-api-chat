@@ -1,8 +1,8 @@
-import { Text, Title } from "@mantine/core";
 import { reatomComponent } from "@reatom/react";
 
 import { activeChatAtom } from "@/entities/chat";
 
+import { ChatWindow } from "./chat-window";
 import { Sidebar } from "./sidebar";
 
 import classes from "./chat-page.module.css";
@@ -16,16 +16,7 @@ export const ChatPage = reatomComponent(() => {
   return (
     <div className={classes.page} data-view={chat ? "chat" : "list"}>
       <Sidebar className={classes.sidebar} />
-      {/* The chat window stub; the window itself lands in the next task. */}
-      <main className={classes.window}>
-        {chat ? (
-          <Title order={2} size="h4">
-            {chat.title}
-          </Title>
-        ) : (
-          <Text c="dimmed">Выберите чат или создайте новый</Text>
-        )}
-      </main>
+      <ChatWindow className={classes.window} />
     </div>
   );
 }, "ChatPage");
