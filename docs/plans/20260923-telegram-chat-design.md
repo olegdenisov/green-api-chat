@@ -110,12 +110,14 @@ Notification — событие инстанса (входящее/исходя�
 ```
 src/
   app/        провайдеры (Mantine, Reatom), глобальные стили, вход, выбор экрана;
-              user-data-cleanup.ts — логаут ⇒ deleteAllChats()
+              user-data-cleanup.ts — логаут ⇒ deleteAllChats() + resetChatPage(); нет
+              кредов при старте ⇒ deleteAllChats()
   pages/
     login/    карточка с формой логина (LoginForm)
     chat/     model: createChatForm, sendChatMessage/retryChatMessage, draftField/sendDraft,
               activeMessagesAtom; ui: Sidebar (CreateChatForm, ChatList), ChatWindow
-              (MessageBubble, Composer); lib: formatTime
+              (MessageBubble, Composer); lib: formatTime (HH:MM), formatChatTime (сегодня —
+              HH:MM, иначе DD.MM.YY)
   features/
     auth/              форма логина (reatomForm: проверка инстанса, webhook-настройки,
                        сохранение кредов), кнопка «Выйти»
@@ -219,17 +221,22 @@ type Message = {
 2. `sendMessage` → успех: id = `idMessage`, `sent`; ошибка: `failed` + «Повторить» на пузыре
    (`retryChatMessage`: тот же текст и временный id, новый `attemptAt`).
 3. `sendChatMessage` — обычный `action`, не сабмит формы: смена чата, новая отправка и
-   размонтирование окна его не отменяют; экшен ничего не пробрасывает (вызывается без
-   `await`).
+   размонтирование окна его не отменяют; возвращённый промис не отклоняется (экшен
+   вызывается без `await`); без клиента — синхронный `throw` (ошибка программиста: экран
+   чата требует креды).
 4. Таймаут `SEND_TIMEOUT` (30 с) → `failed` (таймаут — `TimeoutError`, не отмена). Отправка,
    прерванная закрытием вкладки или перезагрузкой, остаётся `sending`; `isSendingStale`
-   (`now - attemptAt > SEND_TIMEOUT`) показывает её как `failed` при рендере. Помечать
+   (`now - attemptAt > SEND_TIMEOUT`) показывает её как `failed` (текст, «Повторить» и
+   `data-failed` пузыря); пока такая отправка не зависла, пузырь держит одноразовый таймер на
+   `attemptAt + SEND_TIMEOUT` и перерисовывается сам. Помечать
    `failed` при старте нельзя: другая вкладка пометила бы живую отправку → «Повторить» →
    дубль.
 5. **Поздние ответы после логаута отбрасываются**: логаут не сбрасывает кадр и не отменяет
    запросы в полёте, поэтому после `await` модель сверяет, что `greenApiAtom()` — тот же
    клиент; `updateMessage` по неизвестному чату/id — no-op, удалённая история не
-   воскресает. Так же — `checkAccount` в создании чата.
+   воскресает. Так же — `checkAccount` в создании чата (и поздний ответ, и поздняя ошибка).
+   Ответ применяется, только если у сообщения тот же `attemptAt`: поздний таймаут старой
+   попытки не затирает повтор.
 6. Поле ввода — `reatomField` (`draftField`); черновик один на все чаты и сбрасывается при
    смене активного чата.
 
@@ -350,7 +357,7 @@ type Message = {
 6. **Полировка и сдача** — вёрстка под web.max.ru, пустые состояния, компонентные тесты,
    README, деплой.
 
-## Известные ограничения (в README)
+## Известные ограничения (в README на этапе 6)
 
 - Креды хранятся в браузере.
 - Одновременные записи двух вкладок в одном тике теряют одну из них (атом пишется целиком).

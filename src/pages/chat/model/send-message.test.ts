@@ -123,9 +123,11 @@ describe("sendChatMessage", () => {
       ]);
 
       await wrap(vi.waitFor(() => expect(response.pending()).toBe(2)));
+      // Out of order: the second send is answered first.
+      response.resolveAt(1, { idMessage: "1002" });
+      await wrap(second);
       response.resolveNext({ idMessage: "1001" });
-      response.resolveNext({ idMessage: "1002" });
-      await wrap(Promise.all([first, second]));
+      await wrap(first);
 
       expect(
         messagesOf(friend.chatId).map(({ text, id, status }) => ({ text, id, status })),
@@ -202,9 +204,47 @@ describe("sendChatMessage", () => {
 
   it("throws without a GREEN-API client", () => {
     context.start(() => {
-      expect(() => sendChatMessage(friend.chatId, "Hello")).toThrow("no GREEN-API client");
+      expect(() => sendChatMessage(friend.chatId, "Hello")).toThrow("No GREEN-API client");
       expect(messagesAtom()).toEqual({});
     });
+  });
+
+  it("keeps the local id when the answer has no idMessage", async () => {
+    respondByMethod({ sendMessage: { body: {} } });
+    await context.start(async () => {
+      setup();
+      const pending = sendChatMessage(friend.chatId, "Hello");
+      const [sending] = messagesOf(friend.chatId);
+      await wrap(pending);
+
+      expect(messagesOf(friend.chatId)).toEqual([{ ...sending, status: "sent" }]);
+    });
+  });
+
+  it("makes a local id without crypto.randomUUID (plain HTTP is not a secure context)", async () => {
+    vi.stubGlobal("crypto", {});
+    respondByMethod({ sendMessage: { body: sendMessageResponse } });
+    await context.start(async () => {
+      setup();
+      const pending = sendChatMessage(friend.chatId, "Hello");
+      expect(messagesOf(friend.chatId)[0]?.id).toMatch(/^local-./);
+      await wrap(pending);
+      expect(messagesOf(friend.chatId)[0]?.status).toBe("sent");
+    });
+  });
+  it("works without AbortSignal.any (Safari < 17.4, Chrome < 116)", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(AbortSignal, "any");
+    Object.defineProperty(AbortSignal, "any", { value: undefined, configurable: true });
+    try {
+      respondByMethod({ sendMessage: { body: sendMessageResponse } });
+      await context.start(async () => {
+        setup();
+        await wrap(sendChatMessage(friend.chatId, "Hello"));
+        expect(messagesOf(friend.chatId).map((message) => message.status)).toEqual(["sent"]);
+      });
+    } finally {
+      if (descriptor) Object.defineProperty(AbortSignal, "any", descriptor);
+    }
   });
 });
 
@@ -213,8 +253,8 @@ describe("send timeout", () => {
     vi.useRealTimers();
   });
 
-  // A reset does not abort the request: its `wrap` rejects with "context reset" once the
-  // request settles (here — by the timeout). The action must swallow that abort.
+  // A reset does not abort the request: it settles by the send timeout, and the action must
+  // resolve, not reject (it is never awaited in the app).
   it("a frame reset mid-send settles without an unhandled rejection", async () => {
     vi.useFakeTimers();
     hangUntilAbort();
@@ -230,6 +270,11 @@ describe("send timeout", () => {
     await vi.advanceTimersByTimeAsync(SEND_TIMEOUT);
 
     await expect(pending).resolves.toBeUndefined();
+    // Neither the request nor the send timer belong to the frame: the timeout still fires and
+    // the attempt is honestly `failed` (not left `sending` forever).
+    context.start(() => {
+      expect(messagesOf(friend.chatId).map((message) => message.status)).toEqual(["failed"]);
+    });
   });
 
   it("a send without an answer becomes failed after SEND_TIMEOUT", async () => {
@@ -317,6 +362,63 @@ describe("retryChatMessage", () => {
       expect(messagesOf(friend.chatId)).toEqual([
         { ...stale, id: sendMessageResponse.idMessage, status: "sent", attemptAt: now },
       ]);
+    });
+  });
+
+  it("a late failure of the previous attempt does not overwrite the retry", async () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue(1000);
+    const response = deferFetch();
+    await context.start(async () => {
+      setup();
+      const first = sendChatMessage(friend.chatId, "Hello");
+      const [sending] = messagesOf(friend.chatId);
+      await wrap(vi.waitFor(() => expect(response.pending()).toBe(1)));
+
+      // The first attempt's timer is late (a throttled tab): the user already retries.
+      now.mockReturnValue(1000 + SEND_TIMEOUT + 1);
+      const retry = retryChatMessage(friend.chatId, sending!.id);
+      await wrap(vi.waitFor(() => expect(response.pending()).toBe(2)));
+
+      response.rejectNext(new TypeError("Failed to fetch"));
+      await wrap(first);
+      expect(messagesOf(friend.chatId).map((message) => message.status)).toEqual(["sending"]);
+
+      response.resolveNext(sendMessageResponse);
+      await wrap(retry);
+      expect(messagesOf(friend.chatId)).toEqual([
+        {
+          ...sending,
+          id: sendMessageResponse.idMessage,
+          status: "sent",
+          attemptAt: 1000 + SEND_TIMEOUT + 1,
+        },
+      ]);
+    });
+  });
+
+  it("drops a retry answered after logout", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await context.start(async () => {
+      setup();
+      await wrap(sendChatMessage(friend.chatId, "Hello"));
+      const [failed] = messagesOf(friend.chatId);
+
+      const response = deferFetch();
+      const pending = retryChatMessage(friend.chatId, failed!.id);
+      await wrap(vi.waitFor(() => expect(response.pending()).toBe(1)));
+      logout();
+      response.resolveNext(sendMessageResponse);
+      await wrap(pending);
+
+      expect(messagesOf(friend.chatId).map(({ id, status }) => ({ id, status }))).toEqual([
+        { id: failed!.id, status: "sending" },
+      ]);
+    });
+  });
+
+  it("throws without a GREEN-API client", () => {
+    context.start(() => {
+      expect(() => retryChatMessage(friend.chatId, "local-1")).toThrow("No GREEN-API client");
     });
   });
 

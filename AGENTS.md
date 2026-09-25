@@ -38,8 +38,11 @@
 - Сущности друг друга не импортируют: у каждой атомарные экшены, связку делает фича
   (`features/delete-chats`: чат + его сообщения).
 - Очистка данных при логауте — `src/app/user-data-cleanup.ts` (`withChangeHook` на
-  `credentialsAtom` → `deleteAllChats()`): срабатывает на любой логаут, в т.ч. из другой
-  вкладки. Новые данные пользователя чистить там же, не в `logout`.
+  `credentialsAtom` → `deleteAllChats()` и `resetChatPage()` — форма нового чата и черновик;
+  `withInitHook`: кредов нет при старте → `deleteAllChats()`): срабатывает на любой логаут,
+  в т.ч. из другой вкладки. Новые данные пользователя чистить там же, не в `logout`. Хук
+  регистрируется side-effect импортом в `app.tsx`; в тестах без `App` очистки нет —
+  импортировать `@/app/user-data-cleanup` в тесте, если она нужна (из `app`-тестов).
 - steiger не видит `export * from "…"`: такой re-export через границу слоя не ловится —
   писать `import`.
 - В `app` нет сегмента `ui` (`fsd/no-ui-in-app`): компоненты уровня приложения (`Screen`)
@@ -107,6 +110,8 @@
 - Вёрстка — CSS Modules (`*.module.css`) рядом с компонентом.
 - Общие UI-компоненты — сегмент `src/shared/ui` (файлы плоско, публичный API — `index.ts`):
   например, `AppTitle` — название приложения как `h1` страницы.
+- `src/shared/config` — сегмент без слайсов, файлы плоско (`persist.ts` — `PERSIST_TTL`),
+  публичный API — `index.ts`.
 - PostCSS (`postcss.config.cjs`, как в гайде Mantine для Vite): миксины
   `postcss-preset-mantine` (`@mixin hover`, `light`/`dark`, `rem()`) и переменные
   `$mantine-breakpoint-xs…xl` для `@media`.
@@ -142,11 +147,18 @@
   клиент, иначе ничего не записывать. Патч-экшены по неизвестному ключу — no-op, ключ не
   создают.
 - Экшен, вызываемый без `await` (`sendChatMessage`), не должен отклоняться (ни ошибкой, ни
-  отменой): при сбросе кадра это был бы unhandled rejection. Долгую операцию, которую не
+  отменой): при сбросе кадра это был бы unhandled rejection. Исключение — синхронный `throw`
+  без клиента (`requireApi()`): ошибка программиста, экран чата требует креды. Долгую операцию, которую не
   должна отменять повторная отправка, делать обычным `action`, не `onSubmit` формы.
 - Таймаут запроса — `setTimeout` + `AbortController` с причиной `TimeoutError`, не
-  `AbortSignal.timeout()` (не подчиняется fake timers). `isAbort` узнаёт только
-  `AbortError`, поэтому таймаут — ошибка, а не отмена.
+  `AbortSignal.timeout()` (не подчиняется fake timers). Сигналы объединять вручную (общий
+  `AbortController` + слушатель `abort`), не `AbortSignal.any()`: его нет в Safari < 17.4 и
+  Chrome < 116, которые покрывает цель сборки Vite (полифилов нет). `isAbort` узнаёт только
+  `AbortError`, поэтому таймаут — ошибка, а не отмена. `context.reset()` не отменяет ни
+  запрос, ни этот таймер.
+- `set()` persist-атома с `subscribe: false`, ещё не прочитанного в кадре, сравнивает с
+  дефолтом: `set(null)` при дефолте `null` в хранилище не пишется. Сначала прочитать атом
+  (так в `clearChats`).
 - Логгер подключается в `src/app/logger.ts`, и этот модуль — первый импорт в
   `src/main.tsx` (до `@/app/app`). `connectLogger()` расширяет только атомы, созданные
   после вызова (без back-fill), а атомы моделей создаются при вычислении их модулей.
@@ -172,8 +184,8 @@
   `BASE`; `hangUntilAbort()` — мок, который отклоняется с `signal.reason` при отмене (тесты
   отмены). `respondByMethod({ getStateInstance: { body }, ... })` — ответ по имени метода
   из URL (неожиданный метод роняет тест), `calledMethods()` — список вызванных методов.
-  `deferFetch()` — каждый вызов ждёт `resolveNext(body, status?)`/`rejectNext(error)`,
-  `pending()` — число ждущих, отмена — с `signal.reason` (состояние «до ответа», логаут
+  `deferFetch()` — каждый вызов ждёт `resolveNext(body, status?)`/`rejectNext(error)`
+  (`resolveAt(index, body)` — ответ не по порядку), `pending()` — число ждущих, отмена — с `signal.reason` (состояние «до ответа», логаут
   посреди запроса).
 - Примеры ответов GREEN-API — `.ts`-фикстуры в `test/fixtures/green-api/`:
   `export const x = { ... } satisfies <Тип>`, данные из документации (вымышленные).

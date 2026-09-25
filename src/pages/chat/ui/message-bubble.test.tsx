@@ -1,6 +1,6 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { messagesAtom, SEND_TIMEOUT, type Message } from "@/entities/message";
 import { credentialsAtom } from "@/entities/session";
@@ -9,7 +9,6 @@ import { sendMessageResponse } from "@test/fixtures/green-api/send-message";
 import { creds, respondByMethod, stubFetch } from "@test/green-api";
 import { render } from "@test/render";
 
-import { formatTime } from "../lib/format-time";
 import { MessageBubble } from "./message-bubble";
 
 const now = Date.now();
@@ -29,10 +28,11 @@ beforeEach(stubFetch);
 
 describe("MessageBubble", () => {
   it("shows an outgoing sent message on the right with time and a check mark", () => {
-    render(<MessageBubble message={outgoing} />);
+    const timestamp = new Date(2026, 8, 25, 9, 5).getTime();
+    render(<MessageBubble message={{ ...outgoing, timestamp, attemptAt: timestamp }} />);
 
     expect(row()).toHaveAttribute("data-direction", "out");
-    expect(screen.getByText(formatTime(now))).toBeInTheDocument();
+    expect(screen.getByText("09:05")).toBeInTheDocument();
     expect(screen.getByLabelText("Отправлено")).toHaveTextContent("✓");
   });
 
@@ -56,6 +56,24 @@ describe("MessageBubble", () => {
 
     expect(screen.getByText(/Не отправлено/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
+  });
+
+  it("turns a sending message into not sent once SEND_TIMEOUT passes", async () => {
+    vi.useFakeTimers();
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const attemptAt = Date.now();
+    render(<MessageBubble message={{ ...outgoing, status: "sending", attemptAt }} />);
+    expect(screen.getByLabelText("Отправляется")).toBeInTheDocument();
+
+    // `act`: the timer's re-render is a state update outside React events.
+    await act(() => vi.advanceTimersByTimeAsync(SEND_TIMEOUT - 1));
+    expect(screen.getByLabelText("Отправляется")).toBeInTheDocument();
+
+    await act(() => vi.advanceTimersByTimeAsync(2));
+    expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
+    expect(row()?.querySelector("[data-failed]")).not.toBeNull();
   });
 
   it("retries a failed message until it is sent", async () => {

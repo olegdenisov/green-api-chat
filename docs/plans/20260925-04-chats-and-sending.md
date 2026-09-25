@@ -102,13 +102,18 @@
 src/
   app/
     app.tsx                 + import "./user-data-cleanup"
-    user-data-cleanup.ts    credentialsAtom → null ⇒ deleteAllChats()
+    user-data-cleanup.ts    credentialsAtom → null ⇒ deleteAllChats() + resetChatPage();
+                            null при старте ⇒ deleteAllChats()
   pages/chat/
+    lib/
+      format-time.ts        formatTime (HH:MM), formatChatTime (сегодня — HH:MM, иначе DD.MM.YY)
     model/
       create-chat.ts        createChatForm (номер → checkAccount → чат)
       create-chat-error.ts  тексты ошибок create-chat
       send-message.ts       sendChatMessage / retryChatMessage / draftField + sendDraft
       active-chat.ts        activeMessagesAtom
+      require-api.ts        requireApi() — клиент или throw (экран чата требует креды)
+      reset-chat-page.ts    resetChatPage() — сброс формы нового чата и черновика (логаут)
     ui/
       chat-page.tsx         раскладка: Sidebar + ChatWindow, мобильный режим
       sidebar.tsx           шапка (AppTitle, LogoutButton), CreateChatForm, ChatList
@@ -187,10 +192,12 @@ src/
   вызывается и после собственных записей атома (сверено на ревью плана), поэтому
   превращение `sending` → `failed` в нём ломало бы отправки в полёте.
 - **Прерванная отправка определяется по таймауту, без записи.** `sendChatMessage`
-  ограничен `SEND_TIMEOUT` (30 с, `AbortSignal.timeout`) — без ответа сообщение само
+  ограничен `SEND_TIMEOUT` (30 с, `setTimeout` + `AbortController` с причиной `TimeoutError`;
+  `AbortSignal.timeout()` не подчиняется fake timers) — без ответа сообщение само
   становится `failed`. В `Message` есть `attemptAt` (начало последней попытки);
   `isSendingStale(message, now)` — `status === "sending" && now - attemptAt >
-  SEND_TIMEOUT` — такое сообщение показывается как `failed` («Повторить» доступен). Так
+  SEND_TIMEOUT` — такое сообщение показывается как `failed` («Повторить» доступен); пузырь
+  ставит одноразовый таймер на `attemptAt + SEND_TIMEOUT`, чтобы перерисоваться. Так
   ловятся отправки из закрытой вкладки и прерванные перезагрузкой. Пометка при старте не
   годится: вкладка B пометила бы `failed` живую отправку вкладки A → «Повторить» → дубль.
 - **Удаление чата** — кнопка в шапке окна чата, подтверждение через Mantine `Popover`
@@ -287,15 +294,22 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
    `draftField.reset()`; `sendChatMessage(chatId, text)` без `await`.
 2. `sendChatMessage(chatId, text)`: `id = local-<uuid>`; `addMessage({ status: "sending",
    direction: "out", timestamp: now, attemptAt: now })`; `touchChat`; `api.sendMessage({
-   chatId, message: text }, { signal })` с `signal = AbortSignal.any([controller.signal,
-   AbortSignal.timeout(SEND_TIMEOUT)])` (`controller` из `abortVar.subscribe()`,
-   `unsubscribe()` в `finally`), `await wrap(...)`. Таймаут — это ошибка (`failed`), а не
-   отмена: отличать по `signal.reason?.name === "TimeoutError"` до проверки `isAbort`
-   (⚠️ сверить, как `request()` пробрасывает `signal.reason` таймаута). После ответа — проверка «клиент не сменился», затем
-   `updateMessage(id, { id: idMessage, status: "sent" })`; ошибка → `{ status: "failed" }`.
-   Отмена (`isAbort`) — сообщение не трогаем. **Экшен ничего не пробрасывает** (ни
-   ошибку, ни отмену): его вызывают без `await`, и отклонённый промис при сбросе кадра
-   стал бы unhandled rejection.
+   chatId, message: text }, { signal })`, где `signal` — один общий `AbortController`:
+   его отменяют и `controller.signal` (`controller` из `abortVar.subscribe()`;
+   `unsubscribe()` и снятие слушателя `abort` в `finally`), и `setTimeout(SEND_TIMEOUT)` с
+   причиной `DOMException("…", "TimeoutError")`; без `AbortSignal.any()` — его нет в
+   Safari < 17.4 и Chrome < 116, которые покрывает цель сборки Vite (полифилов Vite не
+   добавляет), `await wrap(...)`. Таймаут — это ошибка (`failed`),
+   а не отмена: `request()` пробрасывает `signal.reason` как есть, а `isAbort` узнаёт только
+   `AbortError`, поэтому отдельной проверки нет. После ответа — проверка «попытка актуальна»
+   (клиент не сменился и у сообщения тот же `attemptAt`: поздний ответ старой попытки не
+   затирает повтор), затем `updateMessage(chatId, id, { id: idMessage, status: "sent" })`
+   (без `idMessage` в ответе — остаётся локальный id); ошибка → `{ status: "failed" }`.
+   Отмена (`isAbort`) — сообщение не трогаем. **Возвращённый промис не отклоняется** (ни
+   ошибкой, ни отменой): экшен вызывают без `await`, и отклонённый промис при сбросе кадра
+   стал бы unhandled rejection. Без клиента — синхронный `throw` (ошибка программиста).
+   Локальный id — `crypto.randomUUID()`, вне secure context (HTTP по IP) — запасной
+   генератор.
 3. `retryChatMessage(chatId, id)`: для `failed` и зависших (`isSendingStale`); `status:
    "sending"`, новый `attemptAt`, тот же текст и временный id, тот же путь.
 4. Клиент: `Textarea` `autosize`, `maxLength={4096}`; `Enter` → `sendDraft`, `Shift+Enter` —
@@ -517,8 +531,8 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
       воскрешаются
 - [x] тесты: сброс кадра (`context.reset()`) посреди отправки (`hangUntilAbort`) — без
       unhandled rejection
-      (⚠️ `context.reset()` не отменяет запрос: `wrap` отклоняется «context reset» только когда
-      запрос завершится, с `hangUntilAbort` — по таймауту; тест — с `vi.useFakeTimers()`)
+      (⚠️ `context.reset()` не отменяет ни запрос, ни таймер: попытка завершается по
+      таймауту как `failed`; тест — с `vi.useFakeTimers()`)
 - [x] тест таймаута (`vi.useFakeTimers()` + `hangUntilAbort`): через `SEND_TIMEOUT` —
       `failed`; `retryChatMessage` зависшего сообщения обновляет `attemptAt` и доходит
       (⚠️ таймаут — `setTimeout` + `AbortController` с причиной `TimeoutError`, не

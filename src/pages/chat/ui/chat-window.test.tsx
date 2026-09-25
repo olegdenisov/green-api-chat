@@ -1,7 +1,7 @@
 import { notifications } from "@mantine/notifications";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished } from "vitest";
 
 import { activeChatIdAtom, chatsAtom, openChat, type Chat } from "@/entities/chat";
 import { addMessage, messagesAtom, type Message } from "@/entities/message";
@@ -76,6 +76,32 @@ describe("ChatWindow", () => {
     frame.run(() => addMessage(message("a", "Hi there", "in")));
 
     await waitFor(() => expect(element.scrollTop).toBe(500));
+  });
+
+  it("opens another chat at its latest message, even with the same message count", async () => {
+    // jsdom has no layout: every element reports this height.
+    const scrollHeight = Object.getOwnPropertyDescriptor(Element.prototype, "scrollHeight")!;
+    Object.defineProperty(Element.prototype, "scrollHeight", { configurable: true, value: 800 });
+    onTestFinished(() => {
+      Object.defineProperty(Element.prototype, "scrollHeight", scrollHeight);
+    });
+    const colleague: Chat = { chatId: "2", title: "Colleague", lastMessageAt: 2 };
+    const { frame } = renderWindow();
+    frame.run(() => {
+      openChat(colleague);
+      addMessage({ ...message("b", "From colleague", "in"), chatId: colleague.chatId });
+      activeChatIdAtom.set(friend.chatId);
+      addMessage(message("a", "From friend", "in"));
+    });
+    await waitFor(() => expect(within(feed()).getByText("From friend")).toBeInTheDocument());
+    await waitFor(() => expect(feed().scrollTop).toBe(800));
+    // The user scrolls up in this chat, then opens another one.
+    feed().scrollTop = 0;
+
+    frame.run(() => activeChatIdAtom.set(colleague.chatId));
+
+    await waitFor(() => expect(within(feed()).getByText("From colleague")).toBeInTheDocument());
+    expect(feed().scrollTop).toBe(800);
   });
 
   it("sends a message: it shows up, fails and is sent on retry", async () => {

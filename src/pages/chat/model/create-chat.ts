@@ -4,6 +4,7 @@ import { findChatByPhone, openChat } from "@/entities/chat";
 import { greenApiAtom } from "@/entities/session";
 
 import { CreateChatError } from "./create-chat-error";
+import { requireApi } from "./require-api";
 
 /** Digits only: drops spaces, `+`, `-`, brackets. A leading `8` is kept as is. */
 export function normalizePhone(value: string): string {
@@ -43,10 +44,7 @@ export const createChatForm = reatomForm(
         return;
       }
 
-      const api = greenApiAtom();
-      // The chat screen is shown only with credentials.
-      if (!api) throw new Error("createChatForm: no GREEN-API client (logged out)");
-
+      const api = requireApi();
       const { controller, unsubscribe } = abortVar.subscribe();
       try {
         const response = await wrap(
@@ -60,10 +58,15 @@ export const createChatForm = reatomForm(
 
         openChat({
           chatId: response.chatId,
-          title: response.username ?? `+${number}`,
+          // `||`: an empty `username` is no title either.
+          title: response.username || `+${number}`,
           phone: number,
           lastMessageAt: Date.now(),
         });
+      } catch (error) {
+        // A late failure for the old session is dropped as well.
+        if (greenApiAtom() !== api) return;
+        throw error;
       } finally {
         unsubscribe();
       }

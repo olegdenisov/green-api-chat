@@ -7,5 +7,4 @@ export {
   SEND_TIMEOUT,
   updateMessage,
   type Message,
-  type MessagePatch,
 } from "./model/message";

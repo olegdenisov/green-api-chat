@@ -1,5 +1,5 @@
 import { context, sleep, wrap } from "@reatom/core";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import {
   activeChatAtom,
@@ -178,6 +178,35 @@ describe("chat", () => {
         expect(chatsAtom()).toEqual({ [alice.chatId]: alice, [bob.chatId]: bob });
         expect(activeChatIdAtom()).toBe(alice.chatId);
         expect(activeChatAtom()).toEqual(alice);
+      });
+    });
+
+    it("keeps chats and the selection for more than a year", () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      onTestFinished(() => {
+        vi.useRealTimers();
+      });
+
+      context.start(() => {
+        openChat(alice);
+      });
+      vi.setSystemTime(Date.now() + 400 * 24 * 60 * 60 * 1000);
+
+      context.start(() => {
+        expect(chatsAtom()).toEqual({ [alice.chatId]: alice });
+        expect(activeChatIdAtom()).toBe(alice.chatId);
+      });
+    });
+
+    it("clearChats in a frame that has not read the selection still persists it", () => {
+      context.start(() => {
+        openChat(alice);
+      });
+      context.start(() => clearChats());
+
+      context.start(() => {
+        expect(chatsAtom()).toEqual({});
+        expect(activeChatIdAtom()).toBeNull();
       });
     });
 

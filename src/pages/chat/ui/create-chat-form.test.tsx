@@ -72,16 +72,31 @@ describe("CreateChatForm", () => {
     expect(screen.queryByText("Номер не зарегистрирован в Telegram")).not.toBeInTheDocument();
   });
 
-  it("shows the loader and disables the field while checking", async () => {
+  it("shows the loader and makes the field read-only (keeping the focus) while checking", async () => {
     hangUntilAbort();
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(phoneInput(), "79876543210");
-    await user.click(submitButton());
+    await user.type(phoneInput(), "79876543210{Enter}");
 
     await waitFor(() => expect(submitButton()).toHaveAttribute("data-loading", "true"));
     expect(submitButton()).toBeDisabled();
-    expect(phoneInput()).toBeDisabled();
+    expect(phoneInput()).toHaveAttribute("readonly");
+    expect(phoneInput()).toHaveFocus();
+  });
+
+  it("hides the old error while a new check runs", async () => {
+    respondByMethod({ checkAccount: { body: checkAccountNotExists } });
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(phoneInput(), "79876543210{Enter}");
+    expect(await screen.findByText("Номер не зарегистрирован в Telegram")).toBeInTheDocument();
+
+    hangUntilAbort();
+    await user.click(submitButton());
+
+    await waitFor(() => expect(submitButton()).toHaveAttribute("data-loading", "true"));
+    expect(screen.queryByText("Номер не зарегистрирован в Telegram")).not.toBeInTheDocument();
   });
 });

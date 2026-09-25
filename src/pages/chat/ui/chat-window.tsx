@@ -12,7 +12,10 @@ import { MessageBubble } from "./message-bubble";
 
 import classes from "./chat-window.module.css";
 
-/** Messages of the active chat; scrolls to the bottom when a message is added. */
+/**
+ * Messages of the active chat; scrolls to the bottom when a message is added. Keyed by the chat,
+ * so another chat mounts a new feed and opens at its latest message too.
+ */
 const Feed = reatomComponent(() => {
   const messages = activeMessagesAtom();
   const feedRef = useRef<HTMLDivElement>(null);
@@ -39,7 +42,7 @@ const Feed = reatomComponent(() => {
 /** Right column: header (back, title, delete), the message feed and the input. */
 export const ChatWindow = reatomComponent(({ className }: { className?: string }) => {
   const chat = activeChatAtom();
-  const rootClass = className ? `${classes.window} ${className}` : classes.window;
+  const rootClass = `${classes.window} ${className ?? ""}`;
 
   if (!chat) {
     return (
@@ -69,7 +72,7 @@ export const ChatWindow = reatomComponent(({ className }: { className?: string }
         </Title>
         <DeleteChatButton chatId={chat.chatId} />
       </header>
-      <Feed />
+      <Feed key={chat.chatId} />
       <Composer />
     </main>
   );

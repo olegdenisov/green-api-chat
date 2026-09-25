@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -54,6 +54,21 @@ describe("Composer", () => {
 
     expect(input()).toHaveValue("");
     await waitFor(() => expect(frame.run(() => messagesAtom()["1"])).toHaveLength(1));
+  });
+
+  it("does not send on the Enter that confirms an IME composition", async () => {
+    const user = userEvent.setup();
+    const { frame } = renderComposer();
+    await user.type(input(), "こんにちは");
+
+    // Chrome/Firefox mark it with `isComposing`, Safari only with `keyCode` 229. `fireEvent`:
+    // `userEvent` cannot produce a composing keydown.
+    fireEvent.keyDown(input(), { key: "Enter", isComposing: true });
+    fireEvent.keyDown(input(), { key: "Enter", keyCode: 229 });
+
+    expect(input()).toHaveValue("こんにちは");
+    expect(frame.run(() => messagesAtom()["1"])).toBeUndefined();
+    expect(calledMethods()).toEqual([]);
   });
 
   it("inserts a line break on Shift+Enter without sending", async () => {

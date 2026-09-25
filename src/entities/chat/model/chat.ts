@@ -108,5 +108,7 @@ export const removeChat = action((chatId: string) => {
 
 export const clearChats = action(() => {
   chatsAtom.set({});
-  activeChatIdAtom.set(null);
+  // Read before the write: in a frame that has not read the atom yet, `set(null)` compares with
+  // the default `null` and skips the storage write, so a reload would bring the old id back.
+  if (activeChatIdAtom() !== null) activeChatIdAtom.set(null);
 }, "chat.clear");

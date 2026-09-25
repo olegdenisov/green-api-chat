@@ -17,7 +17,7 @@ export type Message = {
 
 export type Messages = Record<string, Message[]>;
 
-export type MessagePatch = Partial<Omit<Message, "chatId">>;
+type MessagePatch = Partial<Omit<Message, "chatId">>;
 
 /** A send without an answer for this long is a failure (ms). */
 export const SEND_TIMEOUT = 30_000;

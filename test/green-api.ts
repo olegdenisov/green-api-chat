@@ -86,8 +86,9 @@ type PendingCall = { resolve: (response: Response) => void; reject: (error: unkn
 /**
  * Every `fetch` call waits for the test: `resolveNext(body, status?)` answers the oldest
  * pending call with `body` as JSON, `rejectNext(error)` rejects it (the client turns that into
- * `ApiError("network")`). On abort a call rejects with the signal's reason and leaves the
- * queue, like `hangUntilAbort`. `pending()` — the number of calls still waiting.
+ * `ApiError("network")`), `resolveAt(index, body, status?)` answers the pending call at
+ * `index` (to answer out of order). On abort a call rejects with the signal's reason and leaves
+ * the queue, like `hangUntilAbort`. `pending()` — the number of calls still waiting.
  */
 export function deferFetch() {
   const queue: PendingCall[] = [];
@@ -108,8 +109,15 @@ export function deferFetch() {
     if (!call) throw new Error("deferFetch: no pending fetch call");
     return call;
   }
+  function at(index: number): PendingCall {
+    const [call] = queue.splice(index, 1);
+    if (!call) throw new Error(`deferFetch: no pending fetch call at ${index}`);
+    return call;
+  }
   return {
     resolveNext: (body: unknown, status = 200) => next().resolve(Response.json(body, { status })),
+    resolveAt: (index: number, body: unknown, status = 200) =>
+      at(index).resolve(Response.json(body, { status })),
     rejectNext: (error: unknown) => next().reject(error),
     pending: () => queue.length,
   };

@@ -134,6 +134,17 @@ describe("createChatForm submit", () => {
     });
   });
 
+  it("titles a chat with an empty username by the number", async () => {
+    respondByMethod({ checkAccount: { body: { ...checkAccountExists, username: "" } } });
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      fill("79876543210");
+      await submit();
+
+      expect(chatsAtom()[checkAccountExists.chatId]?.title).toBe("+79876543210");
+    });
+  });
+
   it("does not duplicate a chat that already has the chatId, fills in its phone", async () => {
     respondByMethod({ checkAccount: { body: checkAccountExists } });
     await context.start(async () => {
@@ -174,8 +185,20 @@ describe("createChatForm submit", () => {
       (error) => expect((error as ApiError).kind).toBe("rate-limit"),
     ],
     ["HTTP 401", {}, 401, (error) => expect((error as ApiError).kind).toBe("auth")],
-    ["HTTP 400", {}, 400, (error) => expect((error as ApiError).status).toBe(400)],
-    ["HTTP 466", {}, 466, (error) => expect((error as ApiError).status).toBe(466)],
+    [
+      "HTTP 400",
+      {},
+      400,
+      (error) =>
+        expect(error).toMatchObject({ kind: "http", status: 400 } satisfies Partial<ApiError>),
+    ],
+    [
+      "HTTP 466",
+      {},
+      466,
+      (error) =>
+        expect(error).toMatchObject({ kind: "http", status: 466 } satisfies Partial<ApiError>),
+    ],
   ])("%s — an error, no chat, the number stays", async (_name, body, status, check) => {
     respondByMethod({ checkAccount: { body, status } });
     await context.start(async () => {
@@ -274,6 +297,23 @@ describe("createChatForm submit", () => {
 
       expect(chatsAtom()).toEqual({});
       expect(activeChatIdAtom()).toBeNull();
+    });
+  });
+
+  it("drops a late failure after logout", async () => {
+    const response = deferFetch();
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      fill("79876543210");
+      const pending = submit();
+      await wrap(vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce()));
+
+      logout();
+      response.rejectNext(new TypeError("Failed to fetch"));
+      await pending;
+
+      expect(createChatForm.submit.error()).toBeUndefined();
+      expect(chatsAtom()).toEqual({});
     });
   });
 });

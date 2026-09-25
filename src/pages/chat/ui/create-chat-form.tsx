@@ -39,7 +39,8 @@ export const CreateChatForm = reatomComponent(() => {
           autoComplete="off"
           aria-label="Номер телефона"
           placeholder="+7 999 123-45-67"
-          disabled={pending}
+          // Not `disabled`: that drops the focus, and after an error the number is edited again.
+          readOnly={pending}
           error={error}
           flex={1}
           {...phoneProps}

@@ -32,7 +32,10 @@ export const Composer = reatomComponent(() => {
         flex={1}
         {...bindField(draftField)}
         onKeyDown={wrap((event: KeyboardEvent<HTMLTextAreaElement>) => {
-          if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+          // Safari sends the Enter that confirms an IME composition with `isComposing: false`
+          // but `keyCode` 229.
+          const composing = event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
+          if (event.key !== "Enter" || event.shiftKey || composing) return;
           event.preventDefault();
           sendDraft();
         })}

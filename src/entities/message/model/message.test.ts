@@ -1,5 +1,5 @@
 import { context, sleep, wrap } from "@reatom/core";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import {
   addMessage,
@@ -157,6 +157,22 @@ describe("message", () => {
           [hello.chatId]: [hello, reply],
           [other.chatId]: [other],
         });
+      });
+    });
+
+    it("keeps messages for more than a year", () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      onTestFinished(() => {
+        vi.useRealTimers();
+      });
+
+      context.start(() => {
+        addMessage(hello);
+      });
+      vi.setSystemTime(Date.now() + 400 * 24 * 60 * 60 * 1000);
+
+      context.start(() => {
+        expect(messagesAtom()).toEqual({ [hello.chatId]: [hello] });
       });
     });
 

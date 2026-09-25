@@ -1,13 +1,12 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { activeChatIdAtom, chatsAtom } from "@/entities/chat";
 import { messagesAtom } from "@/entities/message";
 
 import { render } from "@test/render";
 
-import { formatChatTime } from "../lib/format-time";
 import { ChatList } from "./chat-list";
 
 describe("ChatList", () => {
@@ -19,11 +18,17 @@ describe("ChatList", () => {
   });
 
   it("lists chats newest first with the last message and time", async () => {
+    // Midday: "a minute ago" and "a day ago" stay on their own days.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    vi.setSystemTime(new Date(2026, 8, 25, 12, 34));
     const now = Date.now();
     const { frame } = render(<ChatList />);
     frame.run(() => {
       chatsAtom.set({
-        "1": { chatId: "1", title: "Old", lastMessageAt: now - 60_000 },
+        "1": { chatId: "1", title: "Old", lastMessageAt: now - 24 * 60 * 60_000 },
         "2": { chatId: "2", title: "New", lastMessageAt: now },
       });
       messagesAtom.set({
@@ -41,8 +46,8 @@ describe("ChatList", () => {
     ]);
     expect(within(rows[0]!).getByText("last")).toBeInTheDocument();
     expect(within(rows[0]!).queryByText("first")).not.toBeInTheDocument();
-    expect(within(rows[0]!).getByText(formatChatTime(now, now))).toBeInTheDocument();
-    expect(within(rows[1]!).getByText(formatChatTime(now - 60_000, now))).toBeInTheDocument();
+    expect(within(rows[0]!).getByText("12:34")).toBeInTheDocument();
+    expect(within(rows[1]!).getByText("24.09.26")).toBeInTheDocument();
   });
 
   it("highlights the active chat and selects a chat on click", async () => {

@@ -9,7 +9,7 @@ import classes from "./sidebar.module.css";
 /** Left column: app header, the new-chat form and the chat list. */
 export function Sidebar({ className }: { className?: string }) {
   return (
-    <aside className={className ? `${classes.sidebar} ${className}` : classes.sidebar}>
+    <aside className={`${classes.sidebar} ${className ?? ""}`}>
       <header className={classes.header}>
         <AppTitle size="h3" />
         <LogoutButton />
