@@ -1,1 +1,1 @@
-export { credentialsAtom, logout } from "./model/session";
+export { credentialsAtom, greenApiAtom, logout } from "./model/session";

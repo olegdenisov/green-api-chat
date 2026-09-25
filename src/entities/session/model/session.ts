@@ -1,13 +1,7 @@
-import { action, atom, withLocalStorage } from "@reatom/core";
+import { action, atom, computed, withLocalStorage } from "@reatom/core";
 
-import type { Credentials } from "@/shared/api";
-
-/**
- * Lifetime of the stored record. The default (`MAX_SAFE_TIMEOUT`, ~24.8 days) would log the
- * user out silently; the credentials must stay until "Выйти". A finite number, not
- * `Infinity`: `JSON.stringify` turns it into `null`, and such a record counts as expired.
- */
-const CREDENTIALS_TTL = 10 * 365 * 24 * 60 * 60 * 1000;
+import { createGreenApi, type Credentials, type GreenApi } from "@/shared/api";
+import { PERSIST_TTL } from "@/shared/config";
 
 /** The stored value is not validated by the storage: anything but full credentials → `null`. */
 function toCredentials(snapshot: unknown): Credentials | null {
@@ -23,8 +17,14 @@ function isFilled(value: unknown): value is string {
 
 /** Instance credentials; `null` — logged out. Saved only after a successful login. */
 export const credentialsAtom = atom<Credentials | null>(null, "session.credentials").extend(
-  withLocalStorage({ key: "ga.credentials", time: CREDENTIALS_TTL, fromSnapshot: toCredentials }),
+  withLocalStorage({ key: "ga.credentials", time: PERSIST_TTL, fromSnapshot: toCredentials }),
 );
+
+/** GREEN-API client for the current credentials; `null` — logged out. New credentials → new client. */
+export const greenApiAtom = computed((): GreenApi | null => {
+  const creds = credentialsAtom();
+  return creds ? createGreenApi(creds) : null;
+}, "session.greenApi");
 
 export const logout = action(() => {
   credentialsAtom.set(null);

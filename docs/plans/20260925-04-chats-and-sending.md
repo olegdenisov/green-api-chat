@@ -344,14 +344,14 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 - Modify: `src/entities/session/index.ts`
 - Modify: `src/entities/session/model/session.test.ts`
 
-- [ ] `PERSIST_TTL` в `shared/config` (комментарий про `Infinity` → `null` переносится
+- [x] `PERSIST_TTL` в `shared/config` (комментарий про `Infinity` → `null` переносится
       туда); `credentialsAtom` использует его вместо `CREDENTIALS_TTL`
-- [ ] `greenApiAtom = computed(() => …, "session.greenApi")`: `createGreenApi(creds)` или
+- [x] `greenApiAtom = computed(() => …, "session.greenApi")`: `createGreenApi(creds)` или
       `null`; экспорт из `index.ts`
-- [ ] тесты: `null` без кредов; клиент с кредами — вызов метода идёт на URL с `idInstance`
+- [x] тесты: `null` без кредов; клиент с кредами — вызов метода идёт на URL с `idInstance`
       (через `stubFetch`); после `logout` — `null`; новые креды → новый экземпляр
-- [ ] существующий тест persist кредов проходит без изменений
-- [ ] `make check` — зелёный (`shared/config` — сегмент без слайсов, steiger правило
+- [x] существующий тест persist кредов проходит без изменений
+- [x] `make check` — зелёный (`shared/config` — сегмент без слайсов, steiger правило
       `insignificant-slice` к нему не применяет)
 
 ### Task 2: `entities/chat`

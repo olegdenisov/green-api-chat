@@ -1,9 +1,9 @@
 import { context, sleep, wrap } from "@reatom/core";
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
-import { creds } from "@test/green-api";
+import { BASE, creds, fetchMock, respondJson, stubFetch, TOKEN } from "@test/green-api";
 
-import { credentialsAtom, logout } from "./session";
+import { credentialsAtom, greenApiAtom, logout } from "./session";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -95,6 +95,52 @@ describe("session", () => {
       );
 
       expect(credentialsAtom()).toBeNull();
+    });
+  });
+
+  describe("greenApiAtom", () => {
+    beforeEach(stubFetch);
+
+    it("is null without credentials", () => {
+      context.start(() => {
+        expect(greenApiAtom()).toBeNull();
+      });
+    });
+
+    it("gives a client bound to the credentials", async () => {
+      respondJson({ stateInstance: "authorized" });
+
+      await context.start(async () => {
+        credentialsAtom.set(creds);
+        const api = greenApiAtom();
+        expect(api).not.toBeNull();
+
+        await wrap(api!.getStateInstance());
+      });
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(String(fetchMock.mock.calls[0]![0])).toBe(`${BASE}/getStateInstance/${TOKEN}`);
+    });
+
+    it("is null after logout", () => {
+      context.start(() => {
+        credentialsAtom.set(creds);
+        expect(greenApiAtom()).not.toBeNull();
+        logout();
+        expect(greenApiAtom()).toBeNull();
+      });
+    });
+
+    it("creates a new client for new credentials", () => {
+      context.start(() => {
+        credentialsAtom.set(creds);
+        const first = greenApiAtom();
+        expect(greenApiAtom()).toBe(first);
+
+        credentialsAtom.set({ ...creds, idInstance: "1101000002" });
+        const second = greenApiAtom();
+        expect(second).not.toBeNull();
+        expect(second).not.toBe(first);
+      });
     });
   });
 });
