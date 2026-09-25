@@ -188,6 +188,19 @@ describe("loginForm submit", () => {
     });
   });
 
+  it("reports a failed fetch as ApiError network", async () => {
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    await context.start(async () => {
+      fill({ idInstance: creds.idInstance, apiTokenInstance: creds.apiTokenInstance });
+      await submit();
+
+      const error = loginForm.submit.error();
+      expect(error).toBeInstanceOf(ApiError);
+      expect((error as ApiError).kind).toBe("network");
+      expect(credentialsAtom()).toBeNull();
+    });
+  });
+
   it("turns on a disabled notification flag and shows a toast", async () => {
     respondByMethod({
       ...ok,
