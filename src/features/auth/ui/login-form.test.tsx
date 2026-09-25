@@ -1,7 +1,7 @@
 import { notifications } from "@mantine/notifications";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { credentialsAtom } from "@/entities/session";
 
@@ -150,10 +150,9 @@ describe("LoginForm", () => {
 
   it("shows a generic alert for an unexpected error", async () => {
     respondByMethod(ok);
-    const set = vi.spyOn(credentialsAtom, "set").mockImplementation(() => {
+    vi.spyOn(credentialsAtom, "set").mockImplementation(() => {
       throw new TypeError("boom");
     });
-    onTestFinished(() => set.mockRestore());
     const user = userEvent.setup();
     render(<LoginForm />);
 

@@ -1,0 +1,4 @@
+/* Overrides Mantine Title defaults (heading font-weight). */
+.title {
+  font-weight: 400;
+}

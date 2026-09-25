@@ -56,9 +56,6 @@ describe("session", () => {
 
   it("falls back to null on a corrupted storage value", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    onTestFinished(() => {
-      warn.mockRestore();
-    });
     localStorage.setItem("ga.credentials", "{not json");
 
     context.start(() => {

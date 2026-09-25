@@ -1,5 +1,4 @@
-import { ApiError } from "@/shared/api";
-import type { GreenApi, RequestOptions, SettingsPatch } from "@/shared/api";
+import { ApiError, type GreenApi, type RequestOptions, type SettingsPatch } from "@/shared/api";
 
 /** `webhookCleared` — updated, and a non-empty `webhookUrl` was cleared (the user must know). */
 type NotificationSettingsResult = "ok" | "updated" | "webhookCleared" | "failed";
@@ -10,6 +9,26 @@ const REQUIRED_FLAGS = [
   "outgoingMessageWebhook",
   "outgoingAPIMessageWebhook",
 ] as const;
+
+/** Toast shown after login for each result except `ok`. */
+export const SETTINGS_TOASTS: Record<
+  Exclude<NotificationSettingsResult, "ok">,
+  { color: string; message: string }
+> = {
+  updated: {
+    color: "green",
+    message: "Настройки инстанса обновлены. Входящие сообщения начнут приходить в течение ~5 минут",
+  },
+  webhookCleared: {
+    color: "green",
+    message:
+      "Настройки инстанса обновлены, webhookUrl очищен: уведомления теперь читает этот чат. Входящие сообщения начнут приходить в течение ~5 минут",
+  },
+  failed: {
+    color: "yellow",
+    message: "Не удалось проверить настройки инстанса — входящие могут не приходить",
+  },
+};
 
 /**
  * Makes the instance deliver notifications to the HTTP API queue: turns on the required

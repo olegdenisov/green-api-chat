@@ -11,9 +11,8 @@
   max-width: rem(400px);
 }
 
-/* Overrides Mantine Title defaults (margin: 0, heading font-weight). */
+/* Overrides Mantine Title defaults (margin: 0). */
 .title {
   margin-bottom: var(--mantine-spacing-lg);
-  font-weight: 400;
   text-align: center;
 }

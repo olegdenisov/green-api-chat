@@ -1,6 +1,6 @@
 import { notifications } from "@mantine/notifications";
 import { context, isAbort, notify, sleep, wrap } from "@reatom/core";
-import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 
 import { credentialsAtom } from "@/entities/session";
 import { ApiError } from "@/shared/api";
@@ -57,9 +57,6 @@ beforeEach(stubFetch);
 let show: MockInstance<typeof notifications.show>;
 beforeEach(() => {
   show = vi.spyOn(notifications, "show").mockReturnValue("");
-});
-afterEach(() => {
-  show.mockRestore();
 });
 
 describe("loginForm validation", () => {

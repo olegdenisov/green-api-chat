@@ -90,6 +90,8 @@
   → `@mantine/notifications/styles.css` → `./styles/index.css`. Так CSS Modules
   перекрывают стили Mantine.
 - Вёрстка — CSS Modules (`*.module.css`) рядом с компонентом.
+- Общие UI-компоненты — сегмент `src/shared/ui` (файлы плоско, публичный API — `index.ts`):
+  например, `AppTitle` — название приложения как `h1` страницы.
 - PostCSS (`postcss.config.cjs`, как в гайде Mantine для Vite): миксины
   `postcss-preset-mantine` (`@mixin hover`, `light`/`dark`, `rem()`) и переменные
   `$mantine-breakpoint-xs…xl` для `@media`.
@@ -151,6 +153,8 @@
 - Тосты: в тестах компонентов — по тексту, в `afterEach` — `notifications.clean()`, иначе
   очередь тостов утекает в следующий тест; в тестах моделей без рендера —
   `vi.spyOn(notifications, "show")`.
+- Шпионы `vi.spyOn` восстанавливаются сами перед каждым тестом (`test.restoreMocks: true` в
+  `vite.config.ts`); `mockRestore()` вручную не вызывать.
 - Исключения: `App` и `ReatomProvider` содержат свои провайдеры и рендерятся обычным
   `render` из RTL.
 - `vitest.setup.ts`: `clearStack()`, очистка `localStorage`/`sessionStorage` после

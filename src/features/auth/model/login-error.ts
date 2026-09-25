@@ -1,5 +1,4 @@
-import { ApiError } from "@/shared/api";
-import type { StateInstance } from "@/shared/api";
+import { ApiError, type StateInstance } from "@/shared/api";
 
 type FailedState = Exclude<StateInstance, "authorized">;
 
@@ -15,12 +14,13 @@ export class LoginError extends Error {
 }
 
 const NOT_AUTHORIZED = "Инстанс не авторизован в Telegram";
+const BLOCKED = "Инстанс заблокирован или приостановлен";
 
 const STATE_MESSAGES: Record<FailedState, string> = {
   notAuthorized: NOT_AUTHORIZED,
   pendingPassword: NOT_AUTHORIZED,
-  blocked: "Инстанс заблокирован или приостановлен",
-  suspended: "Инстанс заблокирован или приостановлен",
+  blocked: BLOCKED,
+  suspended: BLOCKED,
   starting: "Инстанс запускается, попробуйте через минуту",
 };
 

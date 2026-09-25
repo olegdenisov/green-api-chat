@@ -12,11 +12,6 @@
   border-bottom: rem(1px) solid var(--mantine-color-default-border);
 }
 
-/* Overrides Mantine Title defaults (heading font-weight). */
-.title {
-  font-weight: 400;
-}
-
 .body {
   display: flex;
   flex: 1;

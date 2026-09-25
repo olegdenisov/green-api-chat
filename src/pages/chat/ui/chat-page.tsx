@@ -1,6 +1,7 @@
-import { Text, Title } from "@mantine/core";
+import { Text } from "@mantine/core";
 
 import { LogoutButton } from "@/features/auth";
+import { AppTitle } from "@/shared/ui";
 
 import classes from "./chat-page.module.css";
 
@@ -9,9 +10,7 @@ export function ChatPage() {
   return (
     <div className={classes.page}>
       <header className={classes.header}>
-        <Title order={1} size="h3" className={classes.title}>
-          GREEN-API chat
-        </Title>
+        <AppTitle size="h3" />
         <LogoutButton />
       </header>
       <main className={classes.body}>

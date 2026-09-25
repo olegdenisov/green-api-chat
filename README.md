@@ -42,4 +42,4 @@ make help      # все команды
 → `widgets` → `features` → `entities` → `shared`, импорт только сверху вниз. Сейчас есть
 `app` (провайдеры, стили, выбор экрана), `pages/login`, `pages/chat` (заглушка),
 `features/auth` (форма логина, «Выйти»), `entities/session` (креды, `logout`) и
-`shared/api` (клиент GREEN-API); `widgets` появятся на следующих этапах. Тестовые утилиты — в `test/` и `vitest.setup.ts` вне `src/`.
+`shared/api` (клиент GREEN-API), `shared/ui` (заголовок приложения); `widgets` появятся на следующих этапах. Тестовые утилиты — в `test/` и `vitest.setup.ts` вне `src/`.

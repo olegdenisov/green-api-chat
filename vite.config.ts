@@ -12,5 +12,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     unstubGlobals: true,
+    // `vi.spyOn` spies are restored before every test: no manual `mockRestore()`.
+    restoreMocks: true,
   },
 });
