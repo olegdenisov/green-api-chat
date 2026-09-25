@@ -362,23 +362,29 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 - Create: `src/entities/chat/model/chat.test.ts`
 - Modify: `steiger.config.ts`
 
-- [ ] тип `Chat`; `chatsAtom`, `activeChatIdAtom` с `withLocalStorage` (`ga.chats`,
+- [x] тип `Chat`; `chatsAtom`, `activeChatIdAtom` с `withLocalStorage` (`ga.chats`,
       `ga.activeChatId`, `PERSIST_TTL`, `subscribe: false` только у `activeChatIdAtom`,
       `fromSnapshot` — поэлементная проверка формы, экспорт из файла модели для тестов)
-- [ ] `sortedChatsAtom`, `activeChatAtom`; экшены `openChat`, `touchChat`, `removeChat`,
+- [x] `sortedChatsAtom`, `activeChatAtom`; экшены `openChat`, `touchChat`, `removeChat`,
       `clearChats`; функция `findChatByPhone`
-- [ ] временный override `fsd/insignificant-slice` для `./src/entities/chat/**` (см.
+      (➕ `toChats` проверяет и `chatId` элемента = ключ записи; валидный снапшот
+      возвращается тем же объектом; `openChat` обновляет `phone`, если он передан и
+      отличается)
+- [x] временный override `fsd/insignificant-slice` для `./src/entities/chat/**` (см.
       таблицу исключений)
-- [ ] тесты: `openChat` добавляет и выбирает / существующий не перезаписывается, но
+- [x] тесты: `openChat` добавляет и выбирает / существующий не перезаписывается, но
       получает `phone`; `touchChat` не опускает время и no-op для неизвестного чата;
       сортировка; `activeChatAtom` при висячем id; `removeChat` активного сбрасывает
       выбор, неактивного — нет; `clearChats`; `findChatByPhone`
-- [ ] тесты persist: круговой путь в новом кадре; `fromSnapshot` отбрасывает битые
+- [x] тесты persist: круговой путь в новом кадре; `fromSnapshot` отбрасывает битые
       элементы и нестроковый `activeChatId`
-- [ ] тесты синхронизации (запись во втором кадре `context.start()` + `StorageEvent` с
+- [x] тесты синхронизации (запись во втором кадре `context.start()` + `StorageEvent` с
       ключом, ⚠️ способ сверить по реализации подписки): `chatsAtom` подхватывает чужую
       запись, `activeChatIdAtom` — нет
-- [ ] `make check` — зелёный
+      (⚠️ сверено: `reatomPersistWebStorage.subscribe` слушает `storage` по ключу, кэш
+      `storageAtom` — свой у каждого кадра; с `subscribe: false` подписки нет вовсе —
+      тест фиксирует это поведение)
+- [x] `make check` — зелёный
 
 ### Task 3: `entities/message`
 
