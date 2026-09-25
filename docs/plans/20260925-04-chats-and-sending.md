@@ -423,16 +423,18 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 - Create: `src/features/delete-chats/ui/delete-chat-button.test.tsx`
 - Modify: `steiger.config.ts`
 
-- [ ] `deleteChat(chatId)` (`removeChat` + `removeChatMessages`), `deleteAllChats()`
+- [x] `deleteChat(chatId)` (`removeChat` + `removeChatMessages`), `deleteAllChats()`
       (`clearChats` + `clearMessages`), имена `deleteChats.*`
-- [ ] `DeleteChatButton({ chatId })`: `Popover` с подтверждением «Удалить чат и историю?»
+- [x] `DeleteChatButton({ chatId })`: `Popover` с подтверждением «Удалить чат и историю?»
       → «Удалить» / «Отмена»
-- [ ] публичный API: `DeleteChatButton`, `deleteAllChats`; `./src/features/delete-chats/**`
+      (➕ кнопка-триггер подписана «Удалить чат» — отличается от «Удалить» в подтверждении;
+      обычный компонент с `useState` + `useWrap`)
+- [x] публичный API: `DeleteChatButton`, `deleteAllChats`; `./src/features/delete-chats/**`
       — во временный override
-- [ ] тесты модели: `deleteChat` удаляет чат и только его сообщения, сбрасывает выбор;
+- [x] тесты модели: `deleteChat` удаляет чат и только его сообщения, сбрасывает выбор;
       `deleteAllChats` чистит всё
-- [ ] тесты компонента: «Отмена» не удаляет, «Удалить» удаляет
-- [ ] `make check` — зелёный
+- [x] тесты компонента: «Отмена» не удаляет, «Удалить» удаляет
+- [x] `make check` — зелёный
 
 ### Task 5: очистка данных при логауте в `app`
 
