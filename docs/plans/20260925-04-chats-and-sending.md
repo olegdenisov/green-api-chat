@@ -587,16 +587,18 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 
 ### Task 10: Verify acceptance criteria
 
-- [ ] все требования Overview выполнены: чат по номеру, отправка со статусами, удаление,
+- [x] все требования Overview выполнены: чат по номеру, отправка со статусами, удаление,
       очистка при логауте, persist после перезагрузки, пустые состояния, мобильный режим
-- [ ] edge cases: висячий `activeChatId`, зависшее `sending` после перезагрузки, две
+- [x] edge cases: висячий `activeChatId`, зависшее `sending` после перезагрузки, две
       отправки подряд, таймаут отправки, синхронизация вкладок, логаут посреди запроса, номер с `+` и пробелами, существующий номер без
       запроса
-- [ ] временное нарушение FSD (импорт `@/entities/chat` из `entities/message`) роняет
-      `make lint-fsd`; откатить
-- [ ] `make check` — зелёный; в `steiger.config.ts` нет временных overrides
-- [ ] покрытие: модели `entities/*`, `features/delete-chats`, `pages/chat/model` — все
+- [x] временное нарушение FSD (импорт `@/entities/chat` из `entities/message`) роняет
+      `make lint-fsd`; откатить (проверено: `fsd/forbidden-imports`, откачено)
+- [x] `make check` — зелёный; в `steiger.config.ts` нет временных overrides
+- [x] покрытие: модели `entities/*`, `features/delete-chats`, `pages/chat/model` — все
       ветки ошибок из таблиц
+      (➕ тест «логаут посреди отправки отбрасывает позднюю ошибку» — ветка `catch` со сменой
+      клиента не была покрыта; ⚠️ провайдера покрытия нет — ветки сверены по тестам)
 
 ### Task 11: [Final] Update documentation
 

@@ -185,6 +185,21 @@ describe("sendChatMessage", () => {
     });
   });
 
+  it("logout mid-send drops a late error for the old session", async () => {
+    const response = deferFetch();
+    await context.start(async () => {
+      setup();
+      const pending = sendChatMessage(friend.chatId, "Hello");
+      await wrap(vi.waitFor(() => expect(response.pending()).toBe(1)));
+
+      logout();
+      response.rejectNext(new TypeError("Failed to fetch"));
+      await wrap(pending);
+
+      expect(messagesOf(friend.chatId).map((message) => message.status)).toEqual(["sending"]);
+    });
+  });
+
   it("throws without a GREEN-API client", () => {
     context.start(() => {
       expect(() => sendChatMessage(friend.chatId, "Hello")).toThrow("no GREEN-API client");
