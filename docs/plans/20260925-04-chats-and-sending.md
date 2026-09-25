@@ -444,15 +444,15 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 - Modify: `src/app/app.tsx`
 - Modify: `steiger.config.ts`
 
-- [ ] `credentialsAtom.extend(withChangeHook((state, prev) => …))` → `deleteAllChats()`
+- [x] `credentialsAtom.extend(withChangeHook((state, prev) => …))` → `deleteAllChats()`
       при переходе «креды → `null`»; комментарий-причина (сущности не знают друг о друге,
       любой логаут, в т.ч. из другой вкладки, чистит данные; хук — в фазе хуков)
-- [ ] side-effect импорт `./user-data-cleanup` в `app.tsx`
-- [ ] снять override для `features/delete-chats` (ссылка из `app`)
-- [ ] тесты (после `logout()` — `notify()`, затем проверки): чистит чаты, сообщения и
+- [x] side-effect импорт `./user-data-cleanup` в `app.tsx`
+- [x] снять override для `features/delete-chats` (ссылка из `app`)
+- [x] тесты (после `logout()` — `notify()`, затем проверки): чистит чаты, сообщения и
       выбор; установка кредов (логин) ничего не удаляет; `logout` при `null` — без
       ошибок; в новом кадре `context.start()` данные не возвращаются
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный
 
 ### Task 6: модель создания чата (`pages/chat`)
 
