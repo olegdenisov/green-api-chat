@@ -10,6 +10,8 @@
   Логаут (любой путь — кнопка сейчас, `401` из polling на этапе 5) стирает их.
 - Вёрстка — базовая, по мотивам web.max.ru: сайдбар со списком + окно чата; на узком
   экране — либо список, либо окно (кнопка «назад»). Пустые состояния — сразу.
+- Вкладки синхронизируются: новый чат, отправленные сообщения и логаут видны во всех
+  открытых вкладках; выбранный чат и черновик у каждой вкладки свои.
 - Итог: сценарий «логин → чат по номеру → отправка» работает на реальном инстансе;
   получение ответов — этап 5; `make check` зелёный.
 
@@ -64,7 +66,8 @@
   `.d.ts` в `node_modules`, не по памяти. Расхождения с планом — ⚠️ в плане.
 - Без роутера и новых зависимостей (в т.ч. без `@mantine/modals`, иконочных пакетов).
 - YAGNI: не делать polling/получение (этап 5), черновики по чатам, поиск по чатам,
-  логаут по `401` из `create-chat`/`send-message`, синхронизацию чатов между вкладками.
+  логаут по `401` из `create-chat`/`send-message`, выбор вкладки-лидера для polling
+  (этап 5).
 
 ## Testing Strategy
 
@@ -167,16 +170,29 @@ src/
   `sendDraft` читает текст, проверяет, сбрасывает поле и вызывает `sendChatMessage` без
   `await`. Черновик общий; при смене активного чата (в т.ч. «←» на мобильном)
   сбрасывается — так задумано.
-- **Сообщения в статусе `sending` после перезагрузки** — одноразовая нормализация при
-  инициализации, не в каждом `fromSnapshot`. `messagesAtom` и `activeChatIdAtom`
-  (и `chatsAtom` — для согласованности) персистятся с `subscribe: false`: `fromSnapshot`
-  выполняется только при старте, и там `sending` → `failed` безопасен. Вкладки друг с
-  другом не синхронизируются (выбор чата во вкладке B не переключает A и не стирает её
-  черновик) — это уже в «Известных ограничениях» (вкладки конкурируют). Креды остаются с
-  подпиской: логаут в одной вкладке разлогинивает и чистит все.
-  ⚠️ Проверить в Task 3 тестом: при `subscribe: false` второй `addMessage` не превращает
-  первое `sending` в `failed`. Если не так — перенести нормализацию в `withInit` и вернуть
-  `fromSnapshot` к чистой проверке формы.
+- **Синхронизация вкладок** — встроенная подписка `withLocalStorage` (`subscribe: true`
+  по умолчанию, событие `storage`):
+
+  | атом | синхронизация | почему |
+  | --- | --- | --- |
+  | `credentialsAtom` | да (как сейчас) | логаут в одной вкладке — во всех (и очистка данных через хук) |
+  | `chatsAtom`, `messagesAtom` | да | новый чат и сообщения видны везде |
+  | `activeChatIdAtom` | нет (`subscribe: false`) | выбор чата у вкладки свой; иначе выбор в B переключал бы A и стирал её черновик |
+
+  `withBroadcastChannel` из `@reatom/core` не нужен — `localStorage` даёт и хранение, и
+  синхронизацию. Записи — целиком атом: одновременные записи двух вкладок в одном тике
+  теряют одну из них; от действий пользователя это практически не случается, для polling
+  этапа 5 — лидер через Web Locks (см. Task 11).
+- **`fromSnapshot` — только проверка формы, без преобразований.** При подписке он
+  вызывается и после собственных записей атома (сверено на ревью плана), поэтому
+  превращение `sending` → `failed` в нём ломало бы отправки в полёте.
+- **Прерванная отправка определяется по таймауту, без записи.** `sendChatMessage`
+  ограничен `SEND_TIMEOUT` (30 с, `AbortSignal.timeout`) — без ответа сообщение само
+  становится `failed`. В `Message` есть `attemptAt` (начало последней попытки);
+  `isSendingStale(message, now)` — `status === "sending" && now - attemptAt >
+  SEND_TIMEOUT` — такое сообщение показывается как `failed` («Повторить» доступен). Так
+  ловятся отправки из закрытой вкладки и прерванные перезагрузкой. Пометка при старте не
+  годится: вкладка B пометила бы `failed` живую отправку вкладки A → «Повторить» → дубль.
 - **Удаление чата** — кнопка в шапке окна чата, подтверждение через Mantine `Popover`
   («Удалить чат и историю?» → «Удалить»).
 
@@ -200,6 +216,7 @@ type Message = {
   direction: "in" | "out"
   status: "sending" | "sent" | "failed"
   timestamp: number      // ms (этап 5 переводит секунды GREEN-API в ms)
+  attemptAt?: number     // ms, начало последней попытки отправки; только у исходящих
 }
 ```
 
@@ -221,15 +238,17 @@ type Message = {
 | | `addMessage(message)` | в конец списка чата |
 | | `updateMessage(chatId, id, patch)` | патч по id (в т.ч. смена `id` на `idMessage`); нет чата/id — no-op, ключ не создаётся |
 | | `removeChatMessages(chatId)`, `clearMessages()` | удаление |
+| | `isSendingStale(message, now)`, `SEND_TIMEOUT` | зависшая отправка → показывать как `failed` |
 | `features/delete-chats` | `deleteChat(chatId)`, `deleteAllChats()` | связка сущностей |
 | `pages/chat` | `activeMessagesAtom` | `computed`: сообщения активного чата или `[]` |
 | | `createChatForm` | `reatomForm({ phone })` |
 | | `sendChatMessage(chatId, text)`, `retryChatMessage(chatId, id)` | отправка |
 | | `draftField`, `sendDraft()` | поле ввода |
 
-Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSnapshot })`.
-`fromSnapshot`: не объект / элемент не той формы → отбросить элемент (не весь снапшот);
-`activeChatId` — не строка → `null`; у сообщений `sending` → `failed`.
+Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
+`activeChatIdAtom` ещё `subscribe: false`. `fromSnapshot` — чистая проверка формы: не
+объект / элемент не той формы → отбросить элемент (не весь снапшот); `activeChatId` — не
+строка → `null`; корректные данные возвращаются без изменений.
 
 ### Создание чата
 
@@ -267,15 +286,18 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
 1. `sendDraft()`: `text = draftField().trim()`; пусто или нет активного чата → ничего;
    `draftField.reset()`; `sendChatMessage(chatId, text)` без `await`.
 2. `sendChatMessage(chatId, text)`: `id = local-<uuid>`; `addMessage({ status: "sending",
-   direction: "out", timestamp: Date.now() })`; `touchChat`; `api.sendMessage({ chatId,
-   message: text }, { signal })` с `signal` из `abortVar.subscribe()` (`unsubscribe()` в
-   `finally`), `await wrap(...)`. После ответа — проверка «клиент не сменился», затем
+   direction: "out", timestamp: now, attemptAt: now })`; `touchChat`; `api.sendMessage({
+   chatId, message: text }, { signal })` с `signal = AbortSignal.any([controller.signal,
+   AbortSignal.timeout(SEND_TIMEOUT)])` (`controller` из `abortVar.subscribe()`,
+   `unsubscribe()` в `finally`), `await wrap(...)`. Таймаут — это ошибка (`failed`), а не
+   отмена: отличать по `signal.reason?.name === "TimeoutError"` до проверки `isAbort`
+   (⚠️ сверить, как `request()` пробрасывает `signal.reason` таймаута). После ответа — проверка «клиент не сменился», затем
    `updateMessage(id, { id: idMessage, status: "sent" })`; ошибка → `{ status: "failed" }`.
    Отмена (`isAbort`) — сообщение не трогаем. **Экшен ничего не пробрасывает** (ни
    ошибку, ни отмену): его вызывают без `await`, и отклонённый промис при сбросе кадра
    стал бы unhandled rejection.
-3. `retryChatMessage(chatId, id)`: только для `failed`; `status: "sending"`, тот же текст и
-   временный id, тот же путь.
+3. `retryChatMessage(chatId, id)`: для `failed` и зависших (`isSendingStale`); `status:
+   "sending"`, новый `attemptAt`, тот же текст и временный id, тот же путь.
 4. Клиент: `Textarea` `autosize`, `maxLength={4096}`; `Enter` → `sendDraft`, `Shift+Enter` —
    перенос (не перехватывать); кнопка «Отправить» неактивна при пустом `trim()`;
    IME-композиция (`event.nativeEvent.isComposing`) — `Enter` не отправляет.
@@ -341,8 +363,8 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
 - Modify: `steiger.config.ts`
 
 - [ ] тип `Chat`; `chatsAtom`, `activeChatIdAtom` с `withLocalStorage` (`ga.chats`,
-      `ga.activeChatId`, `PERSIST_TTL`, `subscribe: false`, `fromSnapshot` с поэлементной
-      проверкой, экспорт из файла модели для тестов)
+      `ga.activeChatId`, `PERSIST_TTL`, `subscribe: false` только у `activeChatIdAtom`,
+      `fromSnapshot` — поэлементная проверка формы, экспорт из файла модели для тестов)
 - [ ] `sortedChatsAtom`, `activeChatAtom`; экшены `openChat`, `touchChat`, `removeChat`,
       `clearChats`; функция `findChatByPhone`
 - [ ] временный override `fsd/insignificant-slice` для `./src/entities/chat/**` (см.
@@ -353,6 +375,9 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
       выбор, неактивного — нет; `clearChats`; `findChatByPhone`
 - [ ] тесты persist: круговой путь в новом кадре; `fromSnapshot` отбрасывает битые
       элементы и нестроковый `activeChatId`
+- [ ] тесты синхронизации (запись во втором кадре `context.start()` + `StorageEvent` с
+      ключом, ⚠️ способ сверить по реализации подписки): `chatsAtom` подхватывает чужую
+      запись, `activeChatIdAtom` — нет
 - [ ] `make check` — зелёный
 
 ### Task 3: `entities/message`
@@ -363,17 +388,20 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
 - Create: `src/entities/message/model/message.test.ts`
 - Modify: `steiger.config.ts`
 
-- [ ] тип `Message`; `messagesAtom` с `withLocalStorage` (`ga.messages`, `PERSIST_TTL`,
-      `subscribe: false`, `fromSnapshot`: поэлементная проверка, `sending` → `failed`)
+- [ ] тип `Message` (с `attemptAt`); `messagesAtom` с `withLocalStorage` (`ga.messages`,
+      `PERSIST_TTL`, `fromSnapshot` — поэлементная проверка формы без преобразований)
+- [ ] `SEND_TIMEOUT` (30 с), `isSendingStale(message, now)`
 - [ ] экшены `addMessage`, `updateMessage` (no-op без чата/id, ключ не создаёт),
       `removeChatMessages`, `clearMessages`
 - [ ] добавить `./src/entities/message/**` во временный override
 - [ ] тесты: добавление в конец; `updateMessage` по id (смена id; неизвестный id и
       неизвестный чат — без изменений и без нового ключа); удаление чата не трогает
       другие; `clearMessages`
-- [ ] тесты persist: круговой путь; `sending` → `failed` в новом кадре; битые элементы
-      отброшены; **два `addMessage` со `sending` подряд в одном кадре — оба остаются
-      `sending`** (⚠️ если нет — см. «Ключевые решения», перейти на `withInit`)
+- [ ] тесты persist: круговой путь (`sending` сохраняется как есть); битые элементы
+      отброшены; **два `addMessage` со `sending` подряд — оба остаются `sending`**
+- [ ] тест синхронизации: `messagesAtom` подхватывает запись другой вкладки
+- [ ] тесты `isSendingStale`: свежее `sending` — нет; старше `SEND_TIMEOUT` — да; `sent`/
+      `failed` и входящие — нет
 - [ ] `make check` — зелёный
 
 ### Task 4: `features/delete-chats`
@@ -470,6 +498,8 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
       воскрешаются
 - [ ] тесты: сброс кадра (`context.reset()`) посреди отправки (`hangUntilAbort`) — без
       unhandled rejection
+- [ ] тест таймаута (`vi.useFakeTimers()` + `hangUntilAbort`): через `SEND_TIMEOUT` —
+      `failed`; `retryChatMessage` зависшего сообщения обновляет `attemptAt` и доходит
 - [ ] тесты `sendDraft`: пустой/пробельный текст и отсутствие чата — без запроса;
       черновик сбрасывается сразу; смена чата (после `notify()`) сбрасывает черновик
 - [ ] `activeMessagesAtom`: `[]` без чата и для чата без сообщений
@@ -508,8 +538,9 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
 - [ ] `ChatWindow`: шапка («←» на узком экране, название, `DeleteChatButton`), лента с
       автоскроллом, `Composer`; без чата — «Выберите чат или создайте новый», пустая
       лента — «Сообщений пока нет»; `key` пузыря — `message.id`
-- [ ] `MessageBubble`: сторона по `direction`, время `HH:MM`, статус; `failed` — «Не
-      отправлено» + «Повторить» (`retryChatMessage`)
+- [ ] `MessageBubble`: сторона по `direction`, время `HH:MM`, статус; `failed` и
+      `isSendingStale(message, Date.now())` — «Не отправлено» + «Повторить»
+      (`retryChatMessage`)
 - [ ] `Composer`: `Textarea` (`bindField(draftField)`, `autosize`, `maxLength={4096}`),
       `Enter` / `Shift+Enter` / IME, кнопка неактивна при пустом тексте
 - [ ] тесты: `Enter` отправляет и очищает поле, `Shift+Enter` — перенос; пустое — кнопка
@@ -521,8 +552,8 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
 
 - [ ] все требования Overview выполнены: чат по номеру, отправка со статусами, удаление,
       очистка при логауте, persist после перезагрузки, пустые состояния, мобильный режим
-- [ ] edge cases: висячий `activeChatId`, `sending` после перезагрузки, две отправки
-      подряд, логаут посреди запроса, номер с `+` и пробелами, существующий номер без
+- [ ] edge cases: висячий `activeChatId`, зависшее `sending` после перезагрузки, две
+      отправки подряд, таймаут отправки, синхронизация вкладок, логаут посреди запроса, номер с `+` и пробелами, существующий номер без
       запроса
 - [ ] временное нарушение FSD (импорт `@/entities/chat` из `entities/message`) роняет
       `make lint-fsd`; откатить
@@ -534,17 +565,21 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
 
 - [ ] дизайн-док: раскладка pages-first вместо `widgets/*` и `features/create-chat|
       send-message` (причина — `insignificant-slice`), `features/delete-chats`, очистка в
-      `app`, `Chat.phone`, `shared/config` (`PERSIST_TTL`), `subscribe: false` для данных
-      чатов, тексты ошибок create-chat, итог этапа 4 в «Этапах»
+      `app`, `Chat.phone`, `shared/config` (`PERSIST_TTL`), синхронизация вкладок (таблица атомов),
+      `attemptAt`/`SEND_TIMEOUT`, тексты ошибок create-chat, итог этапа 4 в «Этапах»
 - [ ] дизайн-док, задачи для этапа 5: раскладка уведомлений через `openChat`/`touchChat`/
       `addMessage`; дедупликация по `idMessage` с учётом гонки — `outgoingAPIMessageReceived`
       может прийти раньше ответа `sendMessage`, пока у сообщения ещё `local-*` id;
-      `logout` по `401`
+      `logout` по `401`; **polling только во вкладке-лидере** —
+      `navigator.locks.request("ga.polling", { signal }, …)` (Web Locks, без зависимостей):
+      одна вкладка разбирает очередь и пишет, остальные получают данные через
+      синхронизацию `localStorage`; лидер закрылся — лок переходит к следующей. Убрать из
+      «Известных ограничений» пункт «вкладки конкурируют за очередь»
 - [ ] `AGENTS.md`: точная семантика `insignificant-slice` (ссылка только из `app` — ок,
       `pages` не проверяются), pages-first, связка сущностей через фичу, очистка при
       логауте через `user-data-cleanup.ts`; change-хуки выполняются не синхронно
       (`notify()` в тестах); `withLocalStorage` по умолчанию вызывает `fromSnapshot` и
-      после собственных записей — преобразования только при `subscribe: false`; логаут не
+      после собственных записей — в нём только проверка формы; логаут не
       отменяет запросы в полёте — сверять клиент после `await`; `deferFetch`
 - [ ] README — если уже есть раздел о возможностях
 - [ ] переместить план в `docs/plans/completed/`
@@ -560,6 +595,10 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, subscribe: false, fromSn
   (Network в DevTools)
 - отключить сеть → `failed` → включить → «Повторить» → `sent`
 - перезагрузка — чаты, выбор и сообщения на месте; «Выйти» → вход снова — список пуст
-- две вкладки: «Выйти» в одной — вторая тоже на логине, данные чисты
+- две вкладки: чат, созданный в одной, появляется во второй; отправленное сообщение и
+  его статус — тоже; выбор чата в одной не переключает другую; «Выйти» в одной — вторая
+  тоже на логине, данные чисты
+- закрыть вкладку сразу после отправки (медленная сеть в DevTools) — во второй вкладке
+  сообщение через 30 с показывается «Не отправлено» (после любого перерендера)
 - узкий экран (DevTools, 375px): список ↔ окно, «←»
 - CORS на `checkAccount`/`sendMessage` из браузера (если не проявился на этапе 3)
