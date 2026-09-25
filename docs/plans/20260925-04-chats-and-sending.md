@@ -394,21 +394,24 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 - Create: `src/entities/message/model/message.test.ts`
 - Modify: `steiger.config.ts`
 
-- [ ] тип `Message` (с `attemptAt`); `messagesAtom` с `withLocalStorage` (`ga.messages`,
+- [x] тип `Message` (с `attemptAt`); `messagesAtom` с `withLocalStorage` (`ga.messages`,
       `PERSIST_TTL`, `fromSnapshot` — поэлементная проверка формы без преобразований)
-- [ ] `SEND_TIMEOUT` (30 с), `isSendingStale(message, now)`
-- [ ] экшены `addMessage`, `updateMessage` (no-op без чата/id, ключ не создаёт),
+- [x] `SEND_TIMEOUT` (30 с), `isSendingStale(message, now)`
+- [x] экшены `addMessage`, `updateMessage` (no-op без чата/id, ключ не создаёт),
       `removeChatMessages`, `clearMessages`
-- [ ] добавить `./src/entities/message/**` во временный override
-- [ ] тесты: добавление в конец; `updateMessage` по id (смена id; неизвестный id и
+      (➕ `toMessages` проверяет и `chatId` сообщения = ключ записи, не-массив по ключу
+      отбрасывается; валидный снапшот возвращается тем же объектом; `isSendingStale` без
+      `attemptAt` считает от `timestamp`; `MessagePatch` = `Partial<Omit<Message, "chatId">>`)
+- [x] добавить `./src/entities/message/**` во временный override
+- [x] тесты: добавление в конец; `updateMessage` по id (смена id; неизвестный id и
       неизвестный чат — без изменений и без нового ключа); удаление чата не трогает
       другие; `clearMessages`
-- [ ] тесты persist: круговой путь (`sending` сохраняется как есть); битые элементы
+- [x] тесты persist: круговой путь (`sending` сохраняется как есть); битые элементы
       отброшены; **два `addMessage` со `sending` подряд — оба остаются `sending`**
-- [ ] тест синхронизации: `messagesAtom` подхватывает запись другой вкладки
-- [ ] тесты `isSendingStale`: свежее `sending` — нет; старше `SEND_TIMEOUT` — да; `sent`/
+- [x] тест синхронизации: `messagesAtom` подхватывает запись другой вкладки
+- [x] тесты `isSendingStale`: свежее `sending` — нет; старше `SEND_TIMEOUT` — да; `sent`/
       `failed` и входящие — нет
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный
 
 ### Task 4: `features/delete-chats`
 
