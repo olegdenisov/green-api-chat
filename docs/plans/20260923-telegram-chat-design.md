@@ -124,9 +124,11 @@ src/
     delete-chats/      deleteChat (чат + история), deleteAllChats, DeleteChatButton
     receive-messages/  цикл polling, раскладка уведомлений по чатам (этап 5)
   entities/
-    session/   креды (credentialsAtom, persist), logout, greenApiAtom (клиент из кредов)
+    session/   креды (credentialsAtom, persist), logout, greenApiAtom (клиент из кредов),
+               requireApi (клиент или throw)
     chat/      Chat, chatsAtom, activeChatIdAtom, сортировка, openChat/touchChat/removeChat
-    message/   Message, messagesAtom по chatId, addMessage/updateMessage, SEND_TIMEOUT
+    message/   Message, messagesAtom по chatId, addMessage/updateMessage, SEND_TIMEOUT,
+               isSendingStale/sendingStaleAt
   shared/
     api/       клиент GREEN-API (fetch, типы, ApiError)
     config/    PERSIST_TTL (10 лет) — для session, chat, message
@@ -228,7 +230,8 @@ type Message = {
    прерванная закрытием вкладки или перезагрузкой, остаётся `sending`; `isSendingStale`
    (`now - attemptAt > SEND_TIMEOUT`) показывает её как `failed` (текст, «Повторить» и
    `data-failed` пузыря); пока такая отправка не зависла, пузырь держит одноразовый таймер на
-   `attemptAt + SEND_TIMEOUT` и перерисовывается сам. Помечать
+   `sendingStaleAt(message)` (`attemptAt + SEND_TIMEOUT`, правило одно — в `entities/message`)
+   и перерисовывается сам. Помечать
    `failed` при старте нельзя: другая вкладка пометила бы живую отправку → «Повторить» →
    дубль.
 5. **Поздние ответы после логаута отбрасываются**: логаут не сбрасывает кадр и не отменяет
@@ -301,12 +304,12 @@ type Message = {
   | причина | текст |
   | --- | --- |
   | `exist: false` | Номер не зарегистрирован в Telegram |
-  | `rate-limit` | Слишком много проверок номеров. Попробуйте позже |
+  | `rate-limit` | Слишком много проверок номеров, попробуйте позже |
   | `CheckAccountFailure` | Инстанс не готов, попробуйте позже |
   | `http` `400` | Неверный формат номера |
   | `http` `466` | Исчерпан лимит тарифа GREEN-API |
   | `auth` | Доступ запрещён. Выйдите и войдите заново |
-  | `network` | Нет соединения с GREEN-API |
+  | `network` | Нет связи с GREEN-API |
   | прочее | Не удалось проверить номер |
 
 - Удаление чата — кнопка в шапке окна, подтверждение в `Popover` («Удалить чат и

@@ -1,10 +1,9 @@
 import { abortVar, reatomField, reatomForm, withChangeHook, wrap } from "@reatom/core";
 
 import { findChatByPhone, openChat } from "@/entities/chat";
-import { greenApiAtom } from "@/entities/session";
+import { greenApiAtom, requireApi } from "@/entities/session";
 
 import { CreateChatError } from "./create-chat-error";
-import { requireApi } from "./require-api";
 
 /** Digits only: drops spaces, `+`, `-`, brackets. A leading `8` is kept as is. */
 export function normalizePhone(value: string): string {
@@ -12,7 +11,7 @@ export function normalizePhone(value: string): string {
 }
 
 const phone = reatomField("", {
-  name: "chat.createChatForm.phone",
+  name: "chatPage.createChatForm.phone",
   validate: ({ state }) => {
     const digits = normalizePhone(state);
     if (digits === "") return "Введите номер телефона";
@@ -31,7 +30,7 @@ const phone = reatomField("", {
 export const createChatForm = reatomForm(
   { phone },
   {
-    name: "chat.createChatForm",
+    name: "chatPage.createChatForm",
     keepErrorOnChange: false,
     // Only after a successful submit: on an error the number stays for editing.
     resetOnSubmit: true,

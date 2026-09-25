@@ -3,7 +3,7 @@ import { wrap } from "@reatom/core";
 import { reatomComponent } from "@reatom/react";
 import { useEffect, useState } from "react";
 
-import { isSendingStale, type Message, SEND_TIMEOUT } from "@/entities/message";
+import { isSendingStale, type Message, sendingStaleAt } from "@/entities/message";
 
 import { formatTime } from "../lib/format-time";
 import { retryChatMessage } from "../model/send-message";
@@ -12,13 +12,13 @@ import classes from "./message-bubble.module.css";
 
 /**
  * A `sending` message without an answer for too long (a closed tab, a reload) is a failure.
- * Nothing else re-renders the bubble when `SEND_TIMEOUT` passes (the request may be running in
+ * Nothing else re-renders the bubble when `sendingStaleAt` passes (the request may be running in
  * another tab or gone), so a one-shot timer moves `now` past that moment.
  */
 function useFailed(message: Message): boolean {
   const [now, setNow] = useState(Date.now);
   const sending = message.direction === "out" && message.status === "sending";
-  const staleAt = (message.attemptAt ?? message.timestamp) + SEND_TIMEOUT;
+  const staleAt = sendingStaleAt(message);
 
   useEffect(() => {
     if (!sending || now > staleAt) return;
@@ -53,7 +53,7 @@ const OutgoingStatus = reatomComponent(
     if (message.status === "sending") return <span aria-label="Отправляется">…</span>;
     return <span aria-label="Отправлено">✓</span>;
   },
-  "chat.OutgoingStatus",
+  "chatPage.OutgoingStatus",
 );
 
 /** One message: outgoing on the right, incoming on the left; text, `HH:MM` and the status. */

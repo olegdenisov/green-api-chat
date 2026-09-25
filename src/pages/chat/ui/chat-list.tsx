@@ -49,4 +49,4 @@ export const ChatList = reatomComponent(() => {
       })}
     </ul>
   );
-}, "chat.ChatList");
+}, "chatPage.ChatList");

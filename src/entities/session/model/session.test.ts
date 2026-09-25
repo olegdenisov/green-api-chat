@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { BASE, creds, fetchMock, respondJson, stubFetch, TOKEN } from "@test/green-api";
 
-import { credentialsAtom, greenApiAtom, logout } from "./session";
+import { credentialsAtom, greenApiAtom, logout, requireApi } from "./session";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -140,6 +140,21 @@ describe("session", () => {
         const second = greenApiAtom();
         expect(second).not.toBeNull();
         expect(second).not.toBe(first);
+      });
+    });
+  });
+
+  describe("requireApi", () => {
+    it("returns the current client", () => {
+      context.start(() => {
+        credentialsAtom.set(creds);
+        expect(requireApi()).toBe(greenApiAtom());
+      });
+    });
+
+    it("throws when logged out", () => {
+      context.start(() => {
+        expect(() => requireApi()).toThrow("No GREEN-API client");
       });
     });
   });

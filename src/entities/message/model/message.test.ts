@@ -9,6 +9,7 @@ import {
   messagesAtom,
   removeChatMessages,
   SEND_TIMEOUT,
+  sendingStaleAt,
   toMessages,
   updateMessage,
 } from "./message";
@@ -119,6 +120,17 @@ describe("message", () => {
       addMessage(other);
       clearMessages();
       expect(messagesAtom()).toEqual({});
+    });
+  });
+
+  describe("sendingStaleAt", () => {
+    it("is the last attempt plus SEND_TIMEOUT", () => {
+      expect(sendingStaleAt({ ...hello, attemptAt: 10_000 })).toBe(10_000 + SEND_TIMEOUT);
+    });
+
+    it("falls back to the timestamp without an attempt", () => {
+      const { attemptAt: _attemptAt, ...noAttempt } = hello;
+      expect(sendingStaleAt(noAttempt)).toBe(hello.timestamp + SEND_TIMEOUT);
     });
   });
 

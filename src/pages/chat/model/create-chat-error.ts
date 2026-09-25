@@ -29,9 +29,9 @@ export function createChatErrorMessage(error: unknown): string {
       case "auth":
         return "Доступ запрещён. Выйдите и войдите заново";
       case "network":
-        return "Нет соединения с GREEN-API";
+        return "Нет связи с GREEN-API";
       case "rate-limit":
-        return "Слишком много проверок номеров. Попробуйте позже";
+        return "Слишком много проверок номеров, попробуйте позже";
       case "http":
         if (error.status === 400) return "Неверный формат номера";
         if (error.status === 466) return "Исчерпан лимит тарифа GREEN-API";

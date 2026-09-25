@@ -10,4 +10,4 @@ export const activeMessagesAtom = computed((): readonly Message[] => {
   const chat = activeChatAtom();
   if (!chat) return NO_MESSAGES;
   return messagesAtom()[chat.chatId] ?? NO_MESSAGES;
-}, "chat.activeMessages");
+}, "chatPage.activeMessages");

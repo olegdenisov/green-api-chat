@@ -1,6 +1,6 @@
-import { abortVar, action, isAbort, reatomField, withChangeHook, wrap } from "@reatom/core";
+import { abortVar, action, isAbort, wrap } from "@reatom/core";
 
-import { activeChatAtom, activeChatIdAtom, touchChat } from "@/entities/chat";
+import { touchChat } from "@/entities/chat";
 import {
   addMessage,
   isSendingStale,
@@ -8,10 +8,8 @@ import {
   SEND_TIMEOUT,
   updateMessage,
 } from "@/entities/message";
-import { greenApiAtom } from "@/entities/session";
+import { greenApiAtom, requireApi } from "@/entities/session";
 import type { GreenApi } from "@/shared/api";
-
-import { requireApi } from "./require-api";
 
 /** `crypto.randomUUID()` exists only in secure contexts (HTTPS, localhost). */
 function localId(): string {
@@ -97,7 +95,7 @@ export const sendChatMessage = action((chatId: string, text: string): Promise<vo
   });
   touchChat(chatId, now);
   return deliver({ api, chatId, id, text, attemptAt: now });
-}, "chat.sendMessage");
+}, "chatPage.sendMessage");
 
 /**
  * Sends a `failed` or stale `sending` message again: same text and temporary id, a new
@@ -114,23 +112,4 @@ export const retryChatMessage = action((chatId: string, id: string): Promise<voi
   if (message.status !== "failed" && !isSendingStale(message, now)) return Promise.resolve();
   updateMessage(chatId, id, { status: "sending", attemptAt: now });
   return deliver({ api, chatId, id, text: message.text, attemptAt: now });
-}, "chat.retryMessage");
-
-/** The message input; one draft for all chats. */
-export const draftField = reatomField("", "chat.draft");
-
-/**
- * Sends the draft to the active chat and clears it right away (the send is not awaited).
- * Blank text or no active chat — nothing happens.
- */
-export const sendDraft = action(() => {
-  const text = draftField().trim();
-  const chat = activeChatAtom();
-  if (text === "" || !chat) return;
-  draftField.reset();
-  void sendChatMessage(chat.chatId, text);
-}, "chat.sendDraft");
-
-// The draft belongs to the chat it was typed in: switching chats (including "back" on a narrow
-// screen) drops it.
-activeChatIdAtom.extend(withChangeHook(() => draftField.reset()));
+}, "chatPage.retryMessage");

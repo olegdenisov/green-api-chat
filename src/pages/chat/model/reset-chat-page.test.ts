@@ -8,7 +8,7 @@ import { fetchMock, creds, hangUntilAbort, stubFetch } from "@test/green-api";
 
 import { createChatForm } from "./create-chat";
 import { resetChatPage } from "./reset-chat-page";
-import { draftField } from "./send-message";
+import { draftField } from "./draft";
 
 beforeEach(stubFetch);
 

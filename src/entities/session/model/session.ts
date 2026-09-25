@@ -26,6 +26,16 @@ export const greenApiAtom = computed((): GreenApi | null => {
   return creds ? createGreenApi(creds) : null;
 }, "session.greenApi");
 
+/**
+ * The current GREEN-API client. Throws without credentials: screens that send requests are
+ * shown only with them, so a call while logged out is a programmer error.
+ */
+export function requireApi(): GreenApi {
+  const api = greenApiAtom();
+  if (!api) throw new Error("No GREEN-API client (logged out)");
+  return api;
+}
+
 export const logout = action(() => {
   credentialsAtom.set(null);
 }, "session.logout");

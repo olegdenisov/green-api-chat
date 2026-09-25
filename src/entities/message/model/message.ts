@@ -22,6 +22,8 @@ type MessagePatch = Partial<Omit<Message, "chatId">>;
 /** A send without an answer for this long is a failure (ms). */
 export const SEND_TIMEOUT = 30_000;
 
+// Typed `unknown[]` so that `.includes()` accepts the unchecked stored value; `satisfies` still
+// checks the literals against `Message`.
 const DIRECTIONS: readonly unknown[] = ["in", "out"] satisfies Message["direction"][];
 const STATUSES: readonly unknown[] = ["sending", "sent", "failed"] satisfies Message["status"][];
 
@@ -71,15 +73,18 @@ export const messagesAtom = atom<Messages>({}, "message.byChat").extend(
   withLocalStorage({ key: "ga.messages", time: PERSIST_TTL, fromSnapshot: toMessages }),
 );
 
+/** The moment (ms) after which a `sending` message counts as stale: its attempt + `SEND_TIMEOUT`. */
+export function sendingStaleAt(message: Message): number {
+  return (message.attemptAt ?? message.timestamp) + SEND_TIMEOUT;
+}
+
 /**
- * An outgoing `sending` message whose attempt is older than `SEND_TIMEOUT`: the send was
- * interrupted (a closed tab, a reload), so it is shown as `failed`.
+ * An outgoing `sending` message past `sendingStaleAt`: the send was interrupted (a closed
+ * tab, a reload), so it is shown as `failed`.
  */
 export function isSendingStale(message: Message, now: number): boolean {
   return (
-    message.direction === "out" &&
-    message.status === "sending" &&
-    now - (message.attemptAt ?? message.timestamp) > SEND_TIMEOUT
+    message.direction === "out" && message.status === "sending" && now > sendingStaleAt(message)
   );
 }
 

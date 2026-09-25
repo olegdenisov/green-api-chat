@@ -3,7 +3,7 @@ import { wrap } from "@reatom/core";
 import { bindField, reatomComponent } from "@reatom/react";
 import type { FormEvent, KeyboardEvent } from "react";
 
-import { draftField, sendDraft } from "../model/send-message";
+import { draftField, sendDraft } from "../model/draft";
 
 import classes from "./composer.module.css";
 
@@ -45,4 +45,4 @@ export const Composer = reatomComponent(() => {
       </Button>
     </form>
   );
-}, "chat.Composer");
+}, "chatPage.Composer");

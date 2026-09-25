@@ -110,9 +110,9 @@ src/
     model/
       create-chat.ts        createChatForm (номер → checkAccount → чат)
       create-chat-error.ts  тексты ошибок create-chat
-      send-message.ts       sendChatMessage / retryChatMessage / draftField + sendDraft
-      active-chat.ts        activeMessagesAtom
-      require-api.ts        requireApi() — клиент или throw (экран чата требует креды)
+      send-message.ts       sendChatMessage / retryChatMessage
+      draft.ts              draftField + sendDraft, сброс черновика при смене чата
+      active-messages.ts    activeMessagesAtom
       reset-chat-page.ts    resetChatPage() — сброс формы нового чата и черновика (логаут)
     ui/
       chat-page.tsx         раскладка: Sidebar + ChatWindow, мобильный режим
@@ -197,7 +197,8 @@ src/
   становится `failed`. В `Message` есть `attemptAt` (начало последней попытки);
   `isSendingStale(message, now)` — `status === "sending" && now - attemptAt >
   SEND_TIMEOUT` — такое сообщение показывается как `failed` («Повторить» доступен); пузырь
-  ставит одноразовый таймер на `attemptAt + SEND_TIMEOUT`, чтобы перерисоваться. Так
+  ставит одноразовый таймер на `sendingStaleAt(message)` (`attemptAt + SEND_TIMEOUT`),
+  чтобы перерисоваться. Так
   ловятся отправки из закрытой вкладки и прерванные перезагрузкой. Пометка при старте не
   годится: вкладка B пометила бы `failed` живую отправку вкладки A → «Повторить» → дубль.
 - **Удаление чата** — кнопка в шапке окна чата, подтверждение через Mantine `Popover`
@@ -245,7 +246,7 @@ type Message = {
 | | `addMessage(message)` | в конец списка чата |
 | | `updateMessage(chatId, id, patch)` | патч по id (в т.ч. смена `id` на `idMessage`); нет чата/id — no-op, ключ не создаётся |
 | | `removeChatMessages(chatId)`, `clearMessages()` | удаление |
-| | `isSendingStale(message, now)`, `SEND_TIMEOUT` | зависшая отправка → показывать как `failed` |
+| | `isSendingStale(message, now)`, `sendingStaleAt(message)`, `SEND_TIMEOUT` | зависшая отправка → показывать как `failed`; `sendingStaleAt` — момент, когда она станет зависшей (таймер пузыря) |
 | `features/delete-chats` | `deleteChat(chatId)`, `deleteAllChats()` | связка сущностей |
 | `pages/chat` | `activeMessagesAtom` | `computed`: сообщения активного чата или `[]` |
 | | `createChatForm` | `reatomForm({ phone })` |
@@ -277,12 +278,12 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 | причина | текст |
 | --- | --- |
 | нет аккаунта | Номер не зарегистрирован в Telegram |
-| `rate-limit` | Слишком много проверок номеров. Попробуйте позже |
+| `rate-limit` | Слишком много проверок номеров, попробуйте позже |
 | `CheckAccountFailure` | Инстанс не готов, попробуйте позже |
 | `http` `400` | Неверный формат номера |
 | `http` `466` | Исчерпан лимит тарифа GREEN-API |
 | `auth` | Доступ запрещён. Выйдите и войдите заново |
-| `network` | Нет соединения с GREEN-API |
+| `network` | Нет связи с GREEN-API |
 | прочее | Не удалось проверить номер |
 
 Ошибка — под полем (`submit.error()`, провал валидации отличается по тождеству, как в
@@ -480,7 +481,7 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
   Task 8)
 - Modify: `steiger.config.ts`
 
-- [x] `normalizePhone`; `createChatForm` (`reatomForm`, `name: "chat.createChatForm"`,
+- [x] `normalizePhone`; `createChatForm` (`reatomForm`, `name: "chatPage.createChatForm"`,
       `keepErrorOnChange: false`, `resetOnSubmit: true`, сброс ошибки сабмита при правке
       поля)
       (➕ ошибки ответа `checkAccount` — `CreateChatError` с `reason` `not-registered` /
@@ -507,8 +508,8 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 **Files:**
 - Create: `src/pages/chat/model/send-message.ts`
 - Create: `src/pages/chat/model/send-message.test.ts`
-- Create: `src/pages/chat/model/active-chat.ts`
-- Create: `src/pages/chat/model/active-chat.test.ts`
+- Create: `src/pages/chat/model/active-messages.ts`
+- Create: `src/pages/chat/model/active-messages.test.ts`
 - Modify: `test/green-api.ts` (➕ `deferFetch`), `test/green-api.test.ts` если есть тесты
   хелперов
 - Modify: `steiger.config.ts`

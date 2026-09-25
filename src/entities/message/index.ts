@@ -5,6 +5,7 @@ export {
   messagesAtom,
   removeChatMessages,
   SEND_TIMEOUT,
+  sendingStaleAt,
   updateMessage,
   type Message,
 } from "./model/message";

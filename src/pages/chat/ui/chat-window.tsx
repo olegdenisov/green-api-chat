@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { activeChatAtom, activeChatIdAtom } from "@/entities/chat";
 import { DeleteChatButton } from "@/features/delete-chats";
 
-import { activeMessagesAtom } from "../model/active-chat";
+import { activeMessagesAtom } from "../model/active-messages";
 import { Composer } from "./composer";
 import { MessageBubble } from "./message-bubble";
 
@@ -37,12 +37,12 @@ const Feed = reatomComponent(() => {
       )}
     </div>
   );
-}, "chat.Feed");
+}, "chatPage.Feed");
 
 /** Right column: header (back, title, delete), the message feed and the input. */
 export const ChatWindow = reatomComponent(({ className }: { className?: string }) => {
   const chat = activeChatAtom();
-  const rootClass = `${classes.window} ${className ?? ""}`;
+  const rootClass = className ? `${classes.window} ${className}` : classes.window;
 
   if (!chat) {
     return (
@@ -76,4 +76,4 @@ export const ChatWindow = reatomComponent(({ className }: { className?: string }
       <Composer />
     </main>
   );
-}, "chat.ChatWindow");
+}, "chatPage.ChatWindow");

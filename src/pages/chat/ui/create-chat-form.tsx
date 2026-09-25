@@ -51,4 +51,4 @@ export const CreateChatForm = reatomComponent(() => {
       </Group>
     </form>
   );
-}, "chat.CreateChatForm");
+}, "chatPage.CreateChatForm");

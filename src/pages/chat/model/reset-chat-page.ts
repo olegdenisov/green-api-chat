@@ -1,7 +1,7 @@
 import { action } from "@reatom/core";
 
 import { createChatForm } from "./create-chat";
-import { draftField } from "./send-message";
+import { draftField } from "./draft";
 
 /**
  * Drops the page's in-memory input: the new-chat form (its number, error and a request in
@@ -11,4 +11,4 @@ import { draftField } from "./send-message";
 export const resetChatPage = action(() => {
   createChatForm.reset();
   draftField.reset();
-}, "chat.resetPage");
+}, "chatPage.resetPage");

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { activeChatIdAtom, chatsAtom, type Chat } from "@/entities/chat";
 import { messagesAtom, type Message } from "@/entities/message";
 
-import { activeMessagesAtom } from "./active-chat";
+import { activeMessagesAtom } from "./active-messages";
 
 const chat: Chat = { chatId: "10000000", title: "Friend", lastMessageAt: 1 };
 const other: Chat = { chatId: "20000000", title: "Colleague", lastMessageAt: 2 };

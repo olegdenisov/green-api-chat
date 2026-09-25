@@ -15,6 +15,10 @@ export type Chat = {
 
 export type Chats = Record<string, Chat>;
 
+function isTime(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function isChat(value: unknown, chatId: string): value is Chat {
   if (typeof value !== "object" || value === null) return false;
   const chat = value as Partial<Record<keyof Chat, unknown>>;
@@ -23,8 +27,7 @@ function isChat(value: unknown, chatId: string): value is Chat {
     chatId !== "" &&
     typeof chat.title === "string" &&
     (chat.phone === undefined || typeof chat.phone === "string") &&
-    typeof chat.lastMessageAt === "number" &&
-    Number.isFinite(chat.lastMessageAt)
+    isTime(chat.lastMessageAt)
   );
 }
 

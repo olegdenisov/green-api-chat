@@ -19,4 +19,4 @@ export const ChatPage = reatomComponent(() => {
       <ChatWindow className={classes.window} />
     </div>
   );
-}, "ChatPage");
+}, "chatPage.ChatPage");
