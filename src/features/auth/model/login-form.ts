@@ -1,5 +1,5 @@
 import { notifications } from "@mantine/notifications";
-import { abortVar, reatomField, reatomForm, wrap } from "@reatom/core";
+import { abortVar, peek, reatomField, reatomForm, withChangeHook, wrap } from "@reatom/core";
 
 import { credentialsAtom } from "@/entities/session";
 import { createGreenApi, resolveApiUrl } from "@/shared/api";
@@ -12,9 +12,12 @@ import { ensureNotificationSettings } from "./notification-settings";
 // exist yet while the fields are declared.
 const idInstance = reatomField("", {
   name: "auth.loginForm.idInstance",
-  validate: ({ state }) =>
-    /^\d+$/.test(state.trim()) ? undefined : "Введите idInstance (только цифры)",
+  validate: ({ state }) => (isIdInstance(state) ? undefined : "Введите idInstance (только цифры)"),
 });
+
+function isIdInstance(value: string): boolean {
+  return /^\d+$/.test(value.trim());
+}
 
 const apiTokenInstance = reatomField("", {
   name: "auth.loginForm.apiTokenInstance",
@@ -26,18 +29,29 @@ const apiUrl = reatomField("", {
   validate: ({ state }) => {
     const value = state.trim();
     if (value === "") {
-      return resolveApiUrl(idInstance()) === undefined
+      // `peek`: Reatom runs the validator in an effect, and a tracked `idInstance()` would
+      // re-validate this field on every keystroke in idInstance. An invalid idInstance has
+      // its own error — one mistake, one message.
+      const id = peek(idInstance);
+      return isIdInstance(id) && resolveApiUrl(id) === undefined
         ? "Укажите apiUrl из консоли GREEN-API"
         : undefined;
     }
-    return isHttpUrl(value) ? undefined : "Некорректный URL";
+    return isHttpsUrl(value) ? undefined : "Некорректный URL (нужен https://)";
   },
 });
 
-function isHttpUrl(value: string): boolean {
+// The "required" error of an empty apiUrl depends on idInstance: drop it once idInstance changes.
+idInstance.extend(
+  withChangeHook(() => {
+    if (apiUrl().trim() === "") apiUrl.validation.clearErrors();
+  }),
+);
+
+/** Only `https:`: the token is a part of the request URL. */
+function isHttpsUrl(value: string): boolean {
   try {
-    const { protocol } = new URL(value);
-    return protocol === "http:" || protocol === "https:";
+    return new URL(value).protocol === "https:";
   } catch {
     return false;
   }
@@ -80,11 +94,13 @@ export const loginForm = reatomForm(
         credentialsAtom.set(creds);
 
         // Shown from the model: the form unmounts as soon as the credentials are saved.
-        if (settings === "updated") {
+        if (settings === "updated" || settings === "webhookCleared") {
           notifications.show({
             color: "green",
             message:
-              "Настройки инстанса обновлены. Входящие сообщения начнут приходить в течение ~5 минут",
+              settings === "webhookCleared"
+                ? "Настройки инстанса обновлены, webhookUrl очищен: уведомления теперь читает этот чат. Входящие сообщения начнут приходить в течение ~5 минут"
+                : "Настройки инстанса обновлены. Входящие сообщения начнут приходить в течение ~5 минут",
           });
         } else if (settings === "failed") {
           notifications.show({
@@ -98,3 +114,9 @@ export const loginForm = reatomForm(
     },
   },
 );
+
+// Like the field errors (`keepErrorOnChange: false`), the login error goes away once the user
+// edits any field.
+for (const field of [idInstance, apiTokenInstance, apiUrl]) {
+  field.extend(withChangeHook(() => loginForm.submit.error.set(undefined)));
+}

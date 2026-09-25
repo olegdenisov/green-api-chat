@@ -1,14 +1,21 @@
 import { notifications } from "@mantine/notifications";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { credentialsAtom } from "@/entities/session";
 
 import { getSettingsResponse } from "@test/fixtures/green-api/get-settings";
 import { getStateInstanceResponse } from "@test/fixtures/green-api/get-state-instance";
 import { setSettingsResponse } from "@test/fixtures/green-api/set-settings";
-import { calledMethods, creds, hangUntilAbort, respondByMethod, stubFetch } from "@test/green-api";
+import {
+  calledMethods,
+  creds,
+  fetchMock,
+  hangUntilAbort,
+  respondByMethod,
+  stubFetch,
+} from "@test/green-api";
 import { render } from "@test/render";
 
 import { LoginForm } from "./login-form";
@@ -79,7 +86,8 @@ describe("LoginForm", () => {
 
     expect(await screen.findByText("Введите idInstance (только цифры)")).toBeInTheDocument();
     expect(screen.getByText("Введите apiTokenInstance")).toBeInTheDocument();
-    expect(screen.getByText("Укажите apiUrl из консоли GREEN-API")).toBeInTheDocument();
+    // The invalid idInstance has its own error; apiUrl does not repeat it.
+    expect(screen.queryByText("Укажите apiUrl из консоли GREEN-API")).not.toBeInTheDocument();
     expect(idInput()).toHaveAttribute("aria-invalid", "true");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -88,6 +96,8 @@ describe("LoginForm", () => {
     const user = userEvent.setup();
     render(<LoginForm />);
 
+    // The only invalid field: once it is fixed, no field has an error left.
+    await user.type(idInput(), creds.idInstance);
     await user.click(submitButton());
     await screen.findByText("Введите apiTokenInstance");
     await user.type(tokenInput(), "token");
@@ -110,6 +120,65 @@ describe("LoginForm", () => {
     expect(frame.run(() => credentialsAtom())).toBeNull();
   });
 
+  it("hides the alert on edit and does not show it for a failed validation", async () => {
+    respondByMethod({ getStateInstance: { body: {}, status: 401 } });
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await fillCreds(user);
+    await user.click(submitButton());
+    await screen.findByRole("alert");
+
+    await user.clear(idInput());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    await user.click(submitButton());
+    expect(await screen.findByText("Введите idInstance (только цифры)")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows the instance state in an alert", async () => {
+    respondByMethod({ getStateInstance: { body: { stateInstance: "notAuthorized" } } });
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await fillCreds(user);
+    await user.click(submitButton());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Инстанс не авторизован в Telegram");
+  });
+
+  it("shows a generic alert for an unexpected error", async () => {
+    respondByMethod(ok);
+    const set = vi.spyOn(credentialsAtom, "set").mockImplementation(() => {
+      throw new TypeError("boom");
+    });
+    onTestFinished(() => set.mockRestore());
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await fillCreds(user);
+    await user.click(submitButton());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Не удалось войти");
+  });
+
+  it("hides the old alert while a retry is pending", async () => {
+    respondByMethod({ getStateInstance: { body: {}, status: 401 } });
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await fillCreds(user);
+    await user.click(submitButton());
+    await screen.findByRole("alert");
+
+    hangUntilAbort();
+    await user.click(submitButton());
+
+    await waitFor(() => expect(submitButton()).toHaveAttribute("data-loading", "true"));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("shows the loader and disables the fields while the request is pending", async () => {
     hangUntilAbort();
     const user = userEvent.setup();
@@ -123,6 +192,31 @@ describe("LoginForm", () => {
     expect(idInput()).toBeDisabled();
     expect(tokenInput()).toBeDisabled();
     expect(apiUrlInput()).toBeDisabled();
+  });
+
+  it("makes the form usable again after a failed request", async () => {
+    let answer: (response: Response) => void = () => {};
+    fetchMock.mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await fillCreds(user);
+    await user.click(submitButton());
+    await waitFor(() => expect(idInput()).toBeDisabled());
+
+    answer(new Response("{}", { status: 401 }));
+
+    await screen.findByRole("alert");
+    expect(submitButton()).not.toHaveAttribute("data-loading");
+    expect(submitButton()).toBeEnabled();
+    expect(idInput()).toBeEnabled();
+    expect(tokenInput()).toBeEnabled();
+    expect(apiUrlInput()).toBeEnabled();
   });
 
   it("shows a toast after turning on the notification settings", async () => {

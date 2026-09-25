@@ -1,32 +1,38 @@
-import { isAbort } from "@reatom/core";
-
 import { ApiError } from "@/shared/api";
 import type { StateInstance } from "@/shared/api";
 
+type FailedState = Exclude<StateInstance, "authorized">;
+
 /** The instance answered, but its state does not allow working with it. */
 export class LoginError extends Error {
-  readonly state: StateInstance;
+  readonly state: FailedState;
 
-  constructor(state: StateInstance) {
+  constructor(state: FailedState) {
     super(`GREEN-API instance state: ${state}`);
     this.name = "LoginError";
     this.state = state;
   }
 }
 
-const STATE_MESSAGES: Record<StateInstance, string> = {
-  notAuthorized: "Инстанс не авторизован в Telegram",
-  pendingPassword: "Инстанс не авторизован в Telegram",
+const NOT_AUTHORIZED = "Инстанс не авторизован в Telegram";
+
+const STATE_MESSAGES: Record<FailedState, string> = {
+  notAuthorized: NOT_AUTHORIZED,
+  pendingPassword: NOT_AUTHORIZED,
   blocked: "Инстанс заблокирован или приостановлен",
   suspended: "Инстанс заблокирован или приостановлен",
   starting: "Инстанс запускается, попробуйте через минуту",
-  authorized: "Не удалось войти",
 };
 
-/** User-facing text for a login failure; `null` for a cancelled login. */
-export function loginErrorMessage(error: unknown): string | null {
-  if (isAbort(error)) return null;
-  if (error instanceof LoginError) return STATE_MESSAGES[error.state];
+/**
+ * User-facing text for a failed login request. Cancellation never gets here: `withAsync`
+ * does not put aborts into `submit.error()`.
+ */
+export function loginErrorMessage(error: unknown): string {
+  if (error instanceof LoginError) {
+    // Responses are not validated at runtime: a state missing from the docs is possible.
+    return STATE_MESSAGES[error.state] ?? NOT_AUTHORIZED;
+  }
   if (error instanceof ApiError) {
     switch (error.kind) {
       case "auth":

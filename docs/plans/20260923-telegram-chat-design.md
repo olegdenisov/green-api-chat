@@ -93,8 +93,11 @@ Notification — событие инстанса (входящее/исходя�
 - `receiveNotification` вызываем с `receiveTimeout=20`.
 - Поддерживаем только личные чаты (`chatType === 'user'`); события из групп удаляем без обработки.
 - Имя чата: `username` из `checkAccount` или номер; при входящем — обновляем на `chatName`.
-- `setSettings` при логине вызываем только если нужные флаги выключены, и предупреждаем
-  пользователя, что входящие появятся в течение ~5 минут.
+- `setSettings` при логине — один запрос, только если есть что менять: включаем выключенные
+  `incomingWebhook`/`outgoingMessageWebhook`/`outgoingAPIMessageWebhook` и очищаем непустой
+  `webhookUrl` (иначе уведомления уходят на него, а не в очередь). Тост: входящие появятся в
+  течение ~5 минут; если `webhookUrl` очищен — тост говорит и об этом. Сбой
+  `getSettings`/`setSettings` (`ApiError`) логин не блокирует — предупреждающий тост.
 - `checkAccount` не повторяем автоматически; на `rate_limit_exceeded`/`469` — понятная ошибка.
 
 ### Непроверенное
@@ -147,11 +150,16 @@ type Message = {
 }
 ```
 
-Атомы (persist — `.extend(withLocalStorage("ga.<name>"))` из `@reatom/core`):
+Атомы (persist — `withLocalStorage({ key: "ga.<name>", time })` из `@reatom/core`; `time` по
+умолчанию — `MAX_SAFE_TIMEOUT` (~24,8 суток), после чего запись считается просроченной и
+атом возвращается к начальному значению. Для долгоживущих данных задаём большой конечный
+`time` (10 лет; не `Infinity` — `JSON.stringify` превращает его в `null`, и запись сразу
+просрочена):
 
 - `credentialsAtom` (`entities/session`, ключ `ga.credentials`) — `{ idInstance,
   apiTokenInstance, apiUrl }` или `null`; пишется только после успешной проверки инстанса,
-  `logout` сбрасывает в `null`. Экран (логин/чат) выбирает `app` по этому атому, без роутера.
+  `logout` сбрасывает в `null`. Сохранённое значение проверяется при чтении (`fromSnapshot`):
+  не все три поля — непустые строки → `null`. Экран (логин/чат) выбирает `app` по этому атому, без роутера.
 - `chatsAtom` — `Record<chatId, Chat>`, persist.
 - `activeChatIdAtom` — persist.
 - `messagesAtom` — `Record<chatId, Message[]>`, persist.
@@ -196,11 +204,15 @@ type Message = {
   Пустое тело `2xx` — `null` только у `receiveNotification` (пустая очередь); у остальных
   методов — `ApiError { kind: 'http' }`. `checkAccount` с `200`-ошибкой, кроме лимита,
   возвращается как есть (`CheckAccountFailure`) — разбирает этап 4.
-- Логин: `getStateInstance` → `authorized` пускаем; иной статус → «Инстанс не авторизован
-  в Telegram»; `401`/`403` → «Неверный idInstance или apiTokenInstance». Лоадер, форма
-  заблокирована. Включение webhook-настроек при необходимости. Ошибки валидации — у полей;
-  `Alert` над кнопкой — только для `ApiError`/`LoginError` (прочие ошибки не показываются:
-  провал валидации остаётся в `submit.error()` и после правки поля).
+- Логин: `getStateInstance` → `authorized` пускаем; прочие статусы и ошибки запросов —
+  текстом в `Alert` над кнопкой (полная таблица — «Тексты ошибок» в
+  `docs/plans/20260925-03-auth.md`: `notAuthorized`/`pendingPassword` и неизвестный статус →
+  «Инстанс не авторизован в Telegram», `blocked`/`suspended`, `starting`, `401`/`403` →
+  «Неверный idInstance или apiTokenInstance», сеть, `http`, `rate-limit`, прочее → «Не
+  удалось войти»). Лоадер, форма заблокирована; во время повторной попытки `Alert` скрыт,
+  после правки любого поля — исчезает. Включение webhook-настроек при необходимости. Ошибки
+  валидации — у полей; провал валидации `Alert` не даёт (узнаётся по тождеству с
+  `loginForm.validation.trigger.error()`). `apiUrl` — только `https://` (токен идёт в URL).
 - Новый чат: номер → только цифры → `checkAccount`; нет аккаунта → «Номер не
   зарегистрирован в Telegram»; существующий чат — просто открывается.
 - Отправка: неактивна при пустом тексте, `Enter` — отправить, `Shift+Enter` — перенос,

@@ -1,7 +1,8 @@
 import { ApiError } from "@/shared/api";
 import type { GreenApi, RequestOptions, SettingsPatch } from "@/shared/api";
 
-export type NotificationSettingsResult = "ok" | "updated" | "failed";
+/** `webhookCleared` — updated, and a non-empty `webhookUrl` was cleared (the user must know). */
+type NotificationSettingsResult = "ok" | "updated" | "webhookCleared" | "failed";
 
 /** Settings that must be `yes` for incoming/outgoing messages to reach the notification queue. */
 const REQUIRED_FLAGS = [
@@ -17,7 +18,7 @@ const REQUIRED_FLAGS = [
  */
 export async function ensureNotificationSettings(
   api: Pick<GreenApi, "getSettings" | "setSettings">,
-  options: RequestOptions = {},
+  options: RequestOptions,
 ): Promise<NotificationSettingsResult> {
   try {
     const settings = await api.getSettings(options);
@@ -29,7 +30,7 @@ export async function ensureNotificationSettings(
 
     if (Object.keys(patch).length === 0) return "ok";
     await api.setSettings(patch, options);
-    return "updated";
+    return patch.webhookUrl === undefined ? "updated" : "webhookCleared";
   } catch (error) {
     if (error instanceof ApiError) return "failed";
     throw error;

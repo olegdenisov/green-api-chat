@@ -15,6 +15,9 @@ clearStack();
 // and its isAbort() checks `instanceof Error`, so submit.abort() and other Reatom aborts would
 // be treated as ordinary errors in tests. AbortController stays Node's in the jsdom
 // environment; restore Node's DOMException (the class of its abort reason) to match.
+// Caveat: DOM APIs implemented by jsdom (querySelector, etc.) still throw jsdom's own
+// DOMException, so `instanceof DOMException` / `toThrow(DOMException)` is false for those
+// errors — check `error.name` instead.
 globalThis.DOMException = AbortSignal.abort().reason.constructor;
 
 // Testing Library auto-cleanup needs global afterEach; vitest globals are off.

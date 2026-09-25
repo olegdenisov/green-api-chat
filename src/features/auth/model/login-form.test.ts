@@ -1,5 +1,5 @@
 import { notifications } from "@mantine/notifications";
-import { context, isAbort, notify, wrap } from "@reatom/core";
+import { context, isAbort, notify, sleep, wrap } from "@reatom/core";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 
 import { credentialsAtom } from "@/entities/session";
@@ -68,7 +68,18 @@ describe("loginForm validation", () => {
       await submit();
       expect(fieldError("idInstance")).toBe("Введите idInstance (только цифры)");
       expect(fieldError("apiTokenInstance")).toBe("Введите apiTokenInstance");
-      expect(fieldError("apiUrl")).toBe("Укажите apiUrl из консоли GREEN-API");
+      // One mistake, one message: the invalid idInstance already has an error.
+      expect(fieldError("apiUrl")).toBeUndefined();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it("rejects whitespace-only idInstance and apiTokenInstance", async () => {
+    await context.start(async () => {
+      fill({ idInstance: "   ", apiTokenInstance: "  " });
+      await submit();
+      expect(fieldError("idInstance")).toBe("Введите idInstance (только цифры)");
+      expect(fieldError("apiTokenInstance")).toBe("Введите apiTokenInstance");
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
@@ -92,17 +103,54 @@ describe("loginForm validation", () => {
     });
   });
 
-  it("rejects an invalid apiUrl", async () => {
+  it("accepts a short idInstance with a manual apiUrl", async () => {
+    respondByMethod(ok);
     await context.start(async () => {
-      fill({ idInstance: creds.idInstance, apiTokenInstance: "token", apiUrl: "ftp://host" });
+      fill({ idInstance: "110", apiTokenInstance: "token", apiUrl: creds.apiUrl });
       await submit();
-      expect(fieldError("apiUrl")).toBe("Некорректный URL");
-
-      fill({ apiUrl: "not a url" });
-      await submit();
-      expect(fieldError("apiUrl")).toBe("Некорректный URL");
+      expect(credentialsAtom()).toEqual({
+        idInstance: "110",
+        apiTokenInstance: "token",
+        apiUrl: creds.apiUrl,
+      });
     });
   });
+
+  it("drops the apiUrl requirement error once idInstance changes", async () => {
+    await context.start(async () => {
+      fill({ idInstance: "110", apiTokenInstance: "token" });
+      await submit();
+      expect(fieldError("apiUrl")).toBe("Укажите apiUrl из консоли GREEN-API");
+
+      fill({ idInstance: creds.idInstance });
+      expect(fieldError("apiUrl")).toBeUndefined();
+    });
+  });
+
+  it("does not re-validate apiUrl while idInstance is being edited", async () => {
+    respondByMethod({ getStateInstance: { body: {}, status: 401 } });
+    await context.start(async () => {
+      fill({ idInstance: creds.idInstance, apiTokenInstance: "token" });
+      await submit();
+
+      fill({ idInstance: "" });
+      fill({ idInstance: "1" });
+      await wrap(sleep(0));
+      expect(fieldError("apiUrl")).toBeUndefined();
+    });
+  });
+
+  it.each(["ftp://host", "not a url", "http://1101.api.green-api.com"])(
+    "rejects apiUrl %s (https only)",
+    async (apiUrl) => {
+      await context.start(async () => {
+        fill({ idInstance: creds.idInstance, apiTokenInstance: "token", apiUrl });
+        await submit();
+        expect(fieldError("apiUrl")).toBe("Некорректный URL (нужен https://)");
+        expect(fetchMock).not.toHaveBeenCalled();
+      });
+    },
+  );
 
   it("clears a field error once the value changes", async () => {
     await context.start(async () => {
@@ -221,6 +269,35 @@ describe("loginForm submit", () => {
     });
   });
 
+  it("mentions the cleared webhookUrl in the toast", async () => {
+    respondByMethod({
+      ...ok,
+      getSettings: { body: { ...getSettingsResponse, webhookUrl: "https://example.com/hook" } },
+      setSettings: { body: setSettingsResponse },
+    });
+    await context.start(async () => {
+      fill({ idInstance: creds.idInstance, apiTokenInstance: creds.apiTokenInstance });
+      await submit();
+
+      expect(credentialsAtom()).toEqual(creds);
+      expect(show).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining("webhookUrl очищен") }),
+      );
+    });
+  });
+
+  it("clears the login error once a field changes", async () => {
+    respondByMethod({ getStateInstance: { body: {}, status: 401 } });
+    await context.start(async () => {
+      fill({ idInstance: creds.idInstance, apiTokenInstance: creds.apiTokenInstance });
+      await submit();
+      expect(loginForm.submit.error()).toBeInstanceOf(ApiError);
+
+      fill({ apiTokenInstance: "other" });
+      expect(loginForm.submit.error()).toBeUndefined();
+    });
+  });
+
   it("logs in even when the settings check fails", async () => {
     respondByMethod({ ...ok, getSettings: { body: {}, status: 500 } });
     await context.start(async () => {
@@ -253,6 +330,59 @@ describe("loginForm submit", () => {
       expect(loginForm.submit.error()).toBeUndefined();
       expect(loginForm.submit.ready()).toBe(true);
       expect(credentialsAtom()).toBeNull();
+    });
+  });
+
+  it("submit.abort() during the settings check does not log in", async () => {
+    fetchMock.mockImplementation((input, init) => {
+      if (String(input).includes("/getStateInstance/")) {
+        return Promise.resolve(Response.json(getStateInstanceResponse));
+      }
+      return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+      });
+    });
+    await context.start(async () => {
+      fill({ idInstance: creds.idInstance, apiTokenInstance: creds.apiTokenInstance });
+      const pending = loginForm.submit();
+      await wrap(
+        vi.waitFor(() => expect(calledMethods()).toEqual(["getStateInstance", "getSettings"])),
+      );
+
+      loginForm.submit.abort();
+      const reason: unknown = await wrap(pending.catch((error: unknown) => error));
+
+      expect(isAbort(reason)).toBe(true);
+      expect(credentialsAtom()).toBeNull();
+      expect(show).not.toHaveBeenCalled();
+    });
+  });
+
+  it("a new submit cancels the one in flight", async () => {
+    const other = { ...creds, idInstance: "7103000002", apiUrl: "https://7103.api.green-api.com" };
+    fetchMock.mockImplementation((input, init) => {
+      if (String(input).includes(`waInstance${creds.idInstance}/`)) {
+        return new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        });
+      }
+      const method = calledMethods().at(-1);
+      const body = method === "getStateInstance" ? getStateInstanceResponse : getSettingsResponse;
+      return Promise.resolve(Response.json(body));
+    });
+    await context.start(async () => {
+      fill({ idInstance: creds.idInstance, apiTokenInstance: creds.apiTokenInstance });
+      const first = loginForm.submit();
+      await wrap(vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce()));
+      const firstSignal = fetchMock.mock.calls[0]![1]?.signal;
+
+      fill({ idInstance: other.idInstance });
+      await submit();
+      const reason: unknown = await wrap(first.catch((error: unknown) => error));
+
+      expect(isAbort(reason)).toBe(true);
+      expect(firstSignal?.aborted).toBe(true);
+      expect(credentialsAtom()).toEqual(other);
     });
   });
 });

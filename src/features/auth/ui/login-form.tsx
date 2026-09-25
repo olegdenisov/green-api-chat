@@ -3,27 +3,28 @@ import { wrap } from "@reatom/core";
 import { bindField, reatomComponent } from "@reatom/react";
 import type { FormEvent } from "react";
 
-import { ApiError, resolveApiUrl } from "@/shared/api";
+import { resolveApiUrl } from "@/shared/api";
 
-import { LoginError, loginErrorMessage } from "../model/login-error";
+import { loginErrorMessage } from "../model/login-error";
 import { loginForm } from "../model/login-form";
 
 const API_URL_PLACEHOLDER = "https://XXXX.api.green-api.com";
 
 /**
- * Text for the error `Alert`. Only request failures are shown: a failed validation rejects
- * `submit` with a plain `Error`, and its messages are already shown next to the fields.
+ * Text for the error `Alert`. A failed validation rejects `submit` with the very error of
+ * `validation.trigger` — its messages are already next to the fields, so it is skipped by
+ * identity; any other error (including unexpected ones) is shown.
  */
-function alertMessage(error: unknown): string | null {
-  if (!(error instanceof ApiError || error instanceof LoginError)) return null;
-  if (loginForm.validation().errors.length > 0) return null;
+function alertMessage(error: Error | undefined): string | null {
+  if (error === undefined || error === loginForm.validation.trigger.error()) return null;
   return loginErrorMessage(error);
 }
 
 export const LoginForm = reatomComponent(() => {
   const { fields, submit } = loginForm;
   const pending = !submit.ready();
-  const error = alertMessage(submit.error());
+  // Hidden during a retry: the old error is irrelevant while the new request runs.
+  const error = pending ? null : alertMessage(submit.error());
 
   return (
     <form

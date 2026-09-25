@@ -32,6 +32,8 @@
 - Общее для нескольких фич состояние — в `entities` (креды и `logout` — `entities/session`).
 - steiger не видит `export * from "…"`: такой re-export через границу слоя не ловится —
   писать `import`.
+- В `app` нет сегмента `ui` (`fsd/no-ui-in-app`): компоненты уровня приложения (`Screen`)
+  живут прямо в `src/app/app.tsx`.
 
 ## GREEN-API
 
@@ -61,7 +63,10 @@
 - Типы ответов и уведомлений — `types.ts`, по документации Telegram; рантайм-валидации нет.
   Union уведомлений без «ловушки»: неизвестные `typeWebhook`/`typeMessage` — ветка `default`.
 - Persist атомов — встроенный `withLocalStorage` из `@reatom/core`; `shared/lib` под это не
-  заводить.
+  заводить. Ключ — `ga.<name>`. `time` по умолчанию ~24,8 суток (потом запись просрочена):
+  для долгоживущих данных задавать большой конечный `time` (не `Infinity` — в JSON это
+  `null`). Хранилище значение не проверяет — форму проверять в `fromSnapshot`. Тест persist —
+  круговой путь через новый кадр `context.start()`, формат `PersistRecord` не проверять.
 
 ## Инструменты
 
@@ -104,7 +109,12 @@
   (`<TextInput {...bindField(field)} />`). Логика сабмита — целиком в `onSubmit`; повторный
   сабмит отменяет предыдущий, явная отмена — `submit.abort()`; лоадер и ошибка —
   `submit.ready()`/`submit.error()`. `signal` для запросов — `abortVar.subscribe()`
-  (`unsubscribe()` в `finally`), каждый `await` — через `wrap()`.
+  (`unsubscribe()` в `finally`), каждый `await` — через `wrap()`. `form.reset()` вне сабмита
+  тоже отменяет его. `submit.error()` живёт до следующего успешного сабмита
+  (`resetError: "onFulfill"`); отмена туда не попадает. Провал валидации отклоняет `submit`
+  той же ошибкой, что в `form.validation.trigger.error()`, — отличать её по тождеству.
+- Валидатор-функция поля выполняется в `effect`: чтение другого атома в нём — через
+  `peek`, иначе поле перепроверяется при каждом изменении того атома.
 - Обработчики событий: в `reatomComponent` — `wrap(handler)`, в обычном компоненте —
   `useWrap(handler)`; иначе вызов атома вне кадра.
 - Тосты (`notifications.show` из `@mantine/notifications`) вызываются прямо из модели.
@@ -138,13 +148,16 @@
   `tsc -b` сверяет их с типами.
 - В тестах моделей после `field.change(...)` вызывать `notify()` из `@reatom/core`: хуки
   поля (сброс ошибки) идут микротаском и иначе сотрут ошибки посреди сабмита.
-- Тосты проверяются по тексту; в `afterEach` — `notifications.clean()`, иначе очередь
-  тостов утекает в следующий тест.
+- Тосты: в тестах компонентов — по тексту, в `afterEach` — `notifications.clean()`, иначе
+  очередь тостов утекает в следующий тест; в тестах моделей без рендера —
+  `vi.spyOn(notifications, "show")`.
 - Исключения: `App` и `ReatomProvider` содержат свои провайдеры и рендерятся обычным
   `render` из RTL.
 - `vitest.setup.ts`: `clearStack()`, очистка `localStorage`/`sessionStorage` после
   каждого теста, моки jsdom для Mantine, глобальный `DOMException` из Node (у jsdom он не
-  `instanceof Error`, и `isAbort()` Reatom не узнавал бы отмену).
+  `instanceof Error`, и `isAbort()` Reatom не узнавал бы отмену). DOM-API jsdom по-прежнему
+  бросают свой `DOMException`: для них `instanceof DOMException`/`toThrow(DOMException)`
+  ложны — проверять `error.name`.
 
 ## Правила
 

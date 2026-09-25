@@ -21,20 +21,20 @@ function fakeApi(settings: Partial<Settings> = {}) {
 describe("ensureNotificationSettings", () => {
   it("returns ok without setSettings when everything is on", async () => {
     const api = fakeApi();
-    await expect(ensureNotificationSettings(api)).resolves.toBe("ok");
+    await expect(ensureNotificationSettings(api, {})).resolves.toBe("ok");
     expect(api.setSettings).not.toHaveBeenCalled();
   });
 
   it("turns on only the disabled flag", async () => {
     const api = fakeApi({ outgoingAPIMessageWebhook: "no" });
-    await expect(ensureNotificationSettings(api)).resolves.toBe("updated");
+    await expect(ensureNotificationSettings(api, {})).resolves.toBe("updated");
     expect(api.setSettings).toHaveBeenCalledOnce();
     expect(api.setSettings.mock.calls[0]![0]).toEqual({ outgoingAPIMessageWebhook: "yes" });
   });
 
   it("clears a non-empty webhookUrl", async () => {
     const api = fakeApi({ webhookUrl: "https://example.com/hook", incomingWebhook: "no" });
-    await expect(ensureNotificationSettings(api)).resolves.toBe("updated");
+    await expect(ensureNotificationSettings(api, {})).resolves.toBe("webhookCleared");
     expect(api.setSettings.mock.calls[0]![0]).toEqual({ webhookUrl: "", incomingWebhook: "yes" });
   });
 
@@ -49,14 +49,14 @@ describe("ensureNotificationSettings", () => {
   it("returns failed when getSettings throws ApiError", async () => {
     const api = fakeApi();
     api.getSettings.mockRejectedValue(new ApiError("http", { status: 500 }));
-    await expect(ensureNotificationSettings(api)).resolves.toBe("failed");
+    await expect(ensureNotificationSettings(api, {})).resolves.toBe("failed");
     expect(api.setSettings).not.toHaveBeenCalled();
   });
 
   it("returns failed when setSettings throws ApiError", async () => {
     const api = fakeApi({ incomingWebhook: "no" });
     api.setSettings.mockRejectedValue(new ApiError("network"));
-    await expect(ensureNotificationSettings(api)).resolves.toBe("failed");
+    await expect(ensureNotificationSettings(api, {})).resolves.toBe("failed");
   });
 
   it("rethrows cancellation", async () => {
@@ -65,13 +65,13 @@ describe("ensureNotificationSettings", () => {
     controller.abort();
     const abort: unknown = controller.signal.reason;
     api.getSettings.mockRejectedValue(abort);
-    await expect(ensureNotificationSettings(api)).rejects.toBe(abort);
+    await expect(ensureNotificationSettings(api, {})).rejects.toBe(abort);
   });
 
   it("rethrows unexpected errors", async () => {
     const api = fakeApi({ incomingWebhook: "no" });
     const error = new TypeError("boom");
     api.setSettings.mockRejectedValue(error);
-    await expect(ensureNotificationSettings(api)).rejects.toBe(error);
+    await expect(ensureNotificationSettings(api, {})).rejects.toBe(error);
   });
 });

@@ -44,7 +44,7 @@ export function hangUntilAbort() {
   );
 }
 
-export type MethodResponse = { body: unknown; status?: number };
+type MethodResponse = { body: unknown; status?: number };
 
 /** GREEN-API method name from a request URL: `.../waInstance{id}/{method}/{token}`. */
 function methodOf(input: Parameters<typeof fetch>[0]): string {

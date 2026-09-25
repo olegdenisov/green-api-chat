@@ -55,6 +55,9 @@ describe("App", () => {
 
     expect(idInput()).toHaveValue("");
     expect(screen.getByLabelText("apiTokenInstance")).toHaveValue("");
+    expect(screen.getByLabelText("apiUrl")).toHaveValue("");
     expect(chatStub()).not.toBeInTheDocument();
+    // A reload (a fresh frame reading localStorage) stays logged out.
+    context.start(() => expect(credentialsAtom()).toBeNull());
   });
 });

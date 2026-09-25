@@ -1,4 +1,3 @@
-import { toAbortError } from "@reatom/core";
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/shared/api";
@@ -16,7 +15,7 @@ describe("LoginError", () => {
 });
 
 describe("loginErrorMessage", () => {
-  it.each<[StateInstance, string]>([
+  it.each<[Exclude<StateInstance, "authorized">, string]>([
     ["notAuthorized", "Инстанс не авторизован в Telegram"],
     ["pendingPassword", "Инстанс не авторизован в Telegram"],
     ["blocked", "Инстанс заблокирован или приостановлен"],
@@ -24,6 +23,12 @@ describe("loginErrorMessage", () => {
     ["starting", "Инстанс запускается, попробуйте через минуту"],
   ])("LoginError %s", (state, message) => {
     expect(loginErrorMessage(new LoginError(state))).toBe(message);
+  });
+
+  it("treats an unknown instance state as not authorized", () => {
+    // Not in the docs' list; responses are not validated at runtime.
+    const error = new LoginError("sleepMode" as Exclude<StateInstance, "authorized">);
+    expect(loginErrorMessage(error)).toBe("Инстанс не авторизован в Telegram");
   });
 
   it.each<[ApiError, string]>([
@@ -37,17 +42,7 @@ describe("loginErrorMessage", () => {
   });
 
   it("falls back to a generic text for unknown errors", () => {
-    expect(loginErrorMessage(new Error("boom"))).toBe("Не удалось войти");
+    expect(loginErrorMessage(new TypeError("boom"))).toBe("Не удалось войти");
     expect(loginErrorMessage("boom")).toBe("Не удалось войти");
-  });
-
-  it("returns null for a cancelled login", () => {
-    const controller = new AbortController();
-    controller.abort();
-    expect(loginErrorMessage(controller.signal.reason)).toBeNull();
-  });
-
-  it("returns null for a Reatom abort (e.g. submit.abort())", () => {
-    expect(loginErrorMessage(toAbortError("auth.loginForm.submit"))).toBeNull();
   });
 });

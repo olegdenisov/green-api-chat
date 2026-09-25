@@ -4,9 +4,11 @@
 сообщений Telegram через [GREEN-API](https://green-api.com/). Backend нет — запросы идут
 из браузера.
 
-Статус: **этап 2 из 6 — клиент GREEN-API**. Настроены стек, инструменты качества и
-FSD-скелет; готов типизированный клиент GREEN-API (`src/shared/api`) с unit-тестами;
-приложение пока показывает заглушку. Дизайн, API, модель данных и этапы:
+Статус: **этап 3 из 6 — вход**. Форма логина проверяет инстанс (`getStateInstance`),
+при необходимости включает настройки уведомлений (тост: входящие начнут приходить в течение
+~5 минут) и сохраняет креды в `localStorage` (`ga.credentials`). После перезагрузки
+залогиненный пользователь сразу видит экран чата (пока заглушка); «Выйти» стирает креды.
+Дизайн, API, модель данных и этапы:
 [docs/plans/20260923-telegram-chat-design.md](docs/plans/20260923-telegram-chat-design.md).
 
 ## Стек
@@ -31,12 +33,13 @@ make check     # lint → format-check → lint-fsd → typecheck → test
 make help      # все команды
 ```
 
-Креды инстанса (`idInstance`, `apiTokenInstance`) будут вводиться в форме логина
-(этап 3) — `.env` не нужен.
+Креды инстанса (`idInstance`, `apiTokenInstance`, при необходимости `apiUrl`) вводятся в
+форме логина — `.env` не нужен.
 
 ## Структура
 
 [Feature-Sliced Design](https://feature-sliced.design/): слои в `src/` — `app` → `pages`
 → `widgets` → `features` → `entities` → `shared`, импорт только сверху вниз. Сейчас есть
-`app` (провайдеры, стили), `pages/home` (заглушка) и `shared/api` (клиент GREEN-API);
-остальные слои появятся на следующих этапах. Тестовые утилиты — в `test/` и `vitest.setup.ts` вне `src/`.
+`app` (провайдеры, стили, выбор экрана), `pages/login`, `pages/chat` (заглушка),
+`features/auth` (форма логина, «Выйти»), `entities/session` (креды, `logout`) и
+`shared/api` (клиент GREEN-API); `widgets` появятся на следующих этапах. Тестовые утилиты — в `test/` и `vitest.setup.ts` вне `src/`.
