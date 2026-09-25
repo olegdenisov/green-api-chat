@@ -540,17 +540,24 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 - Create: `src/pages/chat/ui/create-chat-form.tsx` (+ тест)
 - Create: `src/pages/chat/ui/chat-list.tsx` (+ `.module.css`, тест)
 
-- [ ] раскладка `sidebar | window` + мобильный режим `data-view` (окно — временно
+- [x] раскладка `sidebar | window` + мобильный режим `data-view` (окно — временно
       заглушка «Выберите чат…»); убрать временный список из Task 6
-- [ ] `Sidebar`: шапка (`AppTitle`, `LogoutButton`), `CreateChatForm`, `ChatList`
-- [ ] `CreateChatForm`: `TextInput` `type="tel"` + кнопка, лоадер/блокировка во время
+      (➕ при выбранном чате заглушка показывает его название как `h2` — иначе выбор не
+      виден; ➕ `@media (width < $mantine-breakpoint-sm)` — граница совпадает с
+      `hiddenFrom="sm"` для «←» в Task 9)
+- [x] `Sidebar`: шапка (`AppTitle`, `LogoutButton`), `CreateChatForm`, `ChatList`
+- [x] `CreateChatForm`: `TextInput` `type="tel"` + кнопка, лоадер/блокировка во время
       сабмита, ошибка под полем
-- [ ] `ChatList`: строки (название, последнее сообщение, время), активная подсвечена,
+- [x] `ChatList`: строки (название, последнее сообщение, время), активная подсвечена,
       клик выбирает; пусто — «Создайте чат по номеру телефона»
-- [ ] тесты: создание чата по номеру появляется в списке и выбирается; ошибка «Номер не
+      (➕ строки — Mantine `NavLink component="button"` с `aria-current`; время —
+      `src/pages/chat/lib/format-time.ts`: `HH:MM` сегодня, `DD.MM.YY` иначе; `formatTime`
+      пригодится пузырю в Task 9)
+- [x] тесты: создание чата по номеру появляется в списке и выбирается; ошибка «Номер не
       зарегистрирован в Telegram»; пустое состояние; выбор чата кликом; `data-view`
       переключается
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный (➕ `app.test.tsx` ищет новую заглушку окна вместо «Чаты
+      появятся здесь»)
 
 ### Task 9: UI окна чата
 

@@ -1,30 +1,29 @@
-import { Text } from "@mantine/core";
+import { Text, Title } from "@mantine/core";
 import { reatomComponent } from "@reatom/react";
 
-import { sortedChatsAtom } from "@/entities/chat";
-import { LogoutButton } from "@/features/auth";
-import { AppTitle } from "@/shared/ui";
+import { activeChatAtom } from "@/entities/chat";
+
+import { Sidebar } from "./sidebar";
 
 import classes from "./chat-page.module.css";
 
-/** Chat screen stub: the chat titles for now; the layout lands later in stage 4. */
+/**
+ * Chat screen: `sidebar | window`. On a narrow screen only one column is shown —
+ * `data-view` switches it by the active chat.
+ */
 export const ChatPage = reatomComponent(() => {
-  const chats = sortedChatsAtom();
+  const chat = activeChatAtom();
   return (
-    <div className={classes.page}>
-      <header className={classes.header}>
-        <AppTitle size="h3" />
-        <LogoutButton />
-      </header>
-      <main className={classes.body}>
-        {chats.length === 0 ? (
-          <Text c="dimmed">Чаты появятся здесь</Text>
+    <div className={classes.page} data-view={chat ? "chat" : "list"}>
+      <Sidebar className={classes.sidebar} />
+      {/* The chat window stub; the window itself lands in the next task. */}
+      <main className={classes.window}>
+        {chat ? (
+          <Title order={2} size="h4">
+            {chat.title}
+          </Title>
         ) : (
-          <ul>
-            {chats.map((chat) => (
-              <li key={chat.chatId}>{chat.title}</li>
-            ))}
-          </ul>
+          <Text c="dimmed">Выберите чат или создайте новый</Text>
         )}
       </main>
     </div>

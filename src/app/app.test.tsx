@@ -12,7 +12,7 @@ import { creds, respondByMethod, stubFetch } from "@test/green-api";
 
 import { App } from "./app";
 
-const chatStub = () => screen.queryByText("Чаты появятся здесь");
+const chatStub = () => screen.queryByText("Выберите чат или создайте новый");
 const idInput = () => screen.getByLabelText("idInstance");
 
 beforeEach(stubFetch);
@@ -49,7 +49,7 @@ describe("App", () => {
     await user.type(screen.getByLabelText("apiTokenInstance"), creds.apiTokenInstance);
     await user.click(screen.getByRole("button", { name: "Войти" }));
 
-    expect(await screen.findByText("Чаты появятся здесь")).toBeInTheDocument();
+    expect(await screen.findByText("Выберите чат или создайте новый")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Выйти" }));
 
