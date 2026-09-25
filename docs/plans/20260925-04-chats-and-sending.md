@@ -499,27 +499,36 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
   хелперов
 - Modify: `steiger.config.ts`
 
-- [ ] ➕ `deferFetch()` в `@test/green-api`: вызовы ждут `resolveNext(body, status?)` /
+- [x] ➕ `deferFetch()` в `@test/green-api`: вызовы ждут `resolveNext(body, status?)` /
       `rejectNext(error)`, отклоняются с `signal.reason` при отмене
-- [ ] `activeMessagesAtom`
-- [ ] `sendChatMessage`, `retryChatMessage` по «Отправка» (`signal`, проверка клиента,
-      ничего не пробрасывают); `draftField` (`reatomField`), `sendDraft`; сброс черновика
+      (➕ `pending()` — число ждущих вызовов; `create-chat.test.ts` переведён с локального
+      `deferResponse()` на `deferFetch`)
+- [x] `activeMessagesAtom`
+- [x] `sendChatMessage`, `retryChatMessage` по «Отправка» (`signal`, проверка клиента,
+      ничего не пробрасывают; ⚠️ без клиента — синхронный `throw`, ошибка программиста);
+      `draftField` (`reatomField`), `sendDraft`; сброс черновика
       при смене `activeChatIdAtom` (`withChangeHook`)
-- [ ] снять override для `entities/message` (потребители: `features/delete-chats`,
+- [x] снять override для `entities/message` (потребители: `features/delete-chats`,
       `pages/chat`)
-- [ ] тесты: `sending` до ответа (`deferFetch`) → `sent` с `idMessage`; ошибка → `failed`;
+- [x] тесты: `sending` до ответа (`deferFetch`) → `sent` с `idMessage`; ошибка → `failed`;
       `retryChatMessage` → `sent` с тем же текстом; `touchChat` поднимает чат; две
       отправки подряд — обе `sending`, затем обе `sent` с **разными** `idMessage`; смена
       чата не отменяет отправку; `logout` посреди отправки — сообщения чата не
       воскрешаются
-- [ ] тесты: сброс кадра (`context.reset()`) посреди отправки (`hangUntilAbort`) — без
+- [x] тесты: сброс кадра (`context.reset()`) посреди отправки (`hangUntilAbort`) — без
       unhandled rejection
-- [ ] тест таймаута (`vi.useFakeTimers()` + `hangUntilAbort`): через `SEND_TIMEOUT` —
+      (⚠️ `context.reset()` не отменяет запрос: `wrap` отклоняется «context reset» только когда
+      запрос завершится, с `hangUntilAbort` — по таймауту; тест — с `vi.useFakeTimers()`)
+- [x] тест таймаута (`vi.useFakeTimers()` + `hangUntilAbort`): через `SEND_TIMEOUT` —
       `failed`; `retryChatMessage` зависшего сообщения обновляет `attemptAt` и доходит
-- [ ] тесты `sendDraft`: пустой/пробельный текст и отсутствие чата — без запроса;
+      (⚠️ таймаут — `setTimeout` + `AbortController` с причиной `TimeoutError`, не
+      `AbortSignal.timeout()`: тот не подчиняется fake timers; `request()` пробрасывает
+      `signal.reason` как есть, `isAbort` узнаёт только `AbortError` — таймаут = `failed`)
+- [x] тесты `sendDraft`: пустой/пробельный текст и отсутствие чата — без запроса;
       черновик сбрасывается сразу; смена чата (после `notify()`) сбрасывает черновик
-- [ ] `activeMessagesAtom`: `[]` без чата и для чата без сообщений
-- [ ] `make check` — зелёный, overrides в `steiger.config.ts` не осталось
+      (➕ висячий `activeChatId` — тоже без запроса: `sendDraft` берёт `activeChatAtom`)
+- [x] `activeMessagesAtom`: `[]` без чата и для чата без сообщений
+- [x] `make check` — зелёный, overrides в `steiger.config.ts` не осталось
 
 ### Task 8: UI сайдбара и раскладка страницы
 

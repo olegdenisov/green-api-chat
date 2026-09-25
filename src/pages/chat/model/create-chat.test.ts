@@ -15,6 +15,7 @@ import {
 import {
   calledMethods,
   creds,
+  deferFetch,
   fetchMock,
   hangUntilAbort,
   respondByMethod,
@@ -35,18 +36,6 @@ function fill(value: string) {
 /** Submits; the rejection stays available via `submit.error()`. */
 function submit() {
   return wrap(createChatForm.submit().catch(() => {}));
-}
-
-/** A `fetch` that waits for the test: `resolve(body)` answers the pending call with JSON. */
-function deferResponse() {
-  let resolve!: (body: unknown) => void;
-  fetchMock.mockImplementation(
-    () =>
-      new Promise((done) => {
-        resolve = (body) => done(Response.json(body));
-      }),
-  );
-  return { resolve: (body: unknown) => resolve(body) };
 }
 
 const existing: Chat = {
@@ -272,7 +261,7 @@ describe("createChatForm submit", () => {
   });
 
   it("drops a late answer after logout", async () => {
-    const response = deferResponse();
+    const response = deferFetch();
     await context.start(async () => {
       credentialsAtom.set(creds);
       fill("79876543210");
@@ -280,7 +269,7 @@ describe("createChatForm submit", () => {
       await wrap(vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce()));
 
       logout();
-      response.resolve(checkAccountExists);
+      response.resolveNext(checkAccountExists);
       await pending;
 
       expect(chatsAtom()).toEqual({});
