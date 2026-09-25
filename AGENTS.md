@@ -26,6 +26,12 @@
 - Слайсы одного слоя не импортируют друг друга (в частности, фичи).
 - Пустые слои и сегменты не создавать.
 - Границы проверяет steiger.
+- Новый слайс подключать к потребителю в том же этапе: `fsd/insignificant-slice` роняет
+  steiger для слайса без импортёров или с одним. Слайс без `index.ts` роняет
+  `fsd/public-api`.
+- Общее для нескольких фич состояние — в `entities` (креды и `logout` — `entities/session`).
+- steiger не видит `export * from "…"`: такой re-export через границу слоя не ловится —
+  писать `import`.
 
 ## GREEN-API
 
@@ -94,6 +100,14 @@
 - `connectLogger` включён только при `MODE === "development"` (`make dev`, не в тестах) —
   основной инструмент отладки. Атомы и экшены именовать (`atom(0, "chat.list")`), иначе в
   логе они безымянные.
+- Формы — `reatomForm` + `bindField(field)` из `@reatom/react` на инпутах Mantine
+  (`<TextInput {...bindField(field)} />`). Логика сабмита — целиком в `onSubmit`; повторный
+  сабмит отменяет предыдущий, явная отмена — `submit.abort()`; лоадер и ошибка —
+  `submit.ready()`/`submit.error()`. `signal` для запросов — `abortVar.subscribe()`
+  (`unsubscribe()` в `finally`), каждый `await` — через `wrap()`.
+- Обработчики событий: в `reatomComponent` — `wrap(handler)`, в обычном компоненте —
+  `useWrap(handler)`; иначе вызов атома вне кадра.
+- Тосты (`notifications.show` из `@mantine/notifications`) вызываются прямо из модели.
 - Логгер подключается в `src/app/logger.ts`, и этот модуль — первый импорт в
   `src/main.tsx` (до `@/app/app`). `connectLogger()` расширяет только атомы, созданные
   после вызова (без back-fill), а атомы моделей создаются при вычислении их модулей.
@@ -117,10 +131,15 @@
   нужно — в `vite.config.ts` включено `test.unstubGlobals: true`. Для клиента GREEN-API —
   хелпер `@test/green-api`: `beforeEach(stubFetch)`, `respond`/`respondJson`, `creds`/`TOKEN`/
   `BASE`; `hangUntilAbort()` — мок, который отклоняется с `signal.reason` при отмене (тесты
-  отмены).
+  отмены). `respondByMethod({ getStateInstance: { body }, ... })` — ответ по имени метода
+  из URL (неожиданный метод роняет тест), `calledMethods()` — список вызванных методов.
 - Примеры ответов GREEN-API — `.ts`-фикстуры в `test/fixtures/green-api/`:
   `export const x = { ... } satisfies <Тип>`, данные из документации (вымышленные).
   `tsc -b` сверяет их с типами.
+- В тестах моделей после `field.change(...)` вызывать `notify()` из `@reatom/core`: хуки
+  поля (сброс ошибки) идут микротаском и иначе сотрут ошибки посреди сабмита.
+- Тосты проверяются по тексту; в `afterEach` — `notifications.clean()`, иначе очередь
+  тостов утекает в следующий тест.
 - Исключения: `App` и `ReatomProvider` содержат свои провайдеры и рендерятся обычным
   `render` из RTL.
 - `vitest.setup.ts`: `clearStack()`, очистка `localStorage`/`sessionStorage` после

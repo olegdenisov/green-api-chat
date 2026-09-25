@@ -108,17 +108,20 @@ Notification — событие инстанса (входящее/исходя�
 src/
   app/        провайдеры (Mantine, Reatom), глобальные стили, вход
   pages/
-    login/    форма idInstance + apiTokenInstance
-    chat/     сборка сайдбара и окна чата
+    login/    карточка с формой логина (LoginForm)
+    chat/     сборка сайдбара и окна чата (на этапе 3 — заглушка с LogoutButton)
   widgets/
     chat-list/     список чатов + кнопка «новый чат»
     chat-window/   шапка, лента сообщений, поле ввода
   features/
-    auth/              логин/логаут, хранение кредов
+    auth/              форма логина (reatomForm: проверка инстанса, webhook-настройки,
+                       сохранение кредов), кнопка «Выйти»
     create-chat/       номер → checkAccount → chatId → новый чат
     send-message/      оптимистичная отправка + статус
     receive-messages/  цикл polling, раскладка уведомлений по чатам
   entities/
+    session/   креды (credentialsAtom, persist) и logout — нужны auth, send-message,
+               receive-messages; фичи друг друга не импортируют
     chat/      атомы чатов, выбранный чат, тип Chat
     message/   сообщения по chatId, тип Message
   shared/
@@ -146,7 +149,9 @@ type Message = {
 
 Атомы (persist — `.extend(withLocalStorage("ga.<name>"))` из `@reatom/core`):
 
-- `credentialsAtom` — `{ idInstance, apiTokenInstance, apiUrl }`, persist, чистится при логауте.
+- `credentialsAtom` (`entities/session`, ключ `ga.credentials`) — `{ idInstance,
+  apiTokenInstance, apiUrl }` или `null`; пишется только после успешной проверки инстанса,
+  `logout` сбрасывает в `null`. Экран (логин/чат) выбирает `app` по этому атому, без роутера.
 - `chatsAtom` — `Record<chatId, Chat>`, persist.
 - `activeChatIdAtom` — persist.
 - `messagesAtom` — `Record<chatId, Message[]>`, persist.
@@ -193,7 +198,9 @@ type Message = {
   возвращается как есть (`CheckAccountFailure`) — разбирает этап 4.
 - Логин: `getStateInstance` → `authorized` пускаем; иной статус → «Инстанс не авторизован
   в Telegram»; `401`/`403` → «Неверный idInstance или apiTokenInstance». Лоадер, форма
-  заблокирована. Включение webhook-настроек при необходимости.
+  заблокирована. Включение webhook-настроек при необходимости. Ошибки валидации — у полей;
+  `Alert` над кнопкой — только для `ApiError`/`LoginError` (прочие ошибки не показываются:
+  провал валидации остаётся в `submit.error()` и после правки поля).
 - Новый чат: номер → только цифры → `checkAccount`; нет аккаунта → «Номер не
   зарегистрирован в Telegram»; существующий чат — просто открывается.
 - Отправка: неактивна при пустом тексте, `Enter` — отправить, `Shift+Enter` — перенос,
@@ -223,6 +230,12 @@ type Message = {
    `shared/lib` не нужен: persist — встроенный `withLocalStorage` из `@reatom/core`
    (с `version`/`migration`), подключается к атомам сущностей на этапах 3–4.
 3. **Auth** — `features/auth`, `pages/login`, проверка инстанса, webhook-настройки, логаут.
+   Итог (`docs/plans/20260925-03-auth.md`): креды и `logout` — в `entities/session`;
+   `features/auth` — `loginForm` (`reatomForm`, повторный сабмит отменяет предыдущий,
+   поля очищаются после входа), `LoginForm`, `LogoutButton`; настройки включаются одним
+   `setSettings` с тостом, их сбой логин не блокирует; `pages/login`, `pages/chat`
+   (заглушка), выбор экрана в `app`. На этап 4 перенесены: `greenApiAtom` (клиент из
+   кредов) и очистка чатов/сообщений при логауте.
 4. **Чаты и отправка** — `entities/chat`, `entities/message`, `features/create-chat`,
    `features/send-message`, `widgets/chat-list`, `widgets/chat-window`.
 5. **Получение** — `features/receive-messages`: парсер, polling, backoff, abort, дедупликация.
