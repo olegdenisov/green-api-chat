@@ -1,5 +1,0 @@
-/* Overrides Mantine Title defaults (margin: 0, heading font-weight). */
-.title {
-  margin: var(--mantine-spacing-xl);
-  font-weight: 400;
-}
