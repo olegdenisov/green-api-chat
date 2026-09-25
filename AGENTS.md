@@ -124,7 +124,8 @@
 - Исключения: `App` и `ReatomProvider` содержат свои провайдеры и рендерятся обычным
   `render` из RTL.
 - `vitest.setup.ts`: `clearStack()`, очистка `localStorage`/`sessionStorage` после
-  каждого теста, моки jsdom для Mantine.
+  каждого теста, моки jsdom для Mantine, глобальный `DOMException` из Node (у jsdom он не
+  `instanceof Error`, и `isAbort()` Reatom не узнавал бы отмену).
 
 ## Правила
 

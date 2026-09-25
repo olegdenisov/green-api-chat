@@ -9,6 +9,14 @@ import { afterEach } from "vitest";
 // otherwise it throws "missing async stack" — exactly like in production.
 clearStack();
 
+// jsdom replaces the global DOMException with its own class, whose prototype chain ends in
+// jsdom's Error from another realm, so `new DOMException(...) instanceof Error` is false —
+// unlike browsers and Node. Reatom's toAbortError() creates `new DOMException(..., "AbortError")`
+// and its isAbort() checks `instanceof Error`, so submit.abort() and other Reatom aborts would
+// be treated as ordinary errors in tests. AbortController stays Node's in the jsdom
+// environment; restore Node's DOMException (the class of its abort reason) to match.
+globalThis.DOMException = AbortSignal.abort().reason.constructor;
+
 // Testing Library auto-cleanup needs global afterEach; vitest globals are off.
 afterEach(() => {
   cleanup();

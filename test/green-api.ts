@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { onTestFinished, vi } from "vitest";
 
 import type { Credentials } from "@/shared/api";
 
@@ -42,4 +42,41 @@ export function hangUntilAbort() {
         init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
       }),
   );
+}
+
+export type MethodResponse = { body: unknown; status?: number };
+
+/** GREEN-API method name from a request URL: `.../waInstance{id}/{method}/{token}`. */
+function methodOf(input: Parameters<typeof fetch>[0]): string {
+  const url = input instanceof Request ? input.url : String(input);
+  return new URL(url).pathname.split("/").at(-2) ?? "";
+}
+
+/**
+ * Answers by the GREEN-API method name from the URL: `body` as JSON with `status` (200 by
+ * default). A method missing from `responses` rejects the request and fails the test when it
+ * finishes — the client would otherwise turn the rejection into `ApiError("network")`.
+ * Call inside a test (uses `onTestFinished`).
+ */
+export function respondByMethod(responses: Partial<Record<string, MethodResponse>>) {
+  const unexpected: string[] = [];
+  onTestFinished(() => {
+    if (unexpected.length > 0) {
+      throw new Error(`respondByMethod: unexpected GREEN-API calls: ${unexpected.join(", ")}`);
+    }
+  });
+  fetchMock.mockImplementation(async (input) => {
+    const method = methodOf(input);
+    const response = responses[method];
+    if (!response) {
+      unexpected.push(method);
+      throw new Error(`respondByMethod: unexpected GREEN-API method "${method}"`);
+    }
+    return new Response(JSON.stringify(response.body), { status: response.status ?? 200 });
+  });
+}
+
+/** Names of the GREEN-API methods called so far, in order. */
+export function calledMethods(): string[] {
+  return fetchMock.mock.calls.map(([input]) => methodOf(input));
 }

@@ -1,3 +1,4 @@
+import { toAbortError } from "@reatom/core";
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/shared/api";
@@ -44,5 +45,9 @@ describe("loginErrorMessage", () => {
     const controller = new AbortController();
     controller.abort();
     expect(loginErrorMessage(controller.signal.reason)).toBeNull();
+  });
+
+  it("returns null for a Reatom abort (e.g. submit.abort())", () => {
+    expect(loginErrorMessage(toAbortError("auth.loginForm.submit"))).toBeNull();
   });
 });
