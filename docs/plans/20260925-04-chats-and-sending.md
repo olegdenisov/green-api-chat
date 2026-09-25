@@ -466,22 +466,27 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
   Task 8)
 - Modify: `steiger.config.ts`
 
-- [ ] `normalizePhone`; `createChatForm` (`reatomForm`, `name: "chat.createChatForm"`,
+- [x] `normalizePhone`; `createChatForm` (`reatomForm`, `name: "chat.createChatForm"`,
       `keepErrorOnChange: false`, `resetOnSubmit: true`, сброс ошибки сабмита при правке
       поля)
-- [ ] `onSubmit` по «Создание чата»: поиск по `phone` → `checkAccount` с `signal` из
+      (➕ ошибки ответа `checkAccount` — `CreateChatError` с `reason` `not-registered` /
+      `instance-not-ready` в `create-chat-error.ts`, по образцу `LoginError`)
+- [x] `onSubmit` по «Создание чата»: поиск по `phone` → `checkAccount` с `signal` из
       `abortVar.subscribe()` → проверка «клиент не сменился» → `openChat` / ошибка
-- [ ] `createChatErrorMessage(error)` по таблице
-- [ ] снять override для `entities/chat`
-- [ ] тесты: нормализация (`+7 (999) 123-45-67` → `79991234567`), валидация длины;
+- [x] `createChatErrorMessage(error)` по таблице
+- [x] снять override для `entities/chat`
+- [x] тесты: нормализация (`+7 (999) 123-45-67` → `79991234567`), валидация длины;
       существующий номер — без запроса (`calledMethods()` пуст), поле сброшено;
       `exist: true` — чат создан с `username`/`+номер` и выбран, поле сброшено; `chatId`
       уже есть — чат не дублируется, получает `phone`; ошибка — номер остаётся в поле
-- [ ] тесты ошибок: `exist: false`, `CheckAccountFailure`, `rate-limit` (`469` и `200`),
+- [x] тесты ошибок: `exist: false`, `CheckAccountFailure`, `rate-limit` (`469` и `200`),
       `auth`, `network`, `http 400`, `http 466`; повторный сабмит отменяет первый
       (`hangUntilAbort`); `logout` посреди `checkAccount` (➕ `deferFetch` из Task 7 —
       если нужен раньше, завести здесь) — чат не создаётся
-- [ ] `make check` — зелёный
+      (⚠️ `deferFetch` здесь не заведён: для одного теста хватило локального
+      `deferResponse()` в `create-chat.test.ts`; общий хелпер — в Task 7)
+- [x] `make check` — зелёный (➕ тест `ChatPage`: временный список названий по
+      `sortedChatsAtom`)
 
 ### Task 7: модель отправки (`pages/chat`)
 
