@@ -109,46 +109,67 @@ Notification — событие инстанса (входящее/исходя�
 
 ```
 src/
-  app/        провайдеры (Mantine, Reatom), глобальные стили, вход
+  app/        провайдеры (Mantine, Reatom), глобальные стили, вход, выбор экрана;
+              user-data-cleanup.ts — логаут ⇒ deleteAllChats()
   pages/
     login/    карточка с формой логина (LoginForm)
-    chat/     сборка сайдбара и окна чата (на этапе 3 — заглушка с LogoutButton)
-  widgets/
-    chat-list/     список чатов + кнопка «новый чат»
-    chat-window/   шапка, лента сообщений, поле ввода
+    chat/     model: createChatForm, sendChatMessage/retryChatMessage, draftField/sendDraft,
+              activeMessagesAtom; ui: Sidebar (CreateChatForm, ChatList), ChatWindow
+              (MessageBubble, Composer); lib: formatTime
   features/
     auth/              форма логина (reatomForm: проверка инстанса, webhook-настройки,
                        сохранение кредов), кнопка «Выйти»
-    create-chat/       номер → checkAccount → chatId → новый чат
-    send-message/      оптимистичная отправка + статус
-    receive-messages/  цикл polling, раскладка уведомлений по чатам
+    delete-chats/      deleteChat (чат + история), deleteAllChats, DeleteChatButton
+    receive-messages/  цикл polling, раскладка уведомлений по чатам (этап 5)
   entities/
-    session/   креды (credentialsAtom, persist) и logout — нужны auth, send-message,
-               receive-messages; фичи друг друга не импортируют
-    chat/      атомы чатов, выбранный чат, тип Chat
-    message/   сообщения по chatId, тип Message
+    session/   креды (credentialsAtom, persist), logout, greenApiAtom (клиент из кредов)
+    chat/      Chat, chatsAtom, activeChatIdAtom, сортировка, openChat/touchChat/removeChat
+    message/   Message, messagesAtom по chatId, addMessage/updateMessage, SEND_TIMEOUT
   shared/
     api/       клиент GREEN-API (fetch, типы, ApiError)
-    lib/       утилиты — только когда появятся (persist — встроенный withLocalStorage)
-    ui/        мелкие общие компоненты
+    config/    PERSIST_TTL (10 лет) — для session, chat, message
+    ui/        мелкие общие компоненты (AppTitle)
 ```
 
 Правила: импорт только сверху вниз, фичи не импортируют друг друга, доступ к слайсу — через
 публичный `index.ts`. Пустые слои/сегменты не создаём. Границы проверяет steiger.
 
+- **Pages-first (этап 4).** Изначально планировались `widgets/chat-list`,
+  `widgets/chat-window`, `features/create-chat`, `features/send-message`, но у каждого — один
+  потребитель, и steiger `fsd/insignificant-slice` их не пропускает (правило ругается на
+  слайс без ссылок или с одной ссылкой из другого слайса; одна ссылка только из `app`
+  допустима, слайсы `pages` не проверяются). Поэтому этот код живёт в `pages/chat` (подход
+  FSD 2.1) и выносится, когда появится второй потребитель. `widgets` пока нет.
+- **Сущности не знают друг о друге.** `chat` и `message` дают атомарные экшены
+  (`removeChat`, `clearChats`, `removeChatMessages`, `clearMessages`); связку делает
+  `features/delete-chats` (потребители — `pages/chat` и `app`).
+- **Очистка при логауте — реакция в `app`**: `src/app/user-data-cleanup.ts` вешает
+  `withChangeHook` на `credentialsAtom` (креды → `null` ⇒ `deleteAllChats()`). Любой логаут
+  — кнопка, `401` из polling, логаут в другой вкладке — чистит данные без явных вызовов.
+  Хук выполняется в фазе хуков, не синхронно внутри `logout`.
+
 ## Модель данных
 
 ```ts
-type Chat = { chatId: string; title: string; lastMessageAt: number }
+type Chat = {
+  chatId: string
+  title: string // username из checkAccount или "+<phone>"; этап 5 обновит на chatName
+  phone?: string // только цифры; нет у чатов, созданных входящим
+  lastMessageAt: number // ms; для нового чата — время создания
+}
 type Message = {
-  id: string // idMessage или временный id
+  id: string // idMessage или `local-<uuid>` до ответа sendMessage
   chatId: string
   text: string
   direction: 'in' | 'out'
   status: 'sending' | 'sent' | 'failed'
-  timestamp: number
+  timestamp: number // ms (этап 5 переводит секунды GREEN-API в ms)
+  attemptAt?: number // ms, начало последней попытки отправки; только у исходящих
 }
 ```
+
+`Chat.phone` нужен, чтобы существующий чат по номеру открывался без `checkAccount` (экономит
+лимит Telegram).
 
 Атомы (persist — `withLocalStorage({ key: "ga.<name>", time })` из `@reatom/core`; `time` по
 умолчанию — `MAX_SAFE_TIMEOUT` (~24,8 суток), после чего запись считается просроченной и
@@ -160,19 +181,57 @@ type Message = {
   apiTokenInstance, apiUrl }` или `null`; пишется только после успешной проверки инстанса,
   `logout` сбрасывает в `null`. Сохранённое значение проверяется при чтении (`fromSnapshot`):
   не все три поля — непустые строки → `null`. Экран (логин/чат) выбирает `app` по этому атому, без роутера.
-- `chatsAtom` — `Record<chatId, Chat>`, persist.
-- `activeChatIdAtom` — persist.
-- `messagesAtom` — `Record<chatId, Message[]>`, persist.
-- computed: отсортированный список чатов, сообщения активного чата.
+- `chatsAtom` (`ga.chats`) — `Record<chatId, Chat>`, persist.
+- `activeChatIdAtom` (`ga.activeChatId`) — `string | null`, persist без синхронизации вкладок.
+- `messagesAtom` (`ga.messages`) — `Record<chatId, Message[]>` в порядке добавления, persist.
+- computed: `sortedChatsAtom` (по `lastMessageAt` убыв.), `activeChatAtom` (висячий id →
+  `null`), `activeMessagesAtom` (в `pages/chat`), `greenApiAtom` (клиент из кредов или
+  `null`).
+
+`time` для всех — `PERSIST_TTL` из `shared/config` (10 лет).
 
 Истории у GREEN-API нет (событие исчезает после `Delete`), поэтому всё храним в `localStorage`.
+
+**`fromSnapshot` — только проверка формы, без преобразований.** `withLocalStorage` по
+умолчанию подписан на хранилище и вызывает `fromSnapshot` и после собственных записей атома,
+не только при старте. Битый элемент отбрасывается (не весь снапшот; элемент чата/сообщения
+с `chatId`, не равным ключу записи, — тоже), `activeChatId` не строкой → `null`; корректный
+снапшот возвращается тем же объектом.
+
+**Синхронизация вкладок** — встроенная подписка `withLocalStorage` (событие `storage`):
+
+| атом | синхронизация | почему |
+| --- | --- | --- |
+| `credentialsAtom` | да | логаут в одной вкладке — во всех (и очистка данных через хук) |
+| `chatsAtom`, `messagesAtom` | да | новый чат и сообщения видны везде |
+| `activeChatIdAtom` | нет (`subscribe: false`) | выбор чата у вкладки свой; иначе выбор в одной вкладке переключал бы другую и стирал её черновик |
+
+Записи — целиком атом: одновременные записи двух вкладок в одном тике теряют одну из них.
+От действий пользователя это практически не случается; для polling — одна вкладка-лидер
+(этап 5).
 
 ## Потоки
 
 ### Отправка
 
-1. Сообщение добавляется сразу со `status: 'sending'` и временным id.
-2. `sendMessage` → успех: id = `idMessage`, `sent`; ошибка: `failed` + «повторить» на пузыре.
+1. Сообщение добавляется сразу со `status: 'sending'`, id `local-<uuid>` и `attemptAt`; чат
+   поднимается (`touchChat`).
+2. `sendMessage` → успех: id = `idMessage`, `sent`; ошибка: `failed` + «Повторить» на пузыре
+   (`retryChatMessage`: тот же текст и временный id, новый `attemptAt`).
+3. `sendChatMessage` — обычный `action`, не сабмит формы: смена чата, новая отправка и
+   размонтирование окна его не отменяют; экшен ничего не пробрасывает (вызывается без
+   `await`).
+4. Таймаут `SEND_TIMEOUT` (30 с) → `failed` (таймаут — `TimeoutError`, не отмена). Отправка,
+   прерванная закрытием вкладки или перезагрузкой, остаётся `sending`; `isSendingStale`
+   (`now - attemptAt > SEND_TIMEOUT`) показывает её как `failed` при рендере. Помечать
+   `failed` при старте нельзя: другая вкладка пометила бы живую отправку → «Повторить» →
+   дубль.
+5. **Поздние ответы после логаута отбрасываются**: логаут не сбрасывает кадр и не отменяет
+   запросы в полёте, поэтому после `await` модель сверяет, что `greenApiAtom()` — тот же
+   клиент; `updateMessage` по неизвестному чату/id — no-op, удалённая история не
+   воскресает. Так же — `checkAccount` в создании чата.
+6. Поле ввода — `reatomField` (`draftField`); черновик один на все чаты и сбрасывается при
+   смене активного чата.
 
 ### Получение
 
@@ -184,9 +243,23 @@ type Message = {
    - `outgoing*MessageReceived` → исходящее, если нет сообщения с таким `idMessage`.
    - остальное (статусы, медиа) — игнор.
 3. `deleteNotification(receiptId)` — всегда, включая игнорируемые события.
-4. Сетевая ошибка → backoff; `401`/`403` → логаут.
+4. Сетевая ошибка → backoff; `401`/`403` → `logout()` из `entities/session` (данные чистит
+   хук в `app/user-data-cleanup.ts`, отдельных вызовов не нужно).
 
 Конкретные примитивы Reatom v1001 для цикла (effect, abort) — сверить по доке при реализации.
+
+Задачи этапа 5 (по итогам этапа 4):
+
+- Раскладка уведомлений — через готовые экшены сущностей: `openChat` (чата нет — создать;
+  `title` — `chatName`), `touchChat(chatId, timestamp)`, `addMessage`; секунды GREEN-API →
+  ms.
+- Дедупликация по `idMessage` с учётом гонки: `outgoingAPIMessageReceived` может прийти
+  раньше ответа `sendMessage`, пока у сообщения ещё `local-*` id. Нужно сопоставить
+  событие с ожидающим `sending`-сообщением (или отложить разбор), иначе появится дубль.
+- **Polling только во вкладке-лидере**: `navigator.locks.request("ga.polling", { signal },
+  …)` (Web Locks, без зависимостей). Одна вкладка разбирает очередь и пишет в атомы,
+  остальные получают данные через синхронизацию `localStorage`; лидер закрылся — лок
+  переходит к следующей вкладке. `signal` — отмена при логауте.
 
 ## Ошибки и UI-состояния
 
@@ -213,8 +286,24 @@ type Message = {
   после правки любого поля — исчезает. Включение webhook-настроек при необходимости. Ошибки
   валидации — у полей; провал валидации `Alert` не даёт (узнаётся по тождеству с
   `loginForm.validation.trigger.error()`). `apiUrl` — только `https://` (токен идёт в URL).
-- Новый чат: номер → только цифры → `checkAccount`; нет аккаунта → «Номер не
-  зарегистрирован в Telegram»; существующий чат — просто открывается.
+- Новый чат: номер → только цифры (10–15) → чат с таким `phone` есть — просто открывается,
+  без запроса; иначе `checkAccount`. `chatId` из ответа уже есть (чат пришёл входящим) —
+  открывается существующий, `phone` дописывается. Поле сбрасывается только при успехе.
+  Ошибки — под полем (`pages/chat/model/create-chat-error.ts`):
+
+  | причина | текст |
+  | --- | --- |
+  | `exist: false` | Номер не зарегистрирован в Telegram |
+  | `rate-limit` | Слишком много проверок номеров. Попробуйте позже |
+  | `CheckAccountFailure` | Инстанс не готов, попробуйте позже |
+  | `http` `400` | Неверный формат номера |
+  | `http` `466` | Исчерпан лимит тарифа GREEN-API |
+  | `auth` | Доступ запрещён. Выйдите и войдите заново |
+  | `network` | Нет соединения с GREEN-API |
+  | прочее | Не удалось проверить номер |
+
+- Удаление чата — кнопка в шапке окна, подтверждение в `Popover` («Удалить чат и
+  историю?» → «Удалить»).
 - Отправка: неактивна при пустом тексте, `Enter` — отправить, `Shift+Enter` — перенос,
   лимит 4096 на клиенте.
 - Polling: индикатор «соединение…» в шапке при серии сетевых ошибок; `401`/`403` → логаут с тостом.
@@ -248,8 +337,15 @@ type Message = {
    `setSettings` с тостом, их сбой логин не блокирует; `pages/login`, `pages/chat`
    (заглушка), выбор экрана в `app`. На этап 4 перенесены: `greenApiAtom` (клиент из
    кредов) и очистка чатов/сообщений при логауте.
-4. **Чаты и отправка** — `entities/chat`, `entities/message`, `features/create-chat`,
-   `features/send-message`, `widgets/chat-list`, `widgets/chat-window`.
+4. **Чаты и отправка** — `entities/chat`, `entities/message`, `features/delete-chats`,
+   `pages/chat`. Итог (`docs/plans/20260925-04-chats-and-sending.md`): раскладка
+   pages-first вместо `widgets/*` и `features/create-chat|send-message` (причина —
+   `insignificant-slice`); `greenApiAtom` в `entities/session`, `PERSIST_TTL` в
+   `shared/config`; очистка при логауте — `app/user-data-cleanup.ts`; чат по номеру
+   (существующий — без запроса), оптимистичная отправка с таймаутом и «Повторить»,
+   удаление чата с историей; сайдбар + окно, на узком экране — одна колонка с «←»;
+   синхронизация вкладок через `localStorage`. В тестах — хелпер `deferFetch()` в
+   `@test/green-api`.
 5. **Получение** — `features/receive-messages`: парсер, polling, backoff, abort, дедупликация.
 6. **Полировка и сдача** — вёрстка под web.max.ru, пустые состояния, компонентные тесты,
    README, деплой.
@@ -257,6 +353,6 @@ type Message = {
 ## Известные ограничения (в README)
 
 - Креды хранятся в браузере.
-- Несколько вкладок конкурируют за одну очередь уведомлений.
+- Одновременные записи двух вкладок в одном тике теряют одну из них (атом пишется целиком).
 - История до первого логина недоступна (кроме событий за последние 24 ч в очереди).
 - Только текстовые сообщения.

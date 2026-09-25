@@ -602,11 +602,11 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
 
 ### Task 11: [Final] Update documentation
 
-- [ ] дизайн-док: раскладка pages-first вместо `widgets/*` и `features/create-chat|
+- [x] дизайн-док: раскладка pages-first вместо `widgets/*` и `features/create-chat|
       send-message` (причина — `insignificant-slice`), `features/delete-chats`, очистка в
       `app`, `Chat.phone`, `shared/config` (`PERSIST_TTL`), синхронизация вкладок (таблица атомов),
       `attemptAt`/`SEND_TIMEOUT`, тексты ошибок create-chat, итог этапа 4 в «Этапах»
-- [ ] дизайн-док, задачи для этапа 5: раскладка уведомлений через `openChat`/`touchChat`/
+- [x] дизайн-док, задачи для этапа 5: раскладка уведомлений через `openChat`/`touchChat`/
       `addMessage`; дедупликация по `idMessage` с учётом гонки — `outgoingAPIMessageReceived`
       может прийти раньше ответа `sendMessage`, пока у сообщения ещё `local-*` id;
       `logout` по `401`; **polling только во вкладке-лидере** —
@@ -614,14 +614,15 @@ Persist — `withLocalStorage({ key, time: PERSIST_TTL, fromSnapshot })`; у
       одна вкладка разбирает очередь и пишет, остальные получают данные через
       синхронизацию `localStorage`; лидер закрылся — лок переходит к следующей. Убрать из
       «Известных ограничений» пункт «вкладки конкурируют за очередь»
-- [ ] `AGENTS.md`: точная семантика `insignificant-slice` (ссылка только из `app` — ок,
+      (➕ вместо него — ограничение «одновременные записи двух вкладок в одном тике»)
+- [x] `AGENTS.md`: точная семантика `insignificant-slice` (ссылка только из `app` — ок,
       `pages` не проверяются), pages-first, связка сущностей через фичу, очистка при
       логауте через `user-data-cleanup.ts`; change-хуки выполняются не синхронно
       (`notify()` в тестах); `withLocalStorage` по умолчанию вызывает `fromSnapshot` и
       после собственных записей — в нём только проверка формы; логаут не
       отменяет запросы в полёте — сверять клиент после `await`; `deferFetch`
-- [ ] README — если уже есть раздел о возможностях
-- [ ] переместить план в `docs/plans/completed/`
+- [x] README — если уже есть раздел о возможностях (➕ обновлены статус и «Структура»)
+- [x] переместить план в `docs/plans/completed/` (пропущено — план перемещает harness после всех фаз)
 
 ## Post-Completion
 
