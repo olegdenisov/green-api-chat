@@ -6,3 +6,9 @@
   border-top: rem(1px) solid var(--mantine-color-default-border);
   background: var(--mantine-color-body);
 }
+
+/* Aligns the round button with the bottom line of a one-row textarea (`--input-height-sm`). */
+.send {
+  flex-shrink: 0;
+  margin-bottom: rem(2px);
+}

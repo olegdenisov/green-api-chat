@@ -50,8 +50,17 @@ const OutgoingStatus = reatomComponent(
         </span>
       );
     }
-    if (message.status === "sending") return <span aria-label="Отправляется">…</span>;
-    return <span aria-label="Отправлено">✓</span>;
+    if (message.status === "sending")
+      return (
+        <span role="img" aria-label="Отправляется">
+          …
+        </span>
+      );
+    return (
+      <span role="img" aria-label="Отправлено">
+        ✓
+      </span>
+    );
   },
   "chatPage.OutgoingStatus",
 );

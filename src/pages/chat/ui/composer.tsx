@@ -1,7 +1,9 @@
-import { Button, Textarea } from "@mantine/core";
+import { ActionIcon, Textarea } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { bindField, reatomComponent } from "@reatom/react";
 import type { FormEvent, KeyboardEvent } from "react";
+
+import { IconSend } from "@/shared/ui";
 
 import { draftField, sendDraft } from "../model/draft";
 
@@ -40,9 +42,17 @@ export const Composer = reatomComponent(() => {
           sendDraft();
         })}
       />
-      <Button type="submit" disabled={blank}>
-        Отправить
-      </Button>
+      <ActionIcon
+        type="submit"
+        size={36}
+        radius="xl"
+        variant="filled"
+        aria-label="Отправить"
+        disabled={blank}
+        className={classes.send}
+      >
+        <IconSend size={18} />
+      </ActionIcon>
     </form>
   );
 }, "chatPage.Composer");

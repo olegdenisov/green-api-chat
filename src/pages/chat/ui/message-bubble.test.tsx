@@ -33,20 +33,20 @@ describe("MessageBubble", () => {
 
     expect(row()).toHaveAttribute("data-direction", "out");
     expect(screen.getByText("09:05")).toBeInTheDocument();
-    expect(screen.getByLabelText("Отправлено")).toHaveTextContent("✓");
+    expect(screen.getByRole("img", { name: "Отправлено" })).toHaveTextContent("✓");
   });
 
   it("shows an incoming message on the left without a status", () => {
     render(<MessageBubble message={{ ...outgoing, direction: "in", attemptAt: undefined }} />);
 
     expect(row()).toHaveAttribute("data-direction", "in");
-    expect(screen.queryByLabelText("Отправлено")).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Отправлено" })).not.toBeInTheDocument();
   });
 
   it("shows a sending message with an ellipsis", () => {
     render(<MessageBubble message={{ ...outgoing, status: "sending" }} />);
 
-    expect(screen.getByLabelText("Отправляется")).toHaveTextContent("…");
+    expect(screen.getByRole("img", { name: "Отправляется" })).toHaveTextContent("…");
     expect(screen.queryByRole("button", { name: "Повторить" })).not.toBeInTheDocument();
   });
 
@@ -65,11 +65,11 @@ describe("MessageBubble", () => {
     });
     const attemptAt = Date.now();
     render(<MessageBubble message={{ ...outgoing, status: "sending", attemptAt }} />);
-    expect(screen.getByLabelText("Отправляется")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Отправляется" })).toBeInTheDocument();
 
     // `act`: the timer's re-render is a state update outside React events.
     await act(() => vi.advanceTimersByTimeAsync(SEND_TIMEOUT - 1));
-    expect(screen.getByLabelText("Отправляется")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Отправляется" })).toBeInTheDocument();
 
     await act(() => vi.advanceTimersByTimeAsync(2));
     expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
