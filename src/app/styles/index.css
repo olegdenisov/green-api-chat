@@ -1,6 +1,8 @@
 /* Before the bundle mounts MantineProvider (which sets data-mantine-color-scheme), follow the
-   system scheme with CSS only: no inline script, so CSP script-src needs no exceptions. */
-html {
+   system scheme with CSS only: no inline script, so CSP script-src needs no exceptions.
+   Mantine's own `:root { color-scheme: var(--mantine-color-scheme) }` is invalid until its
+   variables are injected, and outranks a bare `html` rule: the attribute selector wins it back. */
+:root:not([data-mantine-color-scheme]) {
   color-scheme: light dark;
 }
 

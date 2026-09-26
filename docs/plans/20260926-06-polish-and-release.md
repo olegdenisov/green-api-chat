@@ -383,16 +383,17 @@
 
 ### Task 10: Verify acceptance criteria
 
-- [ ] вёрстка узнаваема как MAX в светлой и тёмной схеме, на широком и узком экране
+- [x] вёрстка узнаваема как MAX в светлой и тёмной схеме, на широком и узком экране
       (скриншоты `chrome-devtools`); нет вспышки светлого фона при загрузке в тёмной схеме
-- [ ] пустые состояния: нет чатов, чат не выбран, чат без сообщений
-- [ ] кнопки-иконки имеют доступные имена, фокус виден и не теряется, Lighthouse
-      accessibility без критичных замечаний
-- [ ] сценарий задания на реальном инстансе: логин → новый чат → отправка → ответ из
+      (проверено на `vite preview` с фейковыми кредами: логин, список, чат, все 4 комбинации схема/ширина; без атрибута `data-mantine-color-scheme` фон `body` тёмный. Найден и исправлен дефект: `html { color-scheme }` перебивался `:root` Mantine — теперь `:root:not([data-mantine-color-scheme])`)
+- [x] пустые состояния: нет чатов, чат не выбран, чат без сообщений (проверено скриншотами)
+- [x] кнопки-иконки имеют доступные имена, фокус виден и не теряется, Lighthouse
+      accessibility без критичных замечаний (Lighthouse a11y 100 в тёмной схеме на 375 px; имена и фокус покрыты тестами задач 2 и 7)
+- [x] (skipped - requires real instance credentials; manual, see Post-Completion) сценарий задания на реальном инстансе: логин → новый чат → отправка → ответ из
       Telegram виден в чате
-- [ ] полный прогон: `make check` и `make build`
-- [ ] покрытие: у каждого компонента `pages/chat/ui`, `pages/login/ui`, `shared/ui` есть
-      тест
+- [x] полный прогон: `make check` и `make build` (43 файла, 452 теста)
+- [x] покрытие: у каждого компонента `pages/chat/ui`, `pages/login/ui`, `shared/ui` есть
+      тест (chat-avatar, chat-list, chat-page, chat-window, composer, create-chat-form, empty-state, message-bubble, sidebar, login-page, app-title, icons — у всех свой `*.test.tsx`)
 
 ### Task 11: [Final] Update documentation
 
