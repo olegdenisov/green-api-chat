@@ -391,14 +391,32 @@ type ReceivedMessage = {
 
 ### Task 9: Verify acceptance criteria
 
-- [ ] входящее из Telegram появляется в чате; новый собеседник — новый чат (не выбран)
-- [ ] свои отправки не дублируются, в т.ч. при раннем `outgoingAPIMessageReceived` и
-      одинаковых текстах
-- [ ] исходящие с телефона видны в ленте
-- [ ] игнорируемые и «ядовитые» события удаляются из очереди
-- [ ] сеть → backoff и индикатор; `401` → логаут с тостом; логаут останавливает опрос
-- [ ] опрашивает одна вкладка
-- [ ] `make check` — зелёный
+- [x] входящее из Telegram появляется в чате; новый собеседник — новый чат (не выбран)
+      (automated coverage: `app.test.tsx` «starts polling after login and lists an incoming
+      chat without selecting it»; `apply-notification.test.ts` «creates the chat of a message
+      from a new sender without selecting it»; manual check skipped - not automatable)
+- [x] свои отправки не дублируются, в т.ч. при раннем `outgoingAPIMessageReceived` и
+      одинаковых текстах (automated coverage: `app.test.tsx` «keeps one sent message when the
+      API event outruns the sendMessage answer»; `apply-notification.test.ts` «matches two
+      same-text sends in order», «a repeated API event after matching adds nothing»;
+      `send-message.test.ts` «sendChatMessage after the polling matched the send»; manual check
+      skipped - not automatable)
+- [x] исходящие с телефона видны в ленте (automated coverage: ➕ `app.test.tsx` «shows a
+      message sent from the phone in the open chat as outgoing»; `apply-notification.test.ts`
+      «adds an outgoing phone message as sent»; manual check skipped - not automatable)
+- [x] игнорируемые и «ядовитые» события удаляются из очереди (automated coverage:
+      `poll.test.ts` «deletes an ignored notification without touching the data», «deletes a
+      notification the layout throws on and goes on»; `parse-notification.test.ts` «ignores» /
+      «returns null for a malformed body»)
+- [x] сеть → backoff и индикатор; `401` → логаут с тостом; логаут останавливает опрос
+      (automated coverage: `poll.test.ts` «backs off 1 s, 2 s, 4 s…», «logs out with a toast on
+      401 and stops»; ➕ `app.test.tsx` «shows the connection strip after network errors and
+      hides it on recovery», «logs out with a toast on 401 from polling», «stops polling on
+      logout»; `connection-indicator.test.tsx`; manual offline check skipped - not automatable)
+- [x] опрашивает одна вкладка (automated coverage: `receive-status.test.ts` «polls in one tab
+      only, the other waits as a follower», «hands the lock and the polling over…»; manual
+      two-tab check skipped - not automatable)
+- [x] `make check` — зелёный
 
 ### Task 10: [Final] Update documentation
 

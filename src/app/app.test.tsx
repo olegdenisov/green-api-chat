@@ -1,8 +1,8 @@
 import { notifications } from "@mantine/notifications";
 import { context } from "@reatom/core";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { activeChatIdAtom, chatsAtom, openChat } from "@/entities/chat";
 import { addMessage, messagesAtom } from "@/entities/message";
@@ -13,12 +13,14 @@ import { getSettingsResponse } from "@test/fixtures/green-api/get-settings";
 import { getStateInstanceResponse } from "@test/fixtures/green-api/get-state-instance";
 import { incomingTextMessage } from "@test/fixtures/green-api/incoming-text-message";
 import { outgoingApiMessage } from "@test/fixtures/green-api/outgoing-api-message";
+import { outgoingMessage } from "@test/fixtures/green-api/outgoing-message";
 import { sendMessageResponse } from "@test/fixtures/green-api/send-message";
 import {
   calledMethods,
   creds,
   deferFetch,
   fetchMock,
+  hangUntilAbort,
   respondByMethod,
   stubFetch,
 } from "@test/green-api";
@@ -186,6 +188,59 @@ describe("App", () => {
       expect(within(feed()).getAllByText("Hello")).toHaveLength(1);
       expect(within(feed()).getAllByLabelText("Отправлено")).toHaveLength(1);
       expect(within(chatList()).getAllByRole("button")).toHaveLength(1);
+    });
+
+    it("shows a message sent from the phone in the open chat as outgoing", async () => {
+      const chatId = outgoingMessage.senderData.chatId;
+      context.start(() => {
+        credentialsAtom.set(creds);
+        openChat({ chatId, title: "Василиса", lastMessageAt: 1 });
+      });
+      respondByMethod({
+        receiveNotification: [{ body: { receiptId: 1, body: outgoingMessage } }, "hang"],
+        deleteNotification: { body: deleteNotificationResponse },
+      });
+      render(<App />);
+      const feed = () => screen.getByRole("log", { name: "Сообщения" });
+
+      const text = outgoingMessage.messageData.textMessageData.textMessage;
+      const bubble = await within(feed()).findByText(text);
+      expect(bubble.closest("[data-direction]")).toHaveAttribute("data-direction", "out");
+      expect(within(feed()).getByLabelText("Отправлено")).toBeInTheDocument();
+      expect(within(chatList()).getAllByRole("button")).toHaveLength(1);
+    });
+
+    it("shows the connection strip after network errors and hides it on recovery", async () => {
+      vi.useFakeTimers();
+      try {
+        context.start(() => credentialsAtom.set(creds));
+        hangUntilAbort();
+        fetchMock
+          .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+          .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+          .mockResolvedValueOnce(new Response("null"));
+        render(<App />);
+        const strip = () => screen.queryByRole("status");
+
+        // First failure: a pause of 1 s, no strip yet.
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(strip()).toBeNull();
+
+        // Second failure: the strip appears, the next try is in 2 s.
+        await act(() => vi.advanceTimersByTimeAsync(1000));
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(strip()).toHaveTextContent("Соединение…");
+        await act(() => vi.advanceTimersByTimeAsync(1999));
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+
+        // An empty answer is a success: the strip hides, the next long poll is pending.
+        await act(() => vi.advanceTimersByTimeAsync(1));
+        expect(strip()).toBeNull();
+        expect(fetchMock).toHaveBeenCalledTimes(4);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("stops polling on logout", async () => {
