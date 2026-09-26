@@ -361,6 +361,9 @@ type ReceivedMessage = {
       "ga.polling", { signal }, wrap(async () => { setReceiveStatus("polling"); await
       pollNotifications(); })))`, отмена ожидания гасится по `isAbort`; нет `navigator.locks`
       — `pollNotifications()` сразу; отключение → `idle`
+      (статус `polling` ставит сам `pollNotifications()` — общий путь с фолбэком без лока;
+      после ревью: хук — на `pollingAtom` в `model/polling.ts`, статус `receiveStatusAtom` —
+      простой атом в `model/status.ts` без `setReceiveStatus`, цикл, закончившийся сам, → `idle`)
 - [x] сверить `withConnectHook` + `abortVar` по skill `reatom-async` и пробой: StrictMode
       (connect → disconnect → connect) не запускает два цикла; лок освобождается при отмене
 - [x] стаб `test/web-locks.ts`: `Object.defineProperty(navigator, "locks", { configurable:

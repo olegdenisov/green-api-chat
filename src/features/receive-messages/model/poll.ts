@@ -6,7 +6,7 @@ import { ApiError } from "@/shared/api";
 
 import { applyReceivedMessage } from "./apply-notification";
 import { parseNotification } from "./parse-notification";
-import { setReceiveStatus } from "./receive-status";
+import { receiveStatusAtom } from "./status";
 
 /** `receiveTimeout` of `receiveNotification`, seconds: the server holds the request that long. */
 export const RECEIVE_TIMEOUT_S = 20;
@@ -41,7 +41,7 @@ function applySafely(body: unknown): void {
  * Polls the notification queue until cancelled: `receiveNotification` → layout →
  * `deleteNotification` (ignored notifications are deleted too). Runs in the caller's frame and
  * stops on its `abortVar` cancellation, on logout (another client) and on `401`/`403` (toast +
- * `logout()`). Network/HTTP errors and timeouts — pauses with backoff, `reconnecting` after
+ * `logout()`). Network/HTTP errors, `469` and timeouts — pauses with backoff, `reconnecting` after
  * `RECONNECTING_AFTER` failures in a row. Never rejects on cancellation.
  */
 export async function pollNotifications(): Promise<void> {
@@ -50,7 +50,7 @@ export async function pollNotifications(): Promise<void> {
   const { controller, unsubscribe } = abortVar.subscribe();
   const options = { signal: controller.signal, timeout: RECEIVE_REQUEST_TIMEOUT };
   let failures = 0;
-  setReceiveStatus("polling");
+  receiveStatusAtom.set("polling");
   try {
     while (true) {
       try {
@@ -66,24 +66,22 @@ export async function pollNotifications(): Promise<void> {
           if (greenApiAtom() !== api) return;
         }
         failures = 0;
-        setReceiveStatus("polling");
-        continue;
+        receiveStatusAtom.set("polling");
       } catch (error) {
-        if (isAbort(error)) throw error;
-        if (greenApiAtom() !== api) return;
+        if (isAbort(error) || greenApiAtom() !== api) return;
         if (error instanceof ApiError && error.kind === "auth") {
           notifications.show(SESSION_EXPIRED_TOAST);
           logout();
           return;
         }
         failures += 1;
-        if (failures >= RECONNECTING_AFTER) setReceiveStatus("reconnecting");
+        if (failures >= RECONNECTING_AFTER) receiveStatusAtom.set("reconnecting");
+        await wrap(sleep(backoffDelay(failures)));
+        if (greenApiAtom() !== api) return;
       }
-      await wrap(sleep(backoffDelay(failures)));
-      if (greenApiAtom() !== api) return;
     }
   } catch (error) {
-    // Cancelled (unsubscribed, logout of the frame): a silent exit.
+    // Cancelled mid-pause (unsubscribed, logout of the frame): a silent exit.
     if (!isAbort(error)) throw error;
   } finally {
     unsubscribe();

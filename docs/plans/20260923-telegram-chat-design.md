@@ -91,7 +91,8 @@ Notification — событие инстанса (входящее/исходя�
 ### Решения по документации
 
 - `receiveNotification` вызываем с `receiveTimeout=20`.
-- Поддерживаем только личные чаты (`chatType === 'user'`); события из групп удаляем без обработки.
+- Поддерживаем только личные чаты (`chatType` `user` или отсутствует, `chatId` — положительное
+  целое); события из групп удаляем без обработки.
 - Имя чата: `username` из `checkAccount` или номер; при входящем — обновляем на `chatName`.
 - `setSettings` при логине — один запрос, только если есть что менять: включаем выключенные
   `incomingWebhook`/`outgoingMessageWebhook`/`outgoingAPIMessageWebhook` и очищаем непустой
@@ -127,7 +128,8 @@ src/
     delete-chats/      deleteChat (чат + история), deleteAllChats, DeleteChatButton
     receive-messages/  model: parseNotification (чистая), applyReceivedMessage (раскладка с
                        дедупликацией), pollNotifications (цикл, backoff), receiveStatusAtom
-                       (withConnectHook → Web Lock → цикл); ui: ReceiveMessages (безголовый,
+                       (статус, простой атом), pollingAtom (withConnectHook → Web Lock →
+                       цикл); ui: ReceiveMessages (безголовый,
                        рендерит app), ConnectionIndicator (полоса «Соединение…» в ChatPage)
   entities/
     session/   креды (credentialsAtom, persist), logout, greenApiAtom (клиент из кредов),
@@ -255,12 +257,14 @@ type Message = {
 
 Итог этапа 5 (`docs/plans/20260926-05-receive-messages.md`), слайс `features/receive-messages`.
 
-1. **Жизненный цикл — `withConnectHook` на `receiveStatusAtom`.** Подписчики — безголовый
-   `ReceiveMessages` (рендерит `app` рядом с `ChatPage`, т.е. только при кредах) и
-   `ConnectionIndicator`. Первый подписчик → `navigator.locks.request("ga.polling",
+1. **Жизненный цикл — `withConnectHook` на `pollingAtom`.** Подписчик — безголовый
+   `ReceiveMessages` (рендерит `app` рядом с `ChatPage`, т.е. только при кредах).
+   `ConnectionIndicator` читает `receiveStatusAtom` — простой атом без хука, опрос не
+   запускает. Первый подписчик → `navigator.locks.request("ga.polling",
    { signal }, wrap(() => pollNotifications()))`; сам промис `request` — через `wrap()`,
    отмена гасится по `isAbort`. Логаут → экран логина → подписчиков нет → отключение отменяет
-   ожидание лока, `wrap`/`sleep` и запросы цикла; лок переходит к следующей вкладке.
+   ожидание лока, `wrap`/`sleep` и запросы цикла; лок переходит к следующей вкладке. Цикл, закончившийся сам (кредов нет, логаут, `401`),
+   оставляет статус `idle`.
 2. **Лидер** — одна вкладка разбирает очередь и пишет в атомы, остальные (`follower`) получают
    данные через синхронизацию `localStorage`. Нет `navigator.locks` (jsdom, старые браузеры)
    — опрос без лока, каждая вкладка сама.
@@ -272,7 +276,8 @@ type Message = {
    `console.error`). Сбой `delete` вернёт то же событие — раскладка идемпотентна.
 4. **Ошибки**: отмена → тихий выход; `ApiError kind: "auth"` → тост «Сессия недействительна,
    войдите заново» + `logout()` (данные чистит хук `app/user-data-cleanup.ts`); прочее
-   (`network`, `http`, `TimeoutError`) → backoff `min(1 с · 2^(n−1), 30 с)`, после 2 сбоев
+   (`network`, `http`, `rate-limit`, `TimeoutError`) → backoff `min(1 с · 2^(n−1), 30 с)`
+   (потолок 30 с и для `469` — сознательно, см. «Известные ограничения»), после 2 сбоев
    подряд — статус `reconnecting`; успешный ответ — сброс, `polling`.
 5. **Разбор** (`parseNotification`, чистая функция): `incomingMessageReceived` → `in`,
    `outgoingMessageReceived` → `out`, `outgoingAPIMessageReceived` → `out` + `viaApi`; текст
@@ -401,5 +406,17 @@ type Message = {
 - Свои API-отправки сопоставляются с событиями по точному тексту: если сервер нормализует
   текст — дубль.
 - Запись лидера может затереть одновременную отправку в другой вкладке (сообщение вернётся
-  через API-событие).
+  через API-событие). Обратное тоже возможно: ведомая пишет `messagesAtom` (отправка, повтор)
+  до прихода `storage`-события от лидера и затирает только что полученное им сообщение —
+  потеря окончательная (уведомление уже удалено из очереди). Слияния по `storage` нет.
+- После `401` лидер вызывает `logout()` и сразу отпускает лок: ведомая может получить его
+  раньше `storage`-события о логауте и сделать ещё один запрос со старыми кредами — второй
+  тост «Сессия недействительна» (после обычного логаута — один лишний long poll).
+- Сопоставление с `failed` не ограничено по времени (событие может прийти через часы, если
+  приложение было закрыто): отправка того же текста другим API-клиентом этого инстанса
+  пометит настоящий `failed` отправленным.
+- Смена кредов X → Y без размонтирования экрана чата (в приложении недостижима: логаут
+  размонтирует экран) останавливает цикл, опрос возобновится только после переподписки.
+- `469` в опросе ждёт максимум 30 с, а не часы: лимиты Telegram касаются `checkAccount`, для
+  очереди уведомлений `469` не ожидается.
 - События очереди за последние 24 ч воссоздают удалённый чат и появляются при первом входе.

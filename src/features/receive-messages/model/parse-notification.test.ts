@@ -103,6 +103,27 @@ describe("parseNotification", () => {
     });
   });
 
+  it("leaves out a non-string chatName", () => {
+    const body = {
+      ...incomingTextMessage,
+      senderData: { ...incomingTextMessage.senderData, chatName: 42 },
+    };
+    const message = parseNotification(body);
+    expect(message).toMatchObject({ chatId: "10000000" });
+    expect(message).not.toHaveProperty("chatName");
+  });
+
+  describe("ignores a chatId that is not a positive integer", () => {
+    it.each([
+      ["zero", "0"],
+      ["a leading zero", "0123"],
+      ["an empty string", ""],
+    ])("%s", (_, chatId) => {
+      const senderData = { ...incomingTextMessage.senderData, chatId };
+      expect(parseNotification({ ...incomingTextMessage, senderData })).toBeNull();
+    });
+  });
+
   describe("returns null for a malformed body", () => {
     it.each([
       ["null", null],

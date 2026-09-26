@@ -7,7 +7,8 @@ import { calledMethods, creds, deferFetch, stubFetch } from "@test/green-api";
 import { render } from "@test/render";
 import { stubWebLocks } from "@test/web-locks";
 
-import { POLLING_LOCK, receiveStatusAtom } from "../model/receive-status";
+import { POLLING_LOCK } from "../model/polling";
+import { receiveStatusAtom } from "../model/status";
 import { ReceiveMessages } from "./receive-messages";
 
 /** Lets the pending promises settle without moving the fake clock. */

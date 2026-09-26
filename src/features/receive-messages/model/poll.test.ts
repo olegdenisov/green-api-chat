@@ -28,7 +28,7 @@ import {
   RECONNECTING_AFTER,
   SESSION_EXPIRED_TOAST,
 } from "./poll";
-import { receiveStatusAtom } from "./receive-status";
+import { receiveStatusAtom } from "./status";
 
 vi.mock("./apply-notification", async (importOriginal) => {
   const original = await importOriginal<typeof import("./apply-notification")>();
@@ -339,6 +339,81 @@ describe("pollNotifications: errors and status", () => {
       expect(messagesAtom()).toEqual({});
       expect(chatsAtom()).toEqual({});
       expect(calledMethods()).toEqual(["receiveNotification"]);
+    });
+  });
+
+  it("stops after a delete answered after logout", async () => {
+    const response = deferFetch();
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      const running = start();
+      await wrap(flush());
+      response.resolveNext(receiveNotificationResponse);
+      await wrap(flush());
+      expect(calledMethods()).toEqual(["receiveNotification", "deleteNotification"]);
+
+      logout();
+      notify();
+      response.resolveNext(deleteNotificationResponse);
+      await wrap(running);
+      await wrap(vi.advanceTimersByTimeAsync(BACKOFF_MAX));
+      expect(calledMethods()).toEqual(["receiveNotification", "deleteNotification"]);
+    });
+  });
+
+  it("an error after logout is not a session error: no toast, no second logout", async () => {
+    const show = vi.spyOn(notifications, "show");
+    const response = deferFetch();
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      const running = start();
+      await wrap(flush());
+
+      logout();
+      notify();
+      const logoutSpy = vi.spyOn(credentialsAtom, "set");
+      response.resolveNext({}, 401);
+      await wrap(running);
+      expect(show).not.toHaveBeenCalled();
+      expect(logoutSpy).not.toHaveBeenCalled();
+      await wrap(vi.advanceTimersByTimeAsync(BACKOFF_MAX));
+      expect(calledMethods()).toEqual(["receiveNotification"]);
+    });
+  });
+
+  it("stops after a pause if logged out during it", async () => {
+    const response = deferFetch();
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      const running = start();
+      await wrap(flush());
+      response.rejectNext(new TypeError("Failed to fetch"));
+      await wrap(vi.advanceTimersByTimeAsync(500));
+
+      logout();
+      notify();
+      await wrap(vi.advanceTimersByTimeAsync(BACKOFF_MAX));
+      await wrap(running);
+      expect(calledMethods()).toEqual(["receiveNotification"]);
+    });
+  });
+
+  it("logs out with a toast on 403 from deleteNotification and stops", async () => {
+    const show = vi.spyOn(notifications, "show");
+    const response = deferFetch();
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      const running = start();
+      await wrap(flush());
+      response.resolveNext(receiveNotificationResponse);
+      await wrap(flush());
+
+      response.resolveNext({}, 403);
+      await wrap(running);
+      expect(credentialsAtom()).toBeNull();
+      expect(show).toHaveBeenCalledWith(SESSION_EXPIRED_TOAST);
+      await wrap(vi.advanceTimersByTimeAsync(BACKOFF_MAX));
+      expect(calledMethods()).toEqual(["receiveNotification", "deleteNotification"]);
     });
   });
 });

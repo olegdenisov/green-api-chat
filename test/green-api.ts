@@ -34,14 +34,18 @@ export function respondJson(body: unknown, status = 200) {
   respond(JSON.stringify(body), status);
 }
 
+/** A request that never settles on its own and rejects with the signal's reason on abort. */
+function hang(init: RequestInit | undefined): Promise<Response> {
+  const signal = init?.signal;
+  if (signal?.aborted) return Promise.reject(signal.reason);
+  return new Promise((_resolve, reject) => {
+    signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
+  });
+}
+
 /** `fetch` never settles on its own and rejects with the signal's reason on abort. */
 export function hangUntilAbort() {
-  fetchMock.mockImplementation(
-    (_, init) =>
-      new Promise((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
-      }),
-  );
+  fetchMock.mockImplementation((_, init) => hang(init));
 }
 
 /** `"hang"` — the request never settles and rejects with the signal's reason on abort. */
@@ -94,11 +98,7 @@ export function respondByMethod(
       unexpected.push(method);
       throw new Error(`respondByMethod: unexpected GREEN-API method "${method}"`);
     }
-    if (response === "hang") {
-      return new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
-      });
-    }
+    if (response === "hang") return hang(init);
     return new Response(JSON.stringify(response.body), { status: response.status ?? 200 });
   });
 }
@@ -124,11 +124,15 @@ export function deferFetch() {
       new Promise<Response>((resolve, reject) => {
         const call: PendingCall = { resolve, reject };
         queue.push(call);
-        init?.signal?.addEventListener("abort", () => {
-          const index = queue.indexOf(call);
-          if (index !== -1) queue.splice(index, 1);
-          reject(init.signal!.reason);
-        });
+        init?.signal?.addEventListener(
+          "abort",
+          () => {
+            const index = queue.indexOf(call);
+            if (index !== -1) queue.splice(index, 1);
+            reject(init.signal!.reason);
+          },
+          { once: true },
+        );
       }),
   );
   function next(): PendingCall {

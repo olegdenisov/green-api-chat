@@ -46,12 +46,16 @@ export function stubWebLocks() {
         const queue = queues.get(name) ?? [];
         queues.set(name, queue);
         queue.push(request);
-        signal?.addEventListener("abort", () => {
-          const index = queue.indexOf(request);
-          if (index === -1) return; // Already granted: the signal no longer applies.
-          queue.splice(index, 1);
-          reject(signal.reason);
-        });
+        signal?.addEventListener(
+          "abort",
+          () => {
+            const index = queue.indexOf(request);
+            if (index === -1) return; // Already granted: the signal no longer applies.
+            queue.splice(index, 1);
+            reject(signal.reason);
+          },
+          { once: true },
+        );
         grantNext(name);
       });
     },

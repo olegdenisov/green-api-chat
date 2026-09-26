@@ -204,6 +204,21 @@ describe("applyReceivedMessage: matching API sends", () => {
     });
   });
 
+  it("ignores a pending send with the same text in another chat", () => {
+    context.start(() => {
+      const otherChatId = "20000000";
+      const other: Message = { ...outgoing("local-other", "sending"), chatId: otherChatId };
+      messagesAtom.set({ [otherChatId]: [other] });
+
+      applyReceivedMessage(apiEvent);
+
+      expect(messagesOf(otherChatId)).toEqual([other]);
+      expect(messagesOf()).toEqual([
+        expect.objectContaining({ id: "api-1", text: "ок", direction: "out", status: "sent" }),
+      ]);
+    });
+  });
+
   it("a phone send with the same text is added separately, the pending send is untouched", () => {
     context.start(() => {
       const sending = outgoing("local-1", "sending");

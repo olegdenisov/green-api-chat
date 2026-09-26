@@ -320,12 +320,39 @@ describe("request: timeout", () => {
   });
 
   it("rethrows the reason of an already aborted signal without fetching", async () => {
+    useFakeTimers();
     const controller = new AbortController();
     const reason = new DOMException("Aborted", "AbortError");
     controller.abort(reason);
 
     await expect(getWithTimeout(controller.signal)).rejects.toBe(reason);
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("times out while the body is being read (after the headers)", async () => {
+    useFakeTimers();
+    fetchMock.mockImplementation(async (_, init) => {
+      const response = new Response("{}");
+      // The body never arrives: reading stops only when the request's signal aborts.
+      vi.spyOn(response, "text").mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => reject(init.signal!.reason), {
+              once: true,
+            });
+          }),
+      );
+      return response;
+    });
+
+    const settled = getWithTimeout().catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    const error = await settled;
+    expect(error).not.toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ name: "TimeoutError" });
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("clears the timer and the abort listener after a response", async () => {

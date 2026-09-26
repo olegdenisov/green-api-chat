@@ -244,18 +244,26 @@ describe("App", () => {
     });
 
     it("stops polling on logout", async () => {
-      context.start(() => credentialsAtom.set(creds));
-      respondByMethod({ receiveNotification: "hang" });
-      const user = userEvent.setup();
-      render(<App />);
+      // Fake timers that still follow the real clock: waitFor and userEvent work as usual, and
+      // the test can jump past any backoff pause of a loop that survived the logout.
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        context.start(() => credentialsAtom.set(creds));
+        respondByMethod({ receiveNotification: "hang" });
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+        render(<App />);
 
-      await waitFor(() => expect(calledMethods()).toEqual(["receiveNotification"]));
-      await user.click(screen.getByRole("button", { name: "Выйти" }));
+        await waitFor(() => expect(calledMethods()).toEqual(["receiveNotification"]));
+        await user.click(screen.getByRole("button", { name: "Выйти" }));
 
-      expect(idInput()).toBeInTheDocument();
-      await waitFor(() => expect(fetchMock.mock.calls[0]?.[1]?.signal?.aborted).toBe(true));
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      expect(calledMethods()).toEqual(["receiveNotification"]);
+        expect(idInput()).toBeInTheDocument();
+        await waitFor(() => expect(fetchMock.mock.calls[0]?.[1]?.signal?.aborted).toBe(true));
+        // Longer than the longest backoff pause (BACKOFF_MAX, 30 s).
+        await act(() => vi.advanceTimersByTimeAsync(60_000));
+        expect(calledMethods()).toEqual(["receiveNotification"]);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("logs out with a toast on 401 from polling", async () => {

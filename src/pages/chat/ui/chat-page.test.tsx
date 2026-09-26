@@ -32,7 +32,8 @@ describe("ChatPage", () => {
   });
 
   it("creates a chat by number: it appears in the list and opens", async () => {
-    respondByMethod({ checkAccount: { body: checkAccountExists }, receiveNotification: "hang" });
+    // ChatPage alone does not poll: a receiveNotification call would fail the test.
+    respondByMethod({ checkAccount: { body: checkAccountExists } });
     const user = userEvent.setup();
     const { frame } = render(<ChatPage />);
     frame.run(() => credentialsAtom.set(creds));

@@ -263,6 +263,53 @@ describe("sendChatMessage after the polling matched the send", () => {
     });
   });
 
+  it("a failed answer for an already matched message keeps it sent", async () => {
+    const response = deferFetch();
+    await context.start(async () => {
+      setup();
+      const pending = sendChatMessage(friend.chatId, "Hello");
+      const [sending] = messagesOf(friend.chatId);
+      await wrap(vi.waitFor(() => expect(response.pending()).toBe(1)));
+
+      updateMessage(friend.chatId, sending!.id, {
+        id: sendMessageResponse.idMessage,
+        status: "sent",
+      });
+      response.rejectNext(new TypeError("Failed to fetch"));
+      await wrap(pending);
+
+      expect(messagesOf(friend.chatId)).toEqual([
+        { ...sending, id: sendMessageResponse.idMessage, status: "sent" },
+      ]);
+    });
+  });
+
+  it("a send timeout for an already matched message keeps it sent", async () => {
+    vi.useFakeTimers();
+    try {
+      hangUntilAbort();
+      await context.start(async () => {
+        setup();
+        const pending = sendChatMessage(friend.chatId, "Hello");
+        const [sending] = messagesOf(friend.chatId);
+        await wrap(vi.advanceTimersByTimeAsync(0));
+
+        updateMessage(friend.chatId, sending!.id, {
+          id: sendMessageResponse.idMessage,
+          status: "sent",
+        });
+        await wrap(vi.advanceTimersByTimeAsync(SEND_TIMEOUT));
+        await wrap(pending);
+
+        expect(messagesOf(friend.chatId)).toEqual([
+          { ...sending, id: sendMessageResponse.idMessage, status: "sent" },
+        ]);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("drops the local message whose idMessage another message already has", async () => {
     const response = deferFetch();
     await context.start(async () => {

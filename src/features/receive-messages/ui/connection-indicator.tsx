@@ -1,11 +1,14 @@
 import { Loader, Text } from "@mantine/core";
 import { reatomComponent } from "@reatom/react";
 
-import { receiveStatusAtom } from "../model/receive-status";
+import { receiveStatusAtom } from "../model/status";
 
 import classes from "./connection-indicator.module.css";
 
-/** «Соединение…» strip, shown only while the leader tab keeps failing to poll. */
+/**
+ * «Соединение…» strip, shown only while the leader tab keeps failing to poll. Reads the plain
+ * status atom: rendering it does not start the polling.
+ */
 export const ConnectionIndicator = reatomComponent(() => {
   if (receiveStatusAtom() !== "reconnecting") return null;
   return (
