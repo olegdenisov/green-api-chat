@@ -44,7 +44,8 @@ export function hangUntilAbort() {
   );
 }
 
-type MethodResponse = { body: unknown; status?: number };
+/** `"hang"` — the request never settles and rejects with the signal's reason on abort. */
+type MethodResponse = { body: unknown; status?: number } | "hang";
 
 /**
  * GREEN-API method name from a request URL: `.../waInstance{id}/{method}/{token}[/{suffix}]`
@@ -66,7 +67,8 @@ export function calledUrls(): string[] {
 
 /**
  * Answers by the GREEN-API method name from the URL: `body` as JSON with `status` (200 by
- * default). A method missing from `responses` rejects the request and fails the test when it
+ * default); `"hang"` keeps the request pending until aborted (the notification polling of a
+ * rendered chat screen: `receiveNotification: "hang"`). A method missing from `responses` rejects the request and fails the test when it
  * finishes — the client would otherwise turn the rejection into `ApiError("network")`.
  * Call inside a test (uses `onTestFinished`).
  */
@@ -77,12 +79,17 @@ export function respondByMethod(responses: Partial<Record<string, MethodResponse
       throw new Error(`respondByMethod: unexpected GREEN-API calls: ${unexpected.join(", ")}`);
     }
   });
-  fetchMock.mockImplementation(async (input) => {
+  fetchMock.mockImplementation(async (input, init) => {
     const method = methodOf(input);
     const response = responses[method];
     if (!response) {
       unexpected.push(method);
       throw new Error(`respondByMethod: unexpected GREEN-API method "${method}"`);
+    }
+    if (response === "hang") {
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+      });
     }
     return new Response(JSON.stringify(response.body), { status: response.status ?? 200 });
   });

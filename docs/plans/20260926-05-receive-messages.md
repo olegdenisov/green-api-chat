@@ -357,20 +357,23 @@ type ReceivedMessage = {
 - Create: `src/features/receive-messages/model/receive-status.test.ts`
 - Create: `test/web-locks.ts` (стаб `navigator.locks`)
 
-- [ ] `withConnectHook` на `receiveStatusAtom`: `follower` → `wrap(navigator.locks.request(
+- [x] `withConnectHook` на `receiveStatusAtom`: `follower` → `wrap(navigator.locks.request(
       "ga.polling", { signal }, wrap(async () => { setReceiveStatus("polling"); await
       pollNotifications(); })))`, отмена ожидания гасится по `isAbort`; нет `navigator.locks`
       — `pollNotifications()` сразу; отключение → `idle`
-- [ ] сверить `withConnectHook` + `abortVar` по skill `reatom-async` и пробой: StrictMode
+- [x] сверить `withConnectHook` + `abortVar` по skill `reatom-async` и пробой: StrictMode
       (connect → disconnect → connect) не запускает два цикла; лок освобождается при отмене
-- [ ] стаб `test/web-locks.ts`: `Object.defineProperty(navigator, "locks", { configurable:
+- [x] стаб `test/web-locks.ts`: `Object.defineProperty(navigator, "locks", { configurable:
       true, value })`, удаление в `onTestFinished`; очередь по имени; колбэк вызывается
       **асинхронно** (микротаском), как настоящий API; отмена по `signal` до выдачи лока
-- [ ] тесты: подписка запускает опрос; отписка останавливает (запросов нет, лок свободен);
+- [x] тесты: подписка запускает опрос; отписка останавливает (запросов нет, лок свободен);
       два кадра `context.start()` со стабом — опрашивает один, второй `follower`; отписка
       лидера — лок и опрос переходят ко второму; без `navigator.locks` — опрос идёт; в тестах
       явно отписываться, чтобы цикл не утёк при fake timers
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный
+- [x] ➕ `respondByMethod`: ответ `"hang"` (запрос висит до отмены) — рендер экрана чата теперь
+      запускает опрос; `app.test.tsx`, `chat-page.test.tsx` — `receiveNotification: "hang"`
+- [x] ➕ StrictMode-проба рендером: `ui/receive-messages.test.tsx`
 
 ### Task 8: Интеграционные тесты `App`
 

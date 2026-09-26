@@ -45,6 +45,7 @@ describe("App", () => {
     respondByMethod({
       getStateInstance: { body: getStateInstanceResponse },
       getSettings: { body: getSettingsResponse },
+      receiveNotification: "hang",
     });
     const user = userEvent.setup();
     render(<App />);
@@ -69,6 +70,7 @@ describe("App", () => {
     respondByMethod({
       getStateInstance: { body: getStateInstanceResponse },
       getSettings: { body: getSettingsResponse },
+      receiveNotification: "hang",
     });
     // A previous session left a chat with a message.
     context.start(() => {
