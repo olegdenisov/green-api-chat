@@ -44,10 +44,10 @@ const Feed = reatomComponent(() => {
           const day = new Date(message.timestamp).toDateString();
           const newDay = day !== lastDay;
           lastDay = day;
-          const label = formatDayLabel(message.timestamp, now);
+          const label = newDay ? formatDayLabel(message.timestamp, now) : undefined;
           return (
             <Fragment key={message.id}>
-              {newDay && (
+              {label !== undefined && (
                 // aria-label duplicates the visible text: some screen readers don't announce
                 // the content of a role="separator" element.
                 <div className={classes.day} role="separator" aria-label={label}>

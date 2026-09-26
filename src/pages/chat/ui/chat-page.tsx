@@ -35,9 +35,9 @@ export const ChatPage = reatomComponent(() => {
     const active = document.activeElement;
     if (active && active !== document.body) return;
     const root = rootRef.current;
-    const row = Array.from(root?.querySelectorAll<HTMLElement>("nav [data-chat-id]") ?? []).find(
-      (element) => element.dataset.chatId === left,
-    );
+    // Quoted attribute value: only `"` and `\` need escaping (jsdom has no `CSS.escape`).
+    const value = left.replace(/["\\]/g, "\\$&");
+    const row = root?.querySelector<HTMLElement>(`nav [data-chat-id="${value}"]`);
     (row ?? root?.querySelector<HTMLElement>("nav"))?.focus();
   }, [chatId]);
 

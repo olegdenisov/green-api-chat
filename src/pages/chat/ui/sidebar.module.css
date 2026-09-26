@@ -35,7 +35,7 @@
   flex: 1;
   overflow-y: auto;
 
-  /* Focused by code only (fallback target after "back"), not a tab stop. */
+  /* Focused by code only (fallback target when the left chat's row is gone — delete), not a tab stop. */
   &:focus {
     outline: none;
   }

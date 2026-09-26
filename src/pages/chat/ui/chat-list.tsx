@@ -32,7 +32,7 @@ export const ChatList = reatomComponent(() => {
               type="button"
               className={classes.item}
               data-chat-id={chat.chatId}
-              data-active={active ? "true" : undefined}
+              data-active={active || undefined}
               aria-current={active ? "true" : undefined}
               onClick={wrap(() => activeChatIdAtom.set(chat.chatId))}
             >

@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from "react";
 
-export type IconProps = Omit<SVGProps<SVGSVGElement>, "children" | "width" | "height"> & {
+type IconProps = Omit<SVGProps<SVGSVGElement>, "children" | "width" | "height"> & {
   /** Side of the square icon, px. */
   size?: number;
 };
