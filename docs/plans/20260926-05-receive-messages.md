@@ -276,15 +276,15 @@ type ReceivedMessage = {
 - Modify: `src/app/app.tsx`, `src/app/app.test.tsx`
 - Modify: `src/pages/chat/ui/chat-page.tsx`, `chat-page.module.css`, `chat-page.test.tsx`
 
-- [ ] `receiveStatusAtom` (`"idle"` по умолчанию) и `setReceiveStatus`; хука пока нет
-- [ ] `ReceiveMessages` — `reatomComponent`, читает `receiveStatusAtom()`, рендерит `null`;
+- [x] `receiveStatusAtom` (`"idle"` по умолчанию) и `setReceiveStatus`; хука пока нет
+- [x] `ReceiveMessages` — `reatomComponent`, читает `receiveStatusAtom()`, рендерит `null`;
       `Screen` в `app.tsx` рендерит его рядом с `ChatPage`
-- [ ] `ConnectionIndicator` — полоса «Соединение…» (Mantine `Loader` + текст,
+- [x] `ConnectionIndicator` — полоса «Соединение…» (Mantine `Loader` + текст,
       `role="status"`) только в `reconnecting`; в `ChatPage` над колонками (видна и на узком
       экране в обоих режимах)
-- [ ] тесты индикатора: скрыт в `idle`/`follower`/`polling`, виден в `reconnecting`
+- [x] тесты индикатора: скрыт в `idle`/`follower`/`polling`, виден в `reconnecting`
       (статус — через `frame.run(() => setReceiveStatus(...))`)
-- [ ] `make check` — зелёный, включая steiger (у слайса два потребителя)
+- [x] `make check` — зелёный, включая steiger (у слайса два потребителя)
 
 ### Task 4: Парсер уведомлений
 

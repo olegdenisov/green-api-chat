@@ -6,6 +6,7 @@ import "./styles/index.css";
 import { reatomComponent } from "@reatom/react";
 
 import { credentialsAtom } from "@/entities/session";
+import { ReceiveMessages } from "@/features/receive-messages";
 import { ChatPage } from "@/pages/chat";
 import { LoginPage } from "@/pages/login";
 
@@ -15,9 +16,18 @@ import { UiProvider } from "./providers/ui-provider";
 import "./user-data-cleanup";
 
 // Two screens, no router: the chat opens as soon as credentials are saved.
+// Receiving runs only with credentials: ReceiveMessages subscribes to the polling status.
 // Kept here, not in an app/ui folder: steiger's fsd/no-ui-in-app forbids it.
 const Screen = reatomComponent(
-  () => (credentialsAtom() ? <ChatPage /> : <LoginPage />),
+  () =>
+    credentialsAtom() ? (
+      <>
+        <ReceiveMessages />
+        <ChatPage />
+      </>
+    ) : (
+      <LoginPage />
+    ),
   "app.Screen",
 );
 

@@ -27,6 +27,8 @@ describe("ChatPage", () => {
     expect(screen.getByText("Создайте чат по номеру телефона")).toBeInTheDocument();
     expect(screen.getByText("Выберите чат или создайте новый")).toBeInTheDocument();
     expect(pageRoot()).toHaveAttribute("data-view", "list");
+    // Polling is idle: no connection strip.
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("creates a chat by number: it appears in the list and opens", async () => {

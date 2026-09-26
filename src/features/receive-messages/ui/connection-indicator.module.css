@@ -1,0 +1,16 @@
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  border-bottom: rem(1px) solid var(--mantine-color-default-border);
+
+  @mixin light {
+    background: var(--mantine-color-yellow-0);
+  }
+
+  @mixin dark {
+    background: var(--mantine-color-dark-6);
+  }
+}

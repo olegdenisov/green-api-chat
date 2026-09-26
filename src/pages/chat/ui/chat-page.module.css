@@ -1,6 +1,13 @@
+.root {
+  display: flex;
+  height: 100dvh;
+  flex-direction: column;
+}
+
 .page {
   display: grid;
-  height: 100dvh;
+  min-height: 0;
+  flex: 1;
   grid-template-columns: rem(320px) minmax(0, 1fr);
 }
 

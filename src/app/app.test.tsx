@@ -37,6 +37,8 @@ describe("App", () => {
 
     expect(chatStub()).toBeInTheDocument();
     expect(screen.queryByLabelText("idInstance")).not.toBeInTheDocument();
+    // ReceiveMessages renders nothing; no connection strip while polling is not failing.
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("opens the chat after login and returns to an empty form after logout", async () => {
