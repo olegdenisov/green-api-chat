@@ -3,6 +3,7 @@ import { abortVar, action, isAbort, wrap } from "@reatom/core";
 import { touchChat } from "@/entities/chat";
 import {
   addMessage,
+  hasMessage,
   isSendingStale,
   messagesAtom,
   removeMessage,
@@ -54,7 +55,7 @@ async function deliver(attempt: Attempt): Promise<void> {
     const sentId = typeof idMessage === "string" && idMessage !== "" ? idMessage : id;
     // The polling already matched this send's event with another local message of the same
     // text: that one is this message now, so drop the duplicate instead of repeating the id.
-    if (sentId !== id && messagesAtom()[chatId]?.some((message) => message.id === sentId)) {
+    if (sentId !== id && hasMessage(chatId, sentId)) {
       removeMessage(chatId, id);
       return;
     }

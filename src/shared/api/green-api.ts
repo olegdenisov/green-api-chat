@@ -19,11 +19,6 @@ export type RequestOptions = {
   timeout?: number;
 };
 
-/** Only the transport options: `receiveTimeout` and the like stay out of `request()`. */
-function transport(options: RequestOptions | undefined): Pick<RequestParams, "signal" | "timeout"> {
-  return { signal: options?.signal, timeout: options?.timeout };
-}
-
 export type ReceiveNotificationOptions = RequestOptions & {
   /** Long-polling timeout, seconds (server default: 5). */
   receiveTimeout?: number;
@@ -49,6 +44,11 @@ export type GreenApi = {
     options?: RequestOptions,
   ): Promise<DeleteNotificationResponse>;
 };
+
+/** Only the transport options: `receiveTimeout` and the like stay out of `request()`. */
+function transport(options: RequestOptions | undefined): Pick<RequestParams, "signal" | "timeout"> {
+  return { signal: options?.signal, timeout: options?.timeout };
+}
 
 function isRateLimitExceeded(response: CheckAccountResponse): boolean {
   return (

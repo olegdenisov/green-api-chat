@@ -25,7 +25,6 @@ import {
   BACKOFF_MAX,
   pollNotifications,
   RECEIVE_REQUEST_TIMEOUT,
-  RECONNECTING_AFTER,
   SESSION_EXPIRED_TOAST,
 } from "./poll";
 import { receiveStatusAtom } from "./status";
@@ -232,7 +231,6 @@ describe("pollNotifications: errors and status", () => {
       }
 
       await wrap(failAndWait(1000));
-      expect(RECONNECTING_AFTER).toBe(2);
       expect(receiveStatusAtom()).toBe("polling");
       await wrap(failAndWait(2000));
       expect(receiveStatusAtom()).toBe("reconnecting");

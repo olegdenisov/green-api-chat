@@ -51,22 +51,23 @@ export function hangUntilAbort() {
 /** `"hang"` — the request never settles and rejects with the signal's reason on abort. */
 type MethodResponse = { body: unknown; status?: number } | "hang";
 
+function urlOf(input: Parameters<typeof fetch>[0]): string {
+  return input instanceof Request ? input.url : String(input);
+}
+
 /**
  * GREEN-API method name from a request URL: `.../waInstance{id}/{method}/{token}[/{suffix}]`
  * (`deleteNotification` has the `receiptId` after the token).
  */
 function methodOf(input: Parameters<typeof fetch>[0]): string {
-  const url = input instanceof Request ? input.url : String(input);
-  const segments = new URL(url).pathname.split("/");
+  const segments = new URL(urlOf(input)).pathname.split("/");
   const instance = segments.findIndex((segment) => segment.startsWith("waInstance"));
   return instance === -1 ? "" : (segments[instance + 1] ?? "");
 }
 
 /** URLs of the requests made so far, in order. */
 export function calledUrls(): string[] {
-  return fetchMock.mock.calls.map(([input]) =>
-    input instanceof Request ? input.url : String(input),
-  );
+  return fetchMock.mock.calls.map(([input]) => urlOf(input));
 }
 
 /**

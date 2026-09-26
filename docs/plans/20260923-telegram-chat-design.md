@@ -137,7 +137,7 @@ src/
     chat/      Chat, chatsAtom, activeChatIdAtom, сортировка, openChat/receiveChat/touchChat/
                removeChat
     message/   Message, messagesAtom по chatId, addMessage/updateMessage/removeMessage, SEND_TIMEOUT,
-               isSendingStale/sendingStaleAt
+               isSendingStale/sendingStaleAt, hasMessage
   shared/
     api/       клиент GREEN-API (fetch, типы, ApiError, опции { signal, timeout })
     config/    PERSIST_TTL (10 лет) — для session, chat, message

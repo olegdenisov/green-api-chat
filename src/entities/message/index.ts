@@ -1,6 +1,7 @@
 export {
   addMessage,
   clearMessages,
+  hasMessage,
   isSendingStale,
   messagesAtom,
   removeChatMessages,

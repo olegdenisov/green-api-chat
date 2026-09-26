@@ -9,13 +9,13 @@ import { parseNotification } from "./parse-notification";
 import { receiveStatusAtom } from "./status";
 
 /** `receiveTimeout` of `receiveNotification`, seconds: the server holds the request that long. */
-export const RECEIVE_TIMEOUT_S = 20;
-/** Client-side timeout of one request, ms: above `RECEIVE_TIMEOUT_S` with a margin. */
+const RECEIVE_TIMEOUT_SECONDS = 20;
+/** Client-side timeout of one request, ms: above `RECEIVE_TIMEOUT_SECONDS` with a margin. */
 export const RECEIVE_REQUEST_TIMEOUT = 30_000;
 /** The longest pause between failed requests, ms. */
 export const BACKOFF_MAX = 30_000;
 /** Failed requests in a row after which the status becomes `reconnecting`. */
-export const RECONNECTING_AFTER = 2;
+const RECONNECTING_AFTER = 2;
 
 export const SESSION_EXPIRED_TOAST = {
   color: "red",
@@ -23,7 +23,7 @@ export const SESSION_EXPIRED_TOAST = {
 };
 
 /** Pause after the `failures`-th failed request in a row: 1 s, 2 s, 4 s… up to `BACKOFF_MAX`. */
-export function backoffDelay(failures: number): number {
+function backoffDelay(failures: number): number {
   return Math.min(1000 * 2 ** (failures - 1), BACKOFF_MAX);
 }
 
@@ -55,7 +55,7 @@ export async function pollNotifications(): Promise<void> {
     while (true) {
       try {
         const notification = await wrap(
-          api.receiveNotification({ ...options, receiveTimeout: RECEIVE_TIMEOUT_S }),
+          api.receiveNotification({ ...options, receiveTimeout: RECEIVE_TIMEOUT_SECONDS }),
         );
         // Logout does not cancel requests in flight: drop the answer for the old session.
         if (greenApiAtom() !== api) return;

@@ -88,6 +88,11 @@ export function isSendingStale(message: Message, now: number): boolean {
   );
 }
 
+/** Whether the chat has a message with this id. Reads `messagesAtom`: call it in a frame. */
+export function hasMessage(chatId: string, id: string): boolean {
+  return messagesAtom()[chatId]?.some((message) => message.id === id) ?? false;
+}
+
 /** Appends the message to its chat. */
 export const addMessage = action((message: Message) => {
   messagesAtom.set((messages) => ({
@@ -101,17 +106,17 @@ export const addMessage = action((message: Message) => {
  * is never created, so a late answer does not bring back a deleted history.
  */
 export const updateMessage = action((chatId: string, id: string, patch: MessagePatch) => {
-  const list = messagesAtom()[chatId];
-  if (!list?.some((message) => message.id === id)) return;
-  const next = list.map((message) => (message.id === id ? { ...message, ...patch } : message));
+  if (!hasMessage(chatId, id)) return;
+  const next = (messagesAtom()[chatId] ?? []).map((message) =>
+    message.id === id ? { ...message, ...patch } : message,
+  );
   messagesAtom.set((messages) => ({ ...messages, [chatId]: next }));
 }, "message.update");
 
 /** Removes the message by id. Unknown chat or id — no-op: the chat key is never created. */
 export const removeMessage = action((chatId: string, id: string) => {
-  const list = messagesAtom()[chatId];
-  if (!list?.some((message) => message.id === id)) return;
-  const next = list.filter((message) => message.id !== id);
+  if (!hasMessage(chatId, id)) return;
+  const next = (messagesAtom()[chatId] ?? []).filter((message) => message.id !== id);
   messagesAtom.set((messages) => ({ ...messages, [chatId]: next }));
 }, "message.remove");
 

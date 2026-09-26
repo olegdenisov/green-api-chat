@@ -1,7 +1,13 @@
 import { action } from "@reatom/core";
 
 import { receiveChat, touchChat } from "@/entities/chat";
-import { addMessage, messagesAtom, updateMessage, type Message } from "@/entities/message";
+import {
+  addMessage,
+  hasMessage,
+  messagesAtom,
+  updateMessage,
+  type Message,
+} from "@/entities/message";
 
 import type { ReceivedMessage } from "./parse-notification";
 
@@ -28,10 +34,9 @@ export const applyReceivedMessage = action((message: ReceivedMessage) => {
   const { chatId, chatName, id, text, direction, viaApi, timestamp } = message;
   receiveChat({ chatId, title: chatName, timestamp });
 
-  const list = messagesAtom()[chatId] ?? [];
-  if (!list.some((item) => item.id === id)) {
+  if (!hasMessage(chatId, id)) {
     // Only API events are matched: a phone send with the same text is another message.
-    const pending = viaApi ? findPendingSend(list, text) : undefined;
+    const pending = viaApi ? findPendingSend(messagesAtom()[chatId] ?? [], text) : undefined;
     if (pending) {
       updateMessage(chatId, pending.id, { id, status: "sent" });
     } else {

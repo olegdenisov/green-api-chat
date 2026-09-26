@@ -16,7 +16,8 @@ import { UiProvider } from "./providers/ui-provider";
 import "./user-data-cleanup";
 
 // Two screens, no router: the chat opens as soon as credentials are saved.
-// Receiving runs only with credentials: ReceiveMessages subscribes to the polling status.
+// Receiving runs only with credentials: ReceiveMessages subscribes to `pollingAtom`, so the
+// polling lives while the chat screen is shown.
 // Kept here, not in an app/ui folder: steiger's fsd/no-ui-in-app forbids it.
 const Screen = reatomComponent(
   () =>

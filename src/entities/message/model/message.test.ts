@@ -4,6 +4,7 @@ import { describe, expect, it, onTestFinished, vi } from "vitest";
 import {
   addMessage,
   clearMessages,
+  hasMessage,
   isSendingStale,
   type Message,
   messagesAtom,
@@ -103,6 +104,15 @@ describe("message", () => {
         expect(messagesAtom()).toBe(before);
         expect("404" in messagesAtom()).toBe(false);
       });
+    });
+  });
+
+  it("hasMessage finds a message by chat and id", () => {
+    context.start(() => {
+      addMessage(hello);
+      expect(hasMessage(hello.chatId, hello.id)).toBe(true);
+      expect(hasMessage(hello.chatId, "404")).toBe(false);
+      expect(hasMessage("404", hello.id)).toBe(false);
     });
   });
 

@@ -192,7 +192,7 @@ type ReceivedMessage = {
   `finally`), каждый `await` — через `wrap()`.
 - Клиент — `greenApiAtom()` на входе; нет — выход. После каждого `await` сверять, что клиент
   тот же (логаут посреди запроса), иначе выход без записи.
-- `receiveNotification({ receiveTimeout: RECEIVE_TIMEOUT_S, signal, timeout:
+- `receiveNotification({ receiveTimeout: RECEIVE_TIMEOUT_SECONDS, signal, timeout:
   RECEIVE_REQUEST_TIMEOUT })`.
 - `null` → сразу следующий запрос.
 - Событие → `parseNotification` → при `ReceivedMessage` — `applyReceivedMessage` (исключение
@@ -207,8 +207,9 @@ type ReceivedMessage = {
     RECONNECTING_AFTER` — статус `reconnecting`; пауза `min(1000 * 2 ** (failures - 1),
     BACKOFF_MAX)` через `await wrap(sleep(ms))`; успешный ответ — `failures = 0`, статус
     `polling`.
-- Константы экспортируются для тестов: `RECEIVE_TIMEOUT_S = 20`,
-  `RECEIVE_REQUEST_TIMEOUT = 30_000`, `BACKOFF_MAX = 30_000`, `RECONNECTING_AFTER = 2`.
+- Константы: `RECEIVE_TIMEOUT_SECONDS = 20`, `RECEIVE_REQUEST_TIMEOUT = 30_000`,
+  `BACKOFF_MAX = 30_000`, `RECONNECTING_AFTER = 2`; экспортируются только те, что нужны
+  тестам (`RECEIVE_REQUEST_TIMEOUT`, `BACKOFF_MAX`).
 
 ### Статус (`receiveStatusAtom`, `receiveMessages.status`)
 
