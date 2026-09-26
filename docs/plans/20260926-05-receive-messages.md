@@ -334,21 +334,21 @@ type ReceivedMessage = {
 - Create: `src/features/receive-messages/model/poll.ts`
 - Create: `src/features/receive-messages/model/poll.test.ts`
 
-- [ ] `pollNotifications()` по «Цикл»: кадр вызывающего, `abortVar`, `wrap`, `timeout`,
+- [x] `pollNotifications()` по «Цикл»: кадр вызывающего, `abortVar`, `wrap`, `timeout`,
       backoff, сверка клиента, статус через `setReceiveStatus`
-- [ ] `401`/`403` → тост + `logout()`; отмена — тихий выход; исключение раскладки —
+- [x] `401`/`403` → тост + `logout()`; отмена — тихий выход; исключение раскладки —
       `console.error` и удаление события
-- [ ] тесты (`respondByMethod`/`deferFetch`, fake timers; запуск в `context.start()` через
+- [x] тесты (`respondByMethod`/`deferFetch`, fake timers; запуск в `context.start()` через
       экшен с отменой по `abortVar`): `null` → повтор; событие → раскладка →
       `deleteNotification` с тем же `receiptId`; игнорируемое — тоже удаляется; сбой `delete`
       → повтор того же события без дубля; «ядовитое» событие (раскладка бросает) удаляется,
       цикл идёт дальше
-- [ ] тесты ошибок и статуса: сеть → паузы 1 с, 2 с, 4 с… до 30 с; после
+- [x] тесты ошибок и статуса: сеть → паузы 1 с, 2 с, 4 с… до 30 с; после
       `RECONNECTING_AFTER` сбоев — `reconnecting`, после успеха — `polling` и сброс паузы;
       таймаут запроса → как сетевая; `401` → логаут + тост (`vi.spyOn(notifications,
       "show")`); отмена посреди запроса и посреди паузы → запросов больше нет; логаут посреди
       запроса → ответ не раскладывается
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный
 
 ### Task 7: Лидерство и запуск через `withConnectHook`
 
