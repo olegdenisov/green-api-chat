@@ -140,7 +140,9 @@
   обработчик «Назад» в `ChatWindow` получает колбэк от `ChatPage` или `ChatPage` следит за
   переходом `activeChatId` X → `null` — выбрать при реализации, проще — колбэк.
 - **Deploy** — `vercel.json`: `framework: "vite"` (сборка и `dist` — из пресета),
-  `installCommand` — только если проверка pnpm 12 этого требует; `headers` для всех путей:
+  `installCommand` и `buildCommand` — оба с `corepack enable &&` (пресет Vercel ставит pnpm
+  9/10, а не 12) — не проверено на реальном деплое, альтернатива в «Риски»; `headers` для
+  всех путей:
   `Content-Security-Policy` — `default-src 'self'`, `script-src 'self'`, `connect-src
   https:` (`apiUrl` задаёт пользователь), `style-src 'self' 'unsafe-inline'` (Mantine
   вставляет `<style>` — `MantineCssVariables`/`MantineClasses`; nonce на статике
@@ -187,8 +189,12 @@
   `https://*.api.green-api.com` (хост по `idInstance`, как в `apiUrl`) и
   `connect-src 'self'`; для dev — `server.proxy` Vite. Это отдельная задача ➕ с
   изменением `shared/api` — добавить в план, только если проблема подтвердится.
-- **pnpm 12 на Vercel.** Если сборщик Vercel не поддерживает — Corepack через переменную
-  окружения проекта или `installCommand` с `corepack`.
+- **pnpm 12 на Vercel.** `vercel.json` уже добавляет `corepack enable &&` в
+  `installCommand`/`buildCommand`, но это не проверено на реальном деплое: если директория
+  Node-инструментов в образе сборки только для чтения, `corepack enable` может упасть с
+  `EACCES`. Проверить на первом деплое; фолбэк — переменная окружения проекта
+  `ENABLE_EXPERIMENTAL_COREPACK=1` (тогда оба `corepack enable &&` можно убрать) или
+  `npx -y pnpm@12.5.1` вместо `pnpm` в командах.
 
 ## What Goes Where
 
@@ -419,7 +425,8 @@
 - проверить, что workflow CI зелёный на обоих Node
 - в Vercel: Import Project из GitHub, пресет Vite; при необходимости — Corepack для pnpm 12;
   production-ветка — `main`
-- вписать URL деплоя в README и закоммитить
+- вписать URL деплоя в README, раскомментировать бейдж CI (путь репозитория теперь известен)
+  и закоммитить
 
 **Ручная проверка на деплое:**
 - консоль без нарушений CSP; вход, `checkAccount`, `sendMessage`, опрос

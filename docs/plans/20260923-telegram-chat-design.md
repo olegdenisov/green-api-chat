@@ -109,7 +109,8 @@ Notification — событие инстанса (входящее/исходя�
   `receiveNotification`/`deleteNotification` (этап 5); если CORS проявится там — варианты:
   Vite `server.proxy` с `router` по `apiUrl` для dev, прокси для прода.
   Этап 6: с домена деплоя не проверено — деплоя и репозитория на GitHub ещё нет (ручной
-  шаг после сдачи, см. «Post-Completion» в `docs/plans/20260926-06-polish-and-release.md`).
+  шаг после сдачи, см. «Post-Completion» в плане этапа 6, `docs/plans/completed/` после
+  публикации).
   Если опрос не заработает с домена Vercel — фолбэк: `rewrites` в `vercel.json` на хост
   GREEN-API по `idInstance` и `connect-src 'self'`.
 - CSP из `vercel.json`, CI на GitHub и деплой Vercel — написаны, но не запускались.

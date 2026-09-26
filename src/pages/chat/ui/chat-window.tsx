@@ -17,9 +17,11 @@ import { MessageBubble } from "./message-bubble";
 import classes from "./chat-window.module.css";
 
 /**
- * Messages of the active chat with a day separator before the first message of each local day;
- * scrolls to the bottom when a message is added. Keyed by the chat, so another chat mounts a new
- * feed and opens at its latest message too.
+ * Messages of the active chat with a day separator before the first message of each local day
+ * (in list order — the order messages were added, not sorted by time: a late incoming message
+ * next to a newer outgoing one near midnight can repeat a separator); scrolls to the bottom
+ * when a message is added. Keyed by the chat, so another chat mounts a new feed and opens at
+ * its latest message too.
  */
 const Feed = reatomComponent(() => {
   const messages = activeMessagesAtom();
@@ -42,11 +44,14 @@ const Feed = reatomComponent(() => {
           const day = new Date(message.timestamp).toDateString();
           const newDay = day !== lastDay;
           lastDay = day;
+          const label = formatDayLabel(message.timestamp, now);
           return (
             <Fragment key={message.id}>
               {newDay && (
-                <div className={classes.day} role="separator">
-                  <span className={classes.dayLabel}>{formatDayLabel(message.timestamp, now)}</span>
+                // aria-label duplicates the visible text: some screen readers don't announce
+                // the content of a role="separator" element.
+                <div className={classes.day} role="separator" aria-label={label}>
+                  <span className={classes.dayLabel}>{label}</span>
                 </div>
               )}
               <MessageBubble message={message} />
@@ -58,49 +63,40 @@ const Feed = reatomComponent(() => {
   );
 }, "chatPage.Feed");
 
-/**
- * Right column: header (back, title, delete), the message feed and the input. `onBack` is told
- * which chat "back" closed, so the page can return focus to its row in the list.
- */
-export const ChatWindow = reatomComponent(
-  ({ className, onBack }: { className?: string; onBack?: (chatId: string) => void }) => {
-    const chat = activeChatAtom();
-    const rootClass = className ? `${classes.window} ${className}` : classes.window;
+/** Right column: header (back, title, delete), the message feed and the input. */
+export const ChatWindow = reatomComponent(({ className }: { className?: string }) => {
+  const chat = activeChatAtom();
+  const rootClass = className ? `${classes.window} ${className}` : classes.window;
 
-    if (!chat) {
-      return (
-        <div className={rootClass} data-empty>
-          <EmptyState>Выберите чат или создайте новый</EmptyState>
-        </div>
-      );
-    }
-
+  if (!chat) {
     return (
-      <div className={rootClass}>
-        <header className={classes.header}>
-          {/* Only a narrow screen shows one column; there "back" returns to the list. */}
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            hiddenFrom="sm"
-            aria-label="Назад к чатам"
-            onClick={wrap(() => {
-              onBack?.(chat.chatId);
-              activeChatIdAtom.set(null);
-            })}
-          >
-            <IconArrowLeft />
-          </ActionIcon>
-          <ChatAvatar chat={chat} size={40} />
-          <Title order={2} size="h4" className={classes.title}>
-            {chat.title}
-          </Title>
-          <DeleteChatButton chatId={chat.chatId} />
-        </header>
-        <Feed key={chat.chatId} />
-        <Composer />
+      <div className={rootClass} data-empty>
+        <EmptyState>Выберите чат или создайте новый</EmptyState>
       </div>
     );
-  },
-  "chatPage.ChatWindow",
-);
+  }
+
+  return (
+    <div className={rootClass}>
+      <header className={classes.header}>
+        {/* Only a narrow screen shows one column; there "back" returns to the list. */}
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          hiddenFrom="sm"
+          aria-label="Назад к чатам"
+          onClick={wrap(() => activeChatIdAtom.set(null))}
+        >
+          <IconArrowLeft />
+        </ActionIcon>
+        <ChatAvatar chat={chat} size={40} />
+        <Title order={2} size="h4" className={classes.title}>
+          {chat.title}
+        </Title>
+        <DeleteChatButton chatId={chat.chatId} />
+      </header>
+      <Feed key={chat.chatId} />
+      <Composer />
+    </div>
+  );
+}, "chatPage.ChatWindow");

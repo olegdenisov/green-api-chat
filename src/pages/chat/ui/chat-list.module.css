@@ -77,7 +77,7 @@
 
 /* Reserves the line of a chat without messages, so rows keep one height. */
 .preview {
-  min-height: 1lh;
+  min-height: calc(1em * var(--mantine-line-height));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

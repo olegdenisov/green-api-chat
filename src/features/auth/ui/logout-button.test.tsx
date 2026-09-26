@@ -19,4 +19,15 @@ describe("LogoutButton", () => {
 
     expect(frame.run(() => credentialsAtom())).toBeNull();
   });
+
+  it("keeps its accessible name while the tooltip is shown on hover", async () => {
+    const user = userEvent.setup();
+    render(<LogoutButton />);
+    const button = screen.getByRole("button", { name: "Выйти" });
+
+    await user.hover(button);
+
+    expect(await screen.findByText("Выйти")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Выйти" })).toBe(button);
+  });
 });

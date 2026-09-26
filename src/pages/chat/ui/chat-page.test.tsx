@@ -79,6 +79,40 @@ describe("ChatPage", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /Other/ })).toHaveFocus());
   });
 
+  it("returns focus to the chats nav when the open chat is deleted (its row is also gone)", async () => {
+    const user = userEvent.setup();
+    const { frame } = render(<ChatPage />);
+    frame.run(() =>
+      chatsAtom.set({
+        "1": { chatId: "1", title: "Friend", lastMessageAt: 2 },
+        "2": { chatId: "2", title: "Other", lastMessageAt: 1 },
+      }),
+    );
+
+    await user.click(await screen.findByRole("button", { name: /Other/ }));
+    await user.click(screen.getByRole("button", { name: "Удалить чат" }));
+    await user.click(screen.getByRole("button", { name: "Удалить" }));
+
+    await waitFor(() => expect(screen.getByRole("navigation", { name: "Чаты" })).toHaveFocus());
+  });
+
+  it("does not steal focus when a chat closes while focus is elsewhere (e.g. another tab)", async () => {
+    const user = userEvent.setup();
+    const { frame } = render(<ChatPage />);
+    frame.run(() => chatsAtom.set({ "1": { chatId: "1", title: "Friend", lastMessageAt: 1 } }));
+
+    await user.click(await screen.findByRole("button", { name: /Friend/ }));
+    const phoneInput = screen.getByLabelText("Номер телефона");
+    await user.click(phoneInput);
+    expect(phoneInput).toHaveFocus();
+
+    // Not a click on "Назад" or "Удалить": e.g. the chat is removed from another tab.
+    frame.run(() => activeChatIdAtom.set(null));
+    await waitFor(() => expect(pageRoot()).toHaveAttribute("data-view", "list"));
+
+    expect(phoneInput).toHaveFocus();
+  });
+
   it("treats a dangling active chat id as no chat", () => {
     const { frame } = render(<ChatPage />);
     frame.run(() => activeChatIdAtom.set("missing"));

@@ -55,13 +55,13 @@ describe("App", () => {
     expect(chatStub()).not.toBeInTheDocument();
   });
 
-  it("follows the system color scheme", () => {
+  it("follows a dark system color scheme", () => {
     stubColorScheme(true);
-    const { unmount } = render(<App />);
+    render(<App />);
     expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "dark");
-    unmount();
-    document.documentElement.removeAttribute("data-mantine-color-scheme");
+  });
 
+  it("follows a light system color scheme", () => {
     stubColorScheme(false);
     render(<App />);
     expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "light");

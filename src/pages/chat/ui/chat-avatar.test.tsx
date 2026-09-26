@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { render } from "@test/render";
@@ -26,6 +26,42 @@ describe("ChatAvatar", () => {
 
     expect(host).not.toHaveTextContent(/\d|\+/);
     expect(host.querySelector("svg")).not.toBeNull();
+  });
+
+  it("takes initials without the @ of a username", () => {
+    const host = renderAvatar({ chatId: "1", title: "@username" });
+
+    expect(host).toHaveTextContent("US");
+    expect(host).not.toHaveTextContent("@");
+  });
+
+  it("takes two initials from a name with repeated spaces", () => {
+    const host = renderAvatar({ chatId: "1", title: "Alice  Bob" });
+
+    expect(host).toHaveTextContent("AB");
+  });
+
+  it.each([
+    ["a title starting with a digit", "3D Team"],
+    ["an empty title", ""],
+    ["a lone @", "@"],
+  ])("shows a placeholder for %s", (_label, title) => {
+    const host = renderAvatar({ chatId: "1", title });
+
+    expect(host).toHaveTextContent("");
+    expect(host.querySelector("svg")).not.toBeNull();
+  });
+
+  it("picks the placeholder colour by chatId: stable per chat", () => {
+    const color = (chatId: string) => {
+      cleanup();
+      const host = renderAvatar({ chatId, title: "" });
+      return host.firstElementChild?.getAttribute("style");
+    };
+    const first = color("79991234567");
+
+    expect(first).toContain("--avatar-bg");
+    expect(color("79991234567")).toBe(first);
   });
 
   it("is hidden from assistive technology", () => {

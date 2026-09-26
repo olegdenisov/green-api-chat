@@ -70,7 +70,7 @@ export function MessageBubble({ message }: { message: Message }) {
   const outgoing = message.direction === "out";
   const failed = useFailed(message);
   return (
-    <div className={classes.row} data-direction={message.direction}>
+    <div className={classes.row} data-direction={message.direction} data-message-id={message.id}>
       <div className={classes.bubble} data-failed={failed || undefined}>
         <Text size="sm" className={classes.text}>
           {message.text}

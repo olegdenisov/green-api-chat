@@ -13,7 +13,7 @@
   border-radius: rem(16px) rem(16px) rem(16px) rem(4px);
   background: var(--ga-bubble-in-bg);
   color: var(--ga-bubble-in-text);
-  box-shadow: 0 rem(1px) rem(1px) rgb(0 0 0 / 8%);
+  box-shadow: 0 rem(1px) rem(1px) var(--ga-bubble-shadow);
 
   .row[data-direction="out"] & {
     border-radius: rem(16px) rem(16px) rem(4px) rem(16px);

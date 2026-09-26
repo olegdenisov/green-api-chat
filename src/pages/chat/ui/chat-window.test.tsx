@@ -1,7 +1,7 @@
 import { notifications } from "@mantine/notifications";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, onTestFinished } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { activeChatIdAtom, chatsAtom, openChat, type Chat } from "@/entities/chat";
 import { addMessage, messagesAtom, type Message } from "@/entities/message";
@@ -74,9 +74,12 @@ describe("ChatWindow", () => {
   });
 
   it("puts one day separator before the first message of each day, in order", async () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime();
-    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12).getTime();
+    vi.setSystemTime(new Date(2026, 8, 25, 15, 0, 0));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const today = new Date(2026, 8, 25, 12).getTime();
+    const yesterday = new Date(2026, 8, 24, 12).getTime();
     const longAgo = new Date(2020, 0, 3, 9).getTime();
     const { frame } = renderWindow();
     frame.run(() => {
@@ -88,21 +91,39 @@ describe("ChatWindow", () => {
 
     await waitFor(() => expect(within(feed()).getByText("Today")).toBeInTheDocument());
     const separators = within(feed()).getAllByRole("separator");
-    expect(separators.map((separator) => separator.textContent)).toEqual([
+    expect(separators.map((separator) => separator.getAttribute("aria-label"))).toEqual([
       "3 января 2020",
       "Вчера",
       "Сегодня",
     ]);
-    // A separator precedes the first message of its day, not the following ones.
-    const order = [...feed().children].map((child) => child.textContent);
-    expect(order.map((text) => text?.replace(/\d{2}:\d{2}.*$/, ""))).toEqual([
-      "3 января 2020",
-      "Old",
+    // A separator precedes the first message of its day, not the following ones. Identify each
+    // child by role/data-* rather than by its rendered text (which also carries the time).
+    const order = [...feed().children].map((child) =>
+      child.getAttribute("role") === "separator"
+        ? `sep:${child.getAttribute("aria-label")}`
+        : (child as HTMLElement).dataset.messageId,
+    );
+    expect(order).toEqual(["sep:3 января 2020", "a", "sep:Вчера", "b", "c", "sep:Сегодня", "d"]);
+  });
+
+  it("puts separate separators across a local-midnight boundary", async () => {
+    vi.setSystemTime(new Date(2026, 8, 25, 15, 0, 0));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const beforeMidnight = new Date(2026, 8, 24, 23, 59).getTime();
+    const afterMidnight = new Date(2026, 8, 25, 0, 1).getTime();
+    const { frame } = renderWindow();
+    frame.run(() => {
+      addMessage(message("a", "Late", "in", beforeMidnight));
+      addMessage(message("b", "Early", "in", afterMidnight));
+    });
+
+    await waitFor(() => expect(within(feed()).getByText("Early")).toBeInTheDocument());
+    const separators = within(feed()).getAllByRole("separator");
+    expect(separators.map((separator) => separator.getAttribute("aria-label"))).toEqual([
       "Вчера",
-      "Yesterday 1",
-      "Yesterday 2",
       "Сегодня",
-      "Today",
     ]);
   });
 

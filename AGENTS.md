@@ -145,6 +145,19 @@
 - PostCSS (`postcss.config.cjs`, как в гайде Mantine для Vite): миксины
   `postcss-preset-mantine` (`@mixin hover`, `light`/`dark`, `rem()`) и переменные
   `$mantine-breakpoint-xs…xl` для `@media`.
+- A11y: у кнопок-иконок (`ActionIcon`) имя — `aria-label`; статус сообщения в пузыре —
+  `role="img"` + `aria-label` (`span` без роли `aria-label` не поддерживает). Тесты ищут
+  элементы по ролям/именам, не по классам. Единственный landmark `<main>` — `.page` в
+  `ChatPage` (`ChatWindow` — обычный `div`). Фокус после ухода из чата (кнопка «Назад» или
+  удаление чата через `DeleteChatButton`) возвращает `ChatPage`: эффект следит за переходом
+  `activeChatId` → `null` и, если фокус упал на `<body>` (элемент, на котором он был,
+  размонтировался), переводит его на строку закрытого чата в `nav` (`[data-chat-id]`) или,
+  если строки нет (чат удалён), на сам `nav` (`tabIndex={-1}`, `sidebar.tsx`). Открытие
+  другого чата в списке при узком экране фокус не переносит: выбранная строка скрывается
+  (`display: none` у колонки списка), фокус падает на `<body>` — известное ограничение, план
+  этого не требовал. Mantine `Popover` в `DeleteChatButton` — свой `returnFocus` для
+  Escape/«Отмена» (кнопка остаётся в DOM); строки чатов — обычные `<button data-chat-id>` с
+  `aria-current`, не `NavLink`.
 
 ## Reatom
 
@@ -250,6 +263,9 @@
   `vite.config.ts`); `mockRestore()` вручную не вызывать.
 - Исключения: `App` и `ReatomProvider` содержат свои провайдеры и рендерятся обычным
   `render` из RTL.
+- Тест системной темы (`app.test.tsx`) подменяет `matchMedia` через `vi.stubGlobal` и в
+  `afterEach` снимает `data-mantine-color-scheme` с `<html>` — `MantineProvider` оставляет
+  атрибут на `documentElement` после размонтирования, иначе он утекает в следующий тест.
 - `vitest.setup.ts`: `clearStack()`, очистка `localStorage`/`sessionStorage` после
   каждого теста, моки jsdom для Mantine, глобальный `DOMException` из Node (у jsdom он не
   `instanceof Error`, и `isAbort()` Reatom не узнавал бы отмену). DOM-API jsdom по-прежнему
