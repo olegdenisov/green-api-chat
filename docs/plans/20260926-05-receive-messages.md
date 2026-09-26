@@ -294,16 +294,16 @@ type ReceivedMessage = {
 - Create: `test/fixtures/green-api/ignored-notifications.ts` (статус сообщения, медиа, группа
   — по документации Telegram-версии)
 
-- [ ] тип `ReceivedMessage` и `parseNotification(body: unknown): ReceivedMessage | null` по
+- [x] тип `ReceivedMessage` и `parseNotification(body: unknown): ReceivedMessage | null` по
       «Разбор уведомления»; `switch` по `typeWebhook`/`typeMessage` с `default`
-- [ ] фикстуры игнорируемых событий (`satisfies` с типом, где он есть; для типов вне union —
+- [x] фикстуры игнорируемых событий (`satisfies` с типом, где он есть; для типов вне union —
       комментарий, почему без `satisfies`)
-- [ ] тесты на фикстурах: входящий `textMessage`, `extendedTextMessage`, исходящий с телефона
+- [x] тесты на фикстурах: входящий `textMessage`, `extendedTextMessage`, исходящий с телефона
       (`viaApi: false`), исходящий API (`viaApi: true`); секунды → ms; `chatName` пустой →
       `undefined`
-- [ ] тесты игнора: статус, медиа, группа (`chatType`/отрицательный `chatId`), битое тело
+- [x] тесты игнора: статус, медиа, группа (`chatType`/отрицательный `chatId`), битое тело
       (нет `senderData`/`messageData`, пустой `idMessage`, `null`, не объект)
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный
 
 ### Task 5: Раскладка с дедупликацией и защита `deliver()`
 
