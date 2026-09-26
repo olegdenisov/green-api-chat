@@ -104,7 +104,8 @@
   lockfile ставит pnpm 9/10, проект — pnpm 12), заголовки: CSP (`script-src 'self'`),
   `Referrer-Policy`, `X-Content-Type-Options`. Поэтому в `index.html` не должно быть
   inline-скриптов; `connect-src https:` — `apiUrl` задаёт пользователь. Менять CSP — вместе
-  с этим файлом; CSP на деплое ещё не проверена.
+  с этим файлом. Деплой — https://green-api-chat-three.vercel.app/: заголовки отдаются,
+  страница грузится без нарушений CSP; запросы к GREEN-API с домена деплоя не проверены.
 
 ## Инструменты
 

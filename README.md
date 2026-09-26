@@ -1,16 +1,17 @@
 # GREEN-API Telegram-чат
 
-<!-- TODO: бейдж CI — после создания GitHub-репозитория (путь owner/repo пока неизвестен):
-[![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml) -->
+[![CI](https://github.com/olegdenisov/green-api-chat/actions/workflows/ci.yml/badge.svg)](https://github.com/olegdenisov/green-api-chat/actions/workflows/ci.yml)
 
-Тестовое задание «Фронтенд-разработчик React»: веб-чат для отправки и получения текстовых
-сообщений Telegram через [GREEN-API](https://green-api.com/). Backend нет — запросы идут
-из браузера. Внешний вид — по мотивам [web.max.ru](https://web.max.ru/).
+Веб-чат для отправки и получения текстовых сообщений Telegram через
+[GREEN-API](https://green-api.com/). Backend нет — запросы идут из браузера. Внешний вид — по
+мотивам [web.max.ru](https://web.max.ru/).
 
-Деплой: _ссылка появится после деплоя_ (см. «Деплой»).
+Деплой: **https://green-api-chat-three.vercel.app/** — Vercel, автоматически с ветки `main`
+(см. «Деплой и CI»).
 
-Статус: **все 6 этапов выполнены**; ручные проверки на деплое (CI на GitHub, деплой Vercel,
-CSP, CORS опроса на домене деплоя) ещё не проведены — см. «Известные ограничения».
+Статус: **все 6 этапов выполнены**; CI на GitHub и деплой Vercel работают, CSP на деплое
+отдаётся и не мешает странице; запросы к GREEN-API с домена деплоя (в т.ч. CORS опроса) ещё не
+проверены — см. «Известные ограничения».
 Форма логина проверяет инстанс (`getStateInstance`), при необходимости включает настройки
 уведомлений и сохраняет креды в `localStorage`. На экране чата: новый чат по номеру телефона
 (`checkAccount`; уже известный номер открывается без запроса), отправка текста со статусами
@@ -73,7 +74,8 @@ make help      # все команды
 
 - **CI** — GitHub Actions (`.github/workflows/ci.yml`): на push в `main` и на pull request
   выполняются `pnpm install --frozen-lockfile`, `make check` и `make build` на Node 22 и 24.
-- **Деплой** — Git-интеграция Vercel (preview на PR, production на `main`); в репозитории
+- **Деплой** — Git-интеграция Vercel, автоматический: push в `main` — production, PR и
+  другие ветки — preview (ссылка — в статусе коммита/PR на GitHub); в репозитории
   только `vercel.json`: пресет `vite`, `corepack enable` перед `pnpm` (Vercel по lockfile
   ставит pnpm 9/10, а проект зафиксирован на pnpm 12) и заголовки безопасности. Деплой Vercel
   не ждёт CI: он идёт независимо от статуса проверки.
@@ -81,8 +83,8 @@ make help      # все команды
   `connect-src https:` — `apiUrl` задаёт пользователь; `style-src 'unsafe-inline'` нужен
   Mantine. Креды лежат в `localStorage`, токен идёт в URL запросов — поэтому CSP важна.
 
-Статус: конфигурация написана, но CI на GitHub, деплой на Vercel и работа CSP на домене
-деплоя **не проверены** — репозитория на GitHub и деплоя пока нет.
+Статус: CI на GitHub и деплой на Vercel работают. CSP на домене деплоя отдаётся, страница
+загружается без нарушений CSP в консоли; запросы к GREEN-API с домена деплоя **не проверены**.
 
 ## Структура
 
@@ -121,6 +123,6 @@ make help      # все команды
 - Не проверено вручную: CORS запросов `receiveNotification`/`deleteNotification` с домена
   деплоя (`getStateInstance`, `getSettings`/`setSettings`, `checkAccount`, `sendMessage`
   проверены на реальном инстансе локально), сценарий задания на реальном инстансе после
-  этапа 6, CSP на деплое.
+  этапа 6 (в т.ч. на деплое).
 
 Полный список и подробности — в дизайн-документе.
