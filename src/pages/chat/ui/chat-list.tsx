@@ -1,15 +1,17 @@
-import { NavLink, Text } from "@mantine/core";
+import { Text } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { reatomComponent } from "@reatom/react";
 
 import { activeChatIdAtom, sortedChatsAtom } from "@/entities/chat";
 import { messagesAtom } from "@/entities/message";
+import { IconLogo } from "@/shared/ui";
 
 import { formatChatTime } from "../lib/format-time";
+import { ChatAvatar } from "./chat-avatar";
 
 import classes from "./chat-list.module.css";
 
-/** Chats, newest first: title, last message, time; a click selects the chat. */
+/** Chats, newest first: avatar, title, time and the last message; a click selects the chat. */
 export const ChatList = reatomComponent(() => {
   const chats = sortedChatsAtom();
   const messages = messagesAtom();
@@ -17,33 +19,42 @@ export const ChatList = reatomComponent(() => {
 
   if (chats.length === 0) {
     return (
-      <Text c="dimmed" size="sm" className={classes.empty}>
-        Создайте чат по номеру телефона
-      </Text>
+      <div className={classes.empty}>
+        <IconLogo size={40} />
+        <Text c="dimmed" size="sm">
+          Создайте чат по номеру телефона
+        </Text>
+      </div>
     );
   }
 
   const now = Date.now();
   return (
-    <ul className={classes.list} aria-label="Чаты">
+    <ul className={classes.list}>
       {chats.map((chat) => {
         const active = chat.chatId === activeChatId;
+        const last = messages[chat.chatId]?.at(-1);
         return (
           <li key={chat.chatId}>
-            <NavLink
-              component="button"
+            <button
               type="button"
               className={classes.item}
-              label={chat.title}
-              description={messages[chat.chatId]?.at(-1)?.text}
-              rightSection={
-                <span className={classes.time}>{formatChatTime(chat.lastMessageAt, now)}</span>
-              }
-              active={active}
+              data-chat-id={chat.chatId}
+              data-active={active ? "true" : undefined}
               aria-current={active ? "true" : undefined}
-              noWrap
               onClick={wrap(() => activeChatIdAtom.set(chat.chatId))}
-            />
+            >
+              <ChatAvatar chat={chat} />
+              <span className={classes.body}>
+                <span className={classes.top}>
+                  <span className={classes.title}>{chat.title}</span>
+                  <span className={classes.time}>{formatChatTime(chat.lastMessageAt, now)}</span>
+                </span>
+                <span className={classes.preview}>
+                  {last && (last.direction === "out" ? `Вы: ${last.text}` : last.text)}
+                </span>
+              </span>
+            </button>
           </li>
         );
       })}

@@ -5,16 +5,86 @@
 }
 
 .item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
   padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  border: 0;
+  background: transparent;
+  color: var(--mantine-color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  @mixin hover {
+    background: var(--mantine-color-default-hover);
+  }
+
+  &:focus-visible {
+    outline: rem(2px) solid var(--mantine-primary-color-filled);
+    outline-offset: rem(-2px);
+  }
+
+  &[data-active] {
+    background: var(--mantine-primary-color-filled);
+    color: var(--mantine-color-white);
+  }
+}
+
+.body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: rem(2px);
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-xs);
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time,
+.preview {
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+
+  .item[data-active] & {
+    color: var(--mantine-color-white);
+    opacity: 0.85;
+  }
 }
 
 .time {
-  align-self: flex-start;
-  color: var(--mantine-color-dimmed);
+  flex-shrink: 0;
   font-size: var(--mantine-font-size-xs);
 }
 
+/* Reserves the line of a chat without messages, so rows keep one height. */
+.preview {
+  min-height: 1lh;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
   padding: var(--mantine-spacing-xl) var(--mantine-spacing-md);
+  color: var(--mantine-color-dimmed);
   text-align: center;
 }

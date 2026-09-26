@@ -1,5 +1,5 @@
 import { LogoutButton } from "@/features/auth";
-import { AppTitle } from "@/shared/ui";
+import { AppTitle, IconLogo } from "@/shared/ui";
 
 import { ChatList } from "./chat-list";
 import { CreateChatForm } from "./create-chat-form";
@@ -11,13 +11,14 @@ export function Sidebar({ className }: { className?: string }) {
   return (
     <aside className={className ? `${classes.sidebar} ${className}` : classes.sidebar}>
       <header className={classes.header}>
-        <AppTitle size="h3" />
+        <IconLogo size={28} className={classes.logo} />
+        <AppTitle size="h3" className={classes.name} />
         <LogoutButton />
       </header>
       <div className={classes.form}>
         <CreateChatForm />
       </div>
-      <nav className={classes.chats}>
+      <nav className={classes.chats} aria-label="Чаты">
         <ChatList />
       </nav>
     </aside>
