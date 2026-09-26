@@ -78,13 +78,3 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--mantine-spacing-sm);
-  padding: var(--mantine-spacing-xl) var(--mantine-spacing-md);
-  color: var(--mantine-color-dimmed);
-  text-align: center;
-}

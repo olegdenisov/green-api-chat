@@ -36,7 +36,7 @@ const OutgoingStatus = reatomComponent(
   ({ message, failed }: { message: Message; failed: boolean }) => {
     if (failed) {
       return (
-        <span className={classes.failed}>
+        <span>
           Не отправлено ·{" "}
           <Button
             variant="transparent"

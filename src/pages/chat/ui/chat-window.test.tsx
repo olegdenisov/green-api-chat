@@ -15,13 +15,18 @@ import { ChatWindow } from "./chat-window";
 
 const friend: Chat = { chatId: "1", title: "Friend", lastMessageAt: 1 };
 
-const message = (id: string, text: string, direction: Message["direction"]): Message => ({
+const message = (
+  id: string,
+  text: string,
+  direction: Message["direction"],
+  timestamp = Date.now(),
+): Message => ({
   id,
   chatId: friend.chatId,
   text,
   direction,
   status: "sent",
-  timestamp: Date.now(),
+  timestamp,
 });
 
 function renderWindow() {
@@ -66,6 +71,46 @@ describe("ChatWindow", () => {
     const rows = feed().querySelectorAll("[data-direction]");
     expect([...rows].map((row) => row.getAttribute("data-direction"))).toEqual(["in", "out"]);
     expect(within(feed()).queryByText("Сообщений пока нет")).not.toBeInTheDocument();
+  });
+
+  it("puts one day separator before the first message of each day, in order", async () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime();
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12).getTime();
+    const longAgo = new Date(2020, 0, 3, 9).getTime();
+    const { frame } = renderWindow();
+    frame.run(() => {
+      addMessage(message("a", "Old", "in", longAgo));
+      addMessage(message("b", "Yesterday 1", "in", yesterday));
+      addMessage(message("c", "Yesterday 2", "out", yesterday + 60_000));
+      addMessage(message("d", "Today", "in", today));
+    });
+
+    await waitFor(() => expect(within(feed()).getByText("Today")).toBeInTheDocument());
+    const separators = within(feed()).getAllByRole("separator");
+    expect(separators.map((separator) => separator.textContent)).toEqual([
+      "3 января 2020",
+      "Вчера",
+      "Сегодня",
+    ]);
+    // A separator precedes the first message of its day, not the following ones.
+    const order = [...feed().children].map((child) => child.textContent);
+    expect(order.map((text) => text?.replace(/\d{2}:\d{2}.*$/, ""))).toEqual([
+      "3 января 2020",
+      "Old",
+      "Вчера",
+      "Yesterday 1",
+      "Yesterday 2",
+      "Сегодня",
+      "Today",
+    ]);
+  });
+
+  it("shows no separator in an empty feed", async () => {
+    renderWindow();
+
+    await screen.findByText("Сообщений пока нет");
+    expect(within(feed()).queryByRole("separator")).not.toBeInTheDocument();
   });
 
   it("scrolls the feed down when a message is added", async () => {

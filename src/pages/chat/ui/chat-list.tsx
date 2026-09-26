@@ -1,13 +1,12 @@
-import { Text } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { reatomComponent } from "@reatom/react";
 
 import { activeChatIdAtom, sortedChatsAtom } from "@/entities/chat";
 import { messagesAtom } from "@/entities/message";
-import { IconLogo } from "@/shared/ui";
 
 import { formatChatTime } from "../lib/format-time";
 import { ChatAvatar } from "./chat-avatar";
+import { EmptyState } from "./empty-state";
 
 import classes from "./chat-list.module.css";
 
@@ -18,14 +17,7 @@ export const ChatList = reatomComponent(() => {
   const activeChatId = activeChatIdAtom();
 
   if (chats.length === 0) {
-    return (
-      <div className={classes.empty}>
-        <IconLogo size={40} />
-        <Text c="dimmed" size="sm">
-          Создайте чат по номеру телефона
-        </Text>
-      </div>
-    );
+    return <EmptyState>Создайте чат по номеру телефона</EmptyState>;
   }
 
   const now = Date.now();

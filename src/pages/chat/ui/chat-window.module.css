@@ -2,14 +2,7 @@
   display: flex;
   min-height: 0;
   flex-direction: column;
-
-  @mixin light {
-    background: var(--mantine-color-gray-0);
-  }
-
-  @mixin dark {
-    background: var(--mantine-color-dark-8);
-  }
+  background: var(--ga-feed-bg);
 
   &[data-empty] {
     align-items: center;
@@ -44,7 +37,17 @@
   padding: var(--mantine-spacing-md);
 }
 
-.placeholder {
-  margin: auto;
-  text-align: center;
+.day {
+  display: flex;
+  justify-content: center;
+  padding-block: rem(6px);
+}
+
+.dayLabel {
+  padding: rem(2px) var(--mantine-spacing-sm);
+  border-radius: rem(999px);
+  background: var(--ga-day-bg);
+  color: var(--ga-day-text);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
 }

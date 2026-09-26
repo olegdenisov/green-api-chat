@@ -272,6 +272,8 @@
 ### Task 4: Окно чата и разделители по дням
 
 **Files:**
+- Create: `src/pages/chat/ui/empty-state.tsx`, `empty-state.module.css`, `empty-state.test.tsx` (➕ общий компонент пустого состояния)
+- Modify: `src/pages/chat/ui/chat-list.tsx`, `chat-list.module.css`
 - Modify: `src/pages/chat/lib/format-time.ts`
 - Modify: `src/pages/chat/lib/format-time.test.ts`
 - Modify: `src/pages/chat/ui/chat-window.tsx`
@@ -279,19 +281,19 @@
 - Modify: `src/pages/chat/ui/message-bubble.module.css`
 - Modify: `src/pages/chat/ui/chat-window.test.tsx`
 
-- [ ] `formatDayLabel(timestamp, now)` — «Сегодня» / «Вчера» / «25 сентября» /
+- [x] `formatDayLabel(timestamp, now)` — «Сегодня» / «Вчера» / «25 сентября» /
       «3 января 2025» (см. «Technical Details»)
-- [ ] `Feed`: разделитель (`role="separator"`, текст дня) перед первым сообщением каждого
+- [x] `Feed`: разделитель (`role="separator"`, текст дня) перед первым сообщением каждого
       дня; стиль — «пилюля» по центру, как в MAX
-- [ ] шапка окна: «←» (`IconArrowLeft`), `ChatAvatar`, заголовок; `DeleteChatButton`
+- [x] шапка окна: «←» (`IconArrowLeft`), `ChatAvatar`, заголовок; `DeleteChatButton`
       справа
-- [ ] фон ленты и пузыри на токенах `--ga-*`; скругления и цвета — по MAX
-- [ ] пустой чат и «чат не выбран» — иконка + текст по центру
-- [ ] тесты `formatDayLabel`: сегодня; вчера — обычный день, 1-е число месяца, 1 января,
+- [x] фон ленты и пузыри на токенах `--ga-*`; скругления и цвета — по MAX
+- [x] пустой чат и «чат не выбран» — иконка + текст по центру (общий `EmptyState` в `pages/chat/ui`, им же пользуется `ChatList`)
+- [x] тесты `formatDayLabel`: сегодня; вчера — обычный день, 1-е число месяца, 1 января,
       тот же год; другой год без «г.»
-- [ ] тесты `ChatWindow`: разделители между сообщениями разных дней, один на день, их
+- [x] тесты `ChatWindow`: разделители между сообщениями разных дней, один на день, их
       порядок; кнопка «Назад к чатам» по имени; заголовок чата — `h2`
-- [ ] проверить в браузере и `make check`
+- [x] проверить в браузере и `make check`
 
 ### Task 5: Кнопка отправки и статусы сообщения
 
