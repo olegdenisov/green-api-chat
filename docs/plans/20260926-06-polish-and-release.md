@@ -372,14 +372,14 @@
 **Files:**
 - Create: `.github/workflows/ci.yml`
 
-- [ ] сверить актуальные мажорные версии `actions/checkout`, `pnpm/action-setup`,
-      `actions/setup-node`
-- [ ] workflow: триггеры `push` в `main` и `pull_request`; матрица Node `22`, `24`;
+- [x] сверить актуальные мажорные версии `actions/checkout`, `pnpm/action-setup`,
+      `actions/setup-node` (checkout v7.0.1, pnpm/action-setup v6.1.0, setup-node v7.0.0 — по `gh api releases/latest`)
+- [x] workflow: триггеры `push` в `main` и `pull_request`; матрица Node `22`, `24`;
       `pnpm install --frozen-lockfile`, `make check`, `make build`; `concurrency` с
       отменой устаревших запусков на ветке; `permissions: contents: read`
-- [ ] прогнать шаги workflow локально на Node 22 (если доступен менеджер версий Node) —
-      `pnpm install --frozen-lockfile && make check && make build`
-- [ ] `make check` — зелёный
+- [x] прогнать шаги workflow локально на Node 22 (если доступен менеджер версий Node) —
+      `pnpm install --frozen-lockfile && make check && make build` (прогнано через nvm, Node 22.14.0 — зелёно)
+- [x] `make check` — зелёный
 
 ### Task 10: Verify acceptance criteria
 
