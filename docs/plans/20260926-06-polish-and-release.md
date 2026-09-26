@@ -234,15 +234,15 @@
 - Modify: `src/features/delete-chats/ui/delete-chat-button.tsx`
 - Modify: `src/features/delete-chats/ui/delete-chat-button.test.tsx`
 
-- [ ] `icons.tsx`: инлайн-SVG (`IconArrowLeft`, `IconSend`, `IconTrash`, `IconLogout`,
+- [x] `icons.tsx`: инлайн-SVG (`IconArrowLeft`, `IconSend`, `IconTrash`, `IconLogout`,
       `IconLogo`), `aria-hidden`, `currentColor`, размер пропсом
-- [ ] `LogoutButton` — `ActionIcon` с `IconLogout`, `aria-label="Выйти"`, `Tooltip`
-- [ ] `DeleteChatButton` — `ActionIcon` с `IconTrash`, `aria-label="Удалить чат"`;
+- [x] `LogoutButton` — `ActionIcon` с `IconLogout`, `aria-label="Выйти"`, `Tooltip`
+- [x] `DeleteChatButton` — `ActionIcon` с `IconTrash`, `aria-label="Удалить чат"`;
       `Popover` с `returnFocus`
-- [ ] обновить тест «Выйти»: кнопка по роли и имени, выход работает
-- [ ] обновить тесты удаления: кнопка по имени, подтверждение и «Отмена» работают; Escape
+- [x] обновить тест «Выйти»: кнопка по роли и имени, выход работает (тест уже искал кнопку по роли и имени — изменений не потребовалось)
+- [x] обновить тесты удаления: кнопка по имени, подтверждение и «Отмена» работают; Escape
       закрывает подтверждение, фокус возвращается на кнопку «Удалить чат»
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный
 
 ### Task 3: Сайдбар и список чатов
 

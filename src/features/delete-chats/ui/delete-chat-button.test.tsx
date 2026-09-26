@@ -54,4 +54,18 @@ describe("DeleteChatButton", () => {
     expect(frame.run(() => activeChatIdAtom())).toBeNull();
     await waitFor(() => expect(screen.queryByText("Удалить чат и историю?")).toBeNull());
   });
+
+  it("closes the confirmation on Escape and returns focus to the button", async () => {
+    const user = userEvent.setup();
+    const { frame } = renderButton();
+    const button = screen.getByRole("button", { name: "Удалить чат" });
+
+    await user.click(button);
+    expect(screen.getByText("Удалить чат и историю?")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.queryByText("Удалить чат и историю?")).toBeNull());
+    expect(button).toHaveFocus();
+    expect(frame.run(() => chatsAtom())).toEqual({ [alice.chatId]: alice });
+  });
 });

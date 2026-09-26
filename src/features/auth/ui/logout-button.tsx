@@ -1,14 +1,23 @@
-import { Button } from "@mantine/core";
+import { ActionIcon, Tooltip } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { reatomComponent } from "@reatom/react";
 
 import { logout } from "@/entities/session";
+import { IconLogout } from "@/shared/ui";
 
 export const LogoutButton = reatomComponent(
   () => (
-    <Button variant="subtle" onClick={wrap(() => logout())}>
-      Выйти
-    </Button>
+    <Tooltip label="Выйти">
+      <ActionIcon
+        variant="subtle"
+        color="gray"
+        size="lg"
+        aria-label="Выйти"
+        onClick={wrap(() => logout())}
+      >
+        <IconLogout />
+      </ActionIcon>
+    </Tooltip>
   ),
   "auth.LogoutButton",
 );

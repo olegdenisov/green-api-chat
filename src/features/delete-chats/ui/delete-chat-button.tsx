@@ -1,6 +1,8 @@
-import { Button, Group, Popover, Text } from "@mantine/core";
+import { ActionIcon, Button, Group, Popover, Text } from "@mantine/core";
 import { useWrap } from "@reatom/react";
 import { useState } from "react";
+
+import { IconTrash } from "@/shared/ui";
 
 import { deleteChat } from "../model/delete-chats";
 
@@ -12,11 +14,24 @@ export function DeleteChatButton({ chatId }: { chatId: string }) {
   }, "deleteChats.DeleteChatButton.confirm");
 
   return (
-    <Popover opened={opened} onChange={setOpened} position="bottom-end" withArrow trapFocus>
+    <Popover
+      opened={opened}
+      onChange={setOpened}
+      position="bottom-end"
+      withArrow
+      trapFocus
+      returnFocus
+    >
       <Popover.Target>
-        <Button variant="subtle" color="red" onClick={() => setOpened((value) => !value)}>
-          Удалить чат
-        </Button>
+        <ActionIcon
+          variant="subtle"
+          color="red"
+          size="lg"
+          aria-label="Удалить чат"
+          onClick={() => setOpened((value) => !value)}
+        >
+          <IconTrash />
+        </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown>
         <Text size="sm" mb="xs">
