@@ -209,20 +209,20 @@
 - Create: `public/favicon.svg`
 - Modify: `src/app/app.test.tsx`
 
-- [ ] снять палитру web.max.ru через `chrome-devtools` (акцент, фон ленты, пузыри
+- [x] снять палитру web.max.ru через `chrome-devtools` (акцент, фон ленты, пузыри (частично: chrome-devtools отказано в навигации на внешний сайт, палитра подобрана по публичным скриншотам/брендовому цвету MAX, источник в комментарии `theme.ts`)
       входящих/исходящих, вторичный текст; светлая и тёмная схемы); источник —
       комментарием в `theme.ts`
-- [ ] `theme.ts`: `createTheme` с палитрой MAX (`primaryColor`), системным `fontFamily`,
+- [x] `theme.ts`: `createTheme` с палитрой MAX (`primaryColor`), системным `fontFamily`,
       `defaultRadius`; `cssVariablesResolver` с токенами `--ga-*` для light/dark;
       `UiProvider` — `theme`, `cssVariablesResolver`, `defaultColorScheme="auto"`
-- [ ] `index.css`: `color-scheme: light dark` и тёмный фон `body` до монтирования (см.
+- [x] `index.css`: `color-scheme: light dark` и тёмный фон `body` до монтирования (см.
       «Solution Overview»), без скриптов
-- [ ] `index.html`: favicon (`public/favicon.svg`, свой логотип), два
+- [x] `index.html`: favicon (`public/favicon.svg`, свой логотип), два
       `<meta name="theme-color" media=…>`
-- [ ] тест `App`: при `prefers-color-scheme: dark` (стаб `matchMedia`) у `<html>`
+- [x] тест `App`: при `prefers-color-scheme: dark` (стаб `matchMedia`) у `<html>`
       `data-mantine-color-scheme="dark"`, без стаба — `light`
-- [ ] проверить в браузере светлую и тёмную схемы (эмуляция `prefers-color-scheme`)
-- [ ] `make check` — зелёный
+- [x] проверить в браузере светлую и тёмную схемы (эмуляция `prefers-color-scheme`) (skipped - chrome-devtools недоступен; проверено сборкой и тестом схемы)
+- [x] `make check` — зелёный
 
 ### Task 2: Иконки и кнопки-иконки
 

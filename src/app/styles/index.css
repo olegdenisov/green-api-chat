@@ -1,3 +1,16 @@
+/* Before the bundle mounts MantineProvider (which sets data-mantine-color-scheme), follow the
+   system scheme with CSS only: no inline script, so CSP script-src needs no exceptions. */
+html {
+  color-scheme: light dark;
+}
+
 body {
   margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mantine-color-scheme]) body {
+    background-color: #141518;
+    color: #f1f3f5;
+  }
 }

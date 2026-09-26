@@ -31,7 +31,19 @@ const chatStub = () => screen.queryByText("Выберите чат или соз
 const idInput = () => screen.getByLabelText("idInstance");
 
 beforeEach(stubFetch);
-afterEach(() => notifications.clean());
+afterEach(() => {
+  notifications.clean();
+  // MantineProvider leaves the scheme attribute on <html> after unmount.
+  document.documentElement.removeAttribute("data-mantine-color-scheme");
+});
+
+const stubColorScheme = (dark: boolean) => {
+  const original = window.matchMedia;
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    ...original(query),
+    matches: dark && query === "(prefers-color-scheme: dark)",
+  }));
+};
 
 // App owns its providers (its own Reatom frame), so it uses plain RTL render.
 describe("App", () => {
@@ -40,6 +52,18 @@ describe("App", () => {
 
     expect(idInput()).toBeInTheDocument();
     expect(chatStub()).not.toBeInTheDocument();
+  });
+
+  it("follows the system color scheme", () => {
+    stubColorScheme(true);
+    const { unmount } = render(<App />);
+    expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "dark");
+    unmount();
+    document.documentElement.removeAttribute("data-mantine-color-scheme");
+
+    stubColorScheme(false);
+    render(<App />);
+    expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "light");
   });
 
   it("shows the chat when credentials were saved before", () => {
