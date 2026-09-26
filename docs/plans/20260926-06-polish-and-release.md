@@ -324,13 +324,13 @@
 - Modify: `src/features/receive-messages/ui/connection-indicator.module.css`
 - Create: `src/shared/ui/app-title.test.tsx`
 
-- [ ] логин: карточка по центру на фоне в стиле MAX, `IconLogo` над названием, подсказка,
+- [x] логин: карточка по центру на фоне в стиле MAX, `IconLogo` над названием, подсказка,
       где взять `idInstance`/`apiTokenInstance` (ссылка на консоль GREEN-API)
-- [ ] полоса «Соединение…» — цвета из темы, корректна в тёмной схеме
-- [ ] тест `AppTitle`: `h1` с названием приложения, `className` дописывается
-- [ ] тест `LoginPage`: заголовок, форма, ссылка на консоль GREEN-API с
+- [x] полоса «Соединение…» — цвета из темы, корректна в тёмной схеме
+- [x] тест `AppTitle`: `h1` с названием приложения, `className` дописывается
+- [x] тест `LoginPage`: заголовок, форма, ссылка на консоль GREEN-API с
       `target="_blank"` и `rel="noreferrer"`
-- [ ] проверить в браузере и `make check`
+- [x] проверить в браузере и `make check`
 
 ### Task 7: Доступность: фокус после «Назад» и аудит
 

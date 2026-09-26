@@ -4,6 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--mantine-spacing-md);
+  background: var(--ga-feed-bg);
 }
 
 .card {
@@ -11,8 +12,19 @@
   max-width: rem(400px);
 }
 
+.logo {
+  display: block;
+  margin: 0 auto var(--mantine-spacing-sm);
+  color: var(--mantine-primary-color-filled);
+}
+
 /* Overrides Mantine Title defaults (margin: 0). */
 .title {
+  margin-bottom: var(--mantine-spacing-xs);
+  text-align: center;
+}
+
+.hint {
   margin-bottom: var(--mantine-spacing-lg);
   text-align: center;
 }

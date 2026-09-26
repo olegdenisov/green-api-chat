@@ -1,15 +1,25 @@
-import { Paper } from "@mantine/core";
+import { Anchor, Paper, Text } from "@mantine/core";
 
 import { LoginForm } from "@/features/auth";
-import { AppTitle } from "@/shared/ui";
+import { AppTitle, IconLogo } from "@/shared/ui";
 
 import classes from "./login-page.module.css";
+
+const CONSOLE_URL = "https://console.green-api.com";
 
 export function LoginPage() {
   return (
     <main className={classes.page}>
-      <Paper withBorder shadow="sm" p="xl" radius="md" className={classes.card}>
+      <Paper withBorder shadow="sm" p="xl" radius="lg" className={classes.card}>
+        <IconLogo size={48} className={classes.logo} />
         <AppTitle className={classes.title} />
+        <Text size="sm" c="dimmed" className={classes.hint}>
+          Возьмите idInstance и apiTokenInstance в{" "}
+          <Anchor href={CONSOLE_URL} target="_blank" rel="noreferrer">
+            консоли GREEN-API
+          </Anchor>
+          .
+        </Text>
         <LoginForm />
       </Paper>
     </main>

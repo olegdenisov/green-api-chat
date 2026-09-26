@@ -5,12 +5,7 @@
   gap: var(--mantine-spacing-xs);
   padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
   border-bottom: rem(1px) solid var(--mantine-color-default-border);
-
-  @mixin light {
-    background: var(--mantine-color-yellow-0);
-  }
-
-  @mixin dark {
-    background: var(--mantine-color-dark-6);
-  }
+  /* Mantine's yellow "light" variant switches by color scheme on its own. */
+  background: var(--mantine-color-yellow-light);
+  color: var(--mantine-color-text);
 }

@@ -12,4 +12,13 @@ describe("LoginPage", () => {
     expect(screen.getByLabelText("idInstance")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Войти" })).toBeInTheDocument();
   });
+
+  it("links to the GREEN-API console in a new tab", () => {
+    render(<LoginPage />);
+
+    const link = screen.getByRole("link", { name: "консоли GREEN-API" });
+    expect(link).toHaveAttribute("href", "https://console.green-api.com");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noreferrer");
+  });
 });
