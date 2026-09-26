@@ -4,6 +4,7 @@ export {
   isSendingStale,
   messagesAtom,
   removeChatMessages,
+  removeMessage,
   SEND_TIMEOUT,
   sendingStaleAt,
   updateMessage,

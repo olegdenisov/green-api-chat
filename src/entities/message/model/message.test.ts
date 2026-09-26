@@ -8,6 +8,7 @@ import {
   type Message,
   messagesAtom,
   removeChatMessages,
+  removeMessage,
   SEND_TIMEOUT,
   sendingStaleAt,
   toMessages,
@@ -99,6 +100,40 @@ describe("message", () => {
         addMessage(hello);
         const before = messagesAtom();
         updateMessage("404", hello.id, { status: "failed" });
+        expect(messagesAtom()).toBe(before);
+        expect("404" in messagesAtom()).toBe(false);
+      });
+    });
+  });
+
+  describe("removeMessage", () => {
+    it("removes the message by id", () => {
+      context.start(() => {
+        addMessage(hello);
+        addMessage(reply);
+        addMessage(other);
+        removeMessage(hello.chatId, hello.id);
+        expect(messagesAtom()).toEqual({
+          [hello.chatId]: [reply],
+          [other.chatId]: [other],
+        });
+      });
+    });
+
+    it("is a no-op for an unknown id", () => {
+      context.start(() => {
+        addMessage(hello);
+        const before = messagesAtom();
+        removeMessage(hello.chatId, "404");
+        expect(messagesAtom()).toBe(before);
+      });
+    });
+
+    it("is a no-op for an unknown chat and does not create its key", () => {
+      context.start(() => {
+        addMessage(hello);
+        const before = messagesAtom();
+        removeMessage("404", hello.id);
         expect(messagesAtom()).toBe(before);
         expect("404" in messagesAtom()).toBe(false);
       });

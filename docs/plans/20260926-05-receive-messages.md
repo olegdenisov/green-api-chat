@@ -253,17 +253,17 @@ type ReceivedMessage = {
 - Modify: `src/entities/message/model/message.ts`, `src/entities/message/index.ts`,
   `src/entities/message/model/message.test.ts`
 
-- [ ] `receiveChat({ chatId, title?, timestamp })` (`chat.receive`): нет чата — создать без
+- [x] `receiveChat({ chatId, title?, timestamp })` (`chat.receive`): нет чата — создать без
       выбора (`title || chatId`, `lastMessageAt = timestamp`); есть — обновить `title`, если
       передан непустой и отличается; `activeChatIdAtom` и `phone` не трогать
-- [ ] `removeMessage(chatId, id)` (`message.remove`): неизвестный чат/id — no-op, ключ чата не
+- [x] `removeMessage(chatId, id)` (`message.remove`): неизвестный чат/id — no-op, ключ чата не
       создаётся
-- [ ] экспорт из `index.ts`; `receiveChat` пока без потребителя вне тестов — это экшен
+- [x] экспорт из `index.ts`; `receiveChat` пока без потребителя вне тестов — это экшен
       сущности, steiger проверяет слайсы, не экспорты
-- [ ] тесты `receiveChat`: создание без смены активного чата; обновление `title`;
+- [x] тесты `receiveChat`: создание без смены активного чата; обновление `title`;
       пустой/тот же `title` — без записи; `phone` сохраняется
-- [ ] тесты `removeMessage`: удаление; неизвестный id/чат — no-op, без записи
-- [ ] `make check` — зелёный
+- [x] тесты `removeMessage`: удаление; неизвестный id/чат — no-op, без записи
+- [x] `make check` — зелёный
 
 ### Task 3: Каркас слайса `features/receive-messages` и подключение
 

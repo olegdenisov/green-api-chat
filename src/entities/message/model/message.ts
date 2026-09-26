@@ -107,6 +107,14 @@ export const updateMessage = action((chatId: string, id: string, patch: MessageP
   messagesAtom.set((messages) => ({ ...messages, [chatId]: next }));
 }, "message.update");
 
+/** Removes the message by id. Unknown chat or id — no-op: the chat key is never created. */
+export const removeMessage = action((chatId: string, id: string) => {
+  const list = messagesAtom()[chatId];
+  if (!list?.some((message) => message.id === id)) return;
+  const next = list.filter((message) => message.id !== id);
+  messagesAtom.set((messages) => ({ ...messages, [chatId]: next }));
+}, "message.remove");
+
 export const removeChatMessages = action((chatId: string) => {
   if (!(chatId in messagesAtom())) return;
   messagesAtom.set(({ [chatId]: _removed, ...rest }) => rest);

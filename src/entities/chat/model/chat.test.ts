@@ -9,6 +9,7 @@ import {
   clearChats,
   findChatByPhone,
   openChat,
+  receiveChat,
   removeChat,
   sortedChatsAtom,
   toActiveChatId,
@@ -74,6 +75,48 @@ describe("chat", () => {
         openChat(alice);
         const before = chatsAtom();
         openChat({ chatId: alice.chatId, title: "other", lastMessageAt: 900 });
+        expect(chatsAtom()).toBe(before);
+      });
+    });
+  });
+
+  describe("receiveChat", () => {
+    it("creates a new chat without selecting it", () => {
+      context.start(() => {
+        openChat(alice);
+        receiveChat({ chatId: carol.chatId, title: carol.title, timestamp: 300 });
+        expect(chatsAtom()[carol.chatId]).toEqual(carol);
+        expect(activeChatIdAtom()).toBe(alice.chatId);
+      });
+    });
+
+    it("titles a new chat by its id without a title", () => {
+      context.start(() => {
+        receiveChat({ chatId: "1004", timestamp: 400 });
+        receiveChat({ chatId: "1005", title: "", timestamp: 500 });
+        expect(chatsAtom()["1004"]).toEqual({ chatId: "1004", title: "1004", lastMessageAt: 400 });
+        expect(chatsAtom()["1005"]).toEqual({ chatId: "1005", title: "1005", lastMessageAt: 500 });
+        expect(activeChatIdAtom()).toBeNull();
+      });
+    });
+
+    it("updates the title of an existing chat and keeps its phone", () => {
+      context.start(() => {
+        openChat(alice);
+        openChat(bob);
+        receiveChat({ chatId: alice.chatId, title: "Alice Liddell", timestamp: 900 });
+        expect(chatsAtom()[alice.chatId]).toEqual({ ...alice, title: "Alice Liddell" });
+        expect(activeChatIdAtom()).toBe(bob.chatId);
+      });
+    });
+
+    it("does not write for an empty, missing or the same title", () => {
+      context.start(() => {
+        openChat(alice);
+        const before = chatsAtom();
+        receiveChat({ chatId: alice.chatId, title: "", timestamp: 900 });
+        receiveChat({ chatId: alice.chatId, timestamp: 900 });
+        receiveChat({ chatId: alice.chatId, title: alice.title, timestamp: 900 });
         expect(chatsAtom()).toBe(before);
       });
     });

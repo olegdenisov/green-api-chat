@@ -94,6 +94,24 @@ export const openChat = action((chat: Chat) => {
   activeChatIdAtom.set(chat.chatId);
 }, "chat.open");
 
+/**
+ * A chat of a received message: a new one is created **without** selecting it (`title` —
+ * the given one or `chatId`); an existing one only gets a non-empty changed `title`.
+ * `phone` and the selection are never touched.
+ */
+export const receiveChat = action(
+  ({ chatId, title, timestamp }: { chatId: string; title?: string; timestamp: number }) => {
+    const existing = chatsAtom()[chatId];
+    if (!existing) {
+      const chat: Chat = { chatId, title: title || chatId, lastMessageAt: timestamp };
+      chatsAtom.set((chats) => ({ ...chats, [chatId]: chat }));
+    } else if (title && existing.title !== title) {
+      chatsAtom.set((chats) => ({ ...chats, [chatId]: { ...existing, title } }));
+    }
+  },
+  "chat.receive",
+);
+
 /** Raises `lastMessageAt` (never lowers it); unknown chat — no-op. */
 export const touchChat = action((chatId: string, timestamp: number) => {
   const chat = chatsAtom()[chatId];

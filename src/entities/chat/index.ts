@@ -5,6 +5,7 @@ export {
   clearChats,
   findChatByPhone,
   openChat,
+  receiveChat,
   removeChat,
   sortedChatsAtom,
   touchChat,
