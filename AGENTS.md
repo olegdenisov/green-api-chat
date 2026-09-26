@@ -43,6 +43,10 @@
   в т.ч. из другой вкладки. Новые данные пользователя чистить там же, не в `logout`. Хук
   регистрируется side-effect импортом в `app.tsx`; в тестах без `App` очистки нет —
   импортировать `@/app/user-data-cleanup` в тесте, если она нужна (из `app`-тестов).
+- Фоновая работа, живущая, пока есть креды, — `features/receive-messages`: опрос очереди
+  уведомлений запускает `withConnectHook` на `receiveStatusAtom`; подписчики — безголовый
+  `ReceiveMessages` (рендерит `Screen` в `app.tsx` рядом с `ChatPage`) и
+  `ConnectionIndicator` в `ChatPage`. Логаут размонтирует экран — отключение отменяет опрос.
 - steiger не видит `export * from "…"`: такой re-export через границу слоя не ловится —
   писать `import`.
 - В `app` нет сегмента `ui` (`fsd/no-ui-in-app`): компоненты уровня приложения (`Screen`)
@@ -68,8 +72,10 @@
   причина в `cause`), `rate-limit` (`469` и `rate_limit_exceeded` в `200` у `checkAccount`),
   `http` (прочие статусы, битый JSON, пустое тело там, где оно обязательно). `message` — без
   URL и токена.
-- Отмена: все методы принимают `{ signal }`; при отменённом `signal` пробрасывается
-  `signal.reason` (не `ApiError`) — чтобы работала отмена Reatom.
+- Отмена: все методы принимают `{ signal, timeout }`; при отменённом `signal` пробрасывается
+  `signal.reason` (не `ApiError`) — чтобы работала отмена Reatom. `timeout` (мс) — таймаут
+  запроса: `request()` сам объединяет его с `signal` и бросает `TimeoutError`; вручную
+  сигналы и таймеры в моделях не объединять (так `deliver()` и цикл опроса).
 - Форматы запросов/ответов сверять по https://green-api.com/telegram/docs/ (страницы
   методов), не по WhatsApp-версии; новые примеры — фикстурами в `test/fixtures/green-api/`
   с `satisfies`.
@@ -151,12 +157,19 @@
   отменой): при сбросе кадра это был бы unhandled rejection. Исключение — синхронный `throw`
   без клиента (`requireApi()` из `entities/session`): ошибка программиста, экран чата требует креды. Долгую операцию, которую не
   должна отменять повторная отправка, делать обычным `action`, не `onSubmit` формы.
-- Таймаут запроса — `setTimeout` + `AbortController` с причиной `TimeoutError`, не
+- Таймаут запроса — опция `timeout` клиента GREEN-API. Внутри `request()` —
+  `setTimeout` + `AbortController` с причиной `TimeoutError`, не
   `AbortSignal.timeout()` (не подчиняется fake timers). Сигналы объединять вручную (общий
   `AbortController` + слушатель `abort`), не `AbortSignal.any()`: его нет в Safari < 17.4 и
   Chrome < 116, которые покрывает цель сборки Vite (полифилов нет). `isAbort` узнаёт только
   `AbortError`, поэтому таймаут — ошибка, а не отмена. `context.reset()` не отменяет ни
   запрос, ни этот таймер.
+- Фоновый процесс — `withConnectHook` на атоме статуса: колбэк запускается при первом
+  подписчике, в его кадре `wrap`/`sleep` и `abortVar.subscribe()` (`signal` запросов)
+  отменяются при отключении; очистку (статус `idle`) возвращать из хука. Промис из хука
+  никто не ждёт — ошибки кроме `isAbort` ловить и логировать. Внешние колбэки
+  (`navigator.locks.request`) вызываются вне кадра — передавать `wrap(fn)`, сам промис
+  `request` — тоже через `wrap()`. Нет `navigator.locks` (jsdom) — работать без лока.
 - `set()` persist-атома с `subscribe: false`, ещё не прочитанного в кадре, сравнивает с
   дефолтом: `set(null)` при дефолте `null` в хранилище не пишется. Сначала прочитать атом
   (так в `clearChats`).
@@ -184,10 +197,17 @@
   хелпер `@test/green-api`: `beforeEach(stubFetch)`, `respond`/`respondJson`, `creds`/`TOKEN`/
   `BASE`; `hangUntilAbort()` — мок, который отклоняется с `signal.reason` при отмене (тесты
   отмены). `respondByMethod({ getStateInstance: { body }, ... })` — ответ по имени метода
-  из URL (неожиданный метод роняет тест), `calledMethods()` — список вызванных методов.
+  из URL (неожиданный метод роняет тест); `"hang"` — запрос висит до отмены (рендер экрана
+  чата запускает опрос: `receiveNotification: "hang"`); массив — ответы по порядку,
+  последний повторяется (`[{ body: notification }, "hang"]`). `calledMethods()` — список
+  вызванных методов, `calledUrls()` — их URL.
   `deferFetch()` — каждый вызов ждёт `resolveNext(body, status?)`/`rejectNext(error)`
   (`resolveAt(index, body)` — ответ не по порядку), `pending()` — число ждущих, отмена — с `signal.reason` (состояние «до ответа», логаут
   посреди запроса).
+- Web Locks: jsdom их не реализует. `stubWebLocks()` из `@test/web-locks` ставит
+  эксклюзивный `navigator.locks` на время теста (снимается сам); `held(name)`/
+  `waiting(name)` — состояние лока. Без стаба опрос идёт без лока. Подписки на
+  `receiveStatusAtom` в тестах снимать явно, иначе цикл утечёт (особенно с fake timers).
 - Примеры ответов GREEN-API — `.ts`-фикстуры в `test/fixtures/green-api/`:
   `export const x = { ... } satisfies <Тип>`, данные из документации (вымышленные).
   `tsc -b` сверяет их с типами.

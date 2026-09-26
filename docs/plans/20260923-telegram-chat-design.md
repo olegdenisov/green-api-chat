@@ -125,15 +125,19 @@ src/
     auth/              форма логина (reatomForm: проверка инстанса, webhook-настройки,
                        сохранение кредов), кнопка «Выйти»
     delete-chats/      deleteChat (чат + история), deleteAllChats, DeleteChatButton
-    receive-messages/  цикл polling, раскладка уведомлений по чатам (этап 5)
+    receive-messages/  model: parseNotification (чистая), applyReceivedMessage (раскладка с
+                       дедупликацией), pollNotifications (цикл, backoff), receiveStatusAtom
+                       (withConnectHook → Web Lock → цикл); ui: ReceiveMessages (безголовый,
+                       рендерит app), ConnectionIndicator (полоса «Соединение…» в ChatPage)
   entities/
     session/   креды (credentialsAtom, persist), logout, greenApiAtom (клиент из кредов),
                requireApi (клиент или throw)
-    chat/      Chat, chatsAtom, activeChatIdAtom, сортировка, openChat/touchChat/removeChat
-    message/   Message, messagesAtom по chatId, addMessage/updateMessage, SEND_TIMEOUT,
+    chat/      Chat, chatsAtom, activeChatIdAtom, сортировка, openChat/receiveChat/touchChat/
+               removeChat
+    message/   Message, messagesAtom по chatId, addMessage/updateMessage/removeMessage, SEND_TIMEOUT,
                isSendingStale/sendingStaleAt
   shared/
-    api/       клиент GREEN-API (fetch, типы, ApiError)
+    api/       клиент GREEN-API (fetch, типы, ApiError, опции { signal, timeout })
     config/    PERSIST_TTL (10 лет) — для session, chat, message
     ui/        мелкие общие компоненты (AppTitle)
 ```
@@ -229,7 +233,8 @@ type Message = {
    размонтирование окна его не отменяют; возвращённый промис не отклоняется (экшен
    вызывается без `await`); без клиента — синхронный `throw` (ошибка программиста: экран
    чата требует креды).
-4. Таймаут `SEND_TIMEOUT` (30 с) → `failed` (таймаут — `TimeoutError`, не отмена). Отправка,
+4. Таймаут `SEND_TIMEOUT` (30 с) — опция `timeout` клиента (этап 5) → `failed` (таймаут —
+   `TimeoutError`, не отмена). Отправка,
    прерванная закрытием вкладки или перезагрузкой, остаётся `sending`; `isSendingStale`
    (`now - attemptAt > SEND_TIMEOUT`) показывает её как `failed` (текст, «Повторить» и
    `data-failed` пузыря); пока такая отправка не зависла, пузырь держит одноразовый таймер на
@@ -248,31 +253,44 @@ type Message = {
 
 ### Получение
 
-Цикл стартует после логина, останавливается при логауте (`AbortController`).
+Итог этапа 5 (`docs/plans/20260926-05-receive-messages.md`), слайс `features/receive-messages`.
 
-1. `receiveNotification` → `null` → повтор.
-2. Событие разбирается по `typeWebhook`:
-   - `incomingMessageReceived` с текстом → входящее сообщение; чата нет — создаётся.
-   - `outgoing*MessageReceived` → исходящее, если нет сообщения с таким `idMessage`.
-   - остальное (статусы, медиа) — игнор.
-3. `deleteNotification(receiptId)` — всегда, включая игнорируемые события.
-4. Сетевая ошибка → backoff; `401`/`403` → `logout()` из `entities/session` (данные чистит
-   хук в `app/user-data-cleanup.ts`, отдельных вызовов не нужно).
-
-Конкретные примитивы Reatom v1001 для цикла (effect, abort) — сверить по доке при реализации.
-
-Задачи этапа 5 (по итогам этапа 4):
-
-- Раскладка уведомлений — через готовые экшены сущностей: `openChat` (чата нет — создать;
-  `title` — `chatName`), `touchChat(chatId, timestamp)`, `addMessage`; секунды GREEN-API →
-  ms.
-- Дедупликация по `idMessage` с учётом гонки: `outgoingAPIMessageReceived` может прийти
-  раньше ответа `sendMessage`, пока у сообщения ещё `local-*` id. Нужно сопоставить
-  событие с ожидающим `sending`-сообщением (или отложить разбор), иначе появится дубль.
-- **Polling только во вкладке-лидере**: `navigator.locks.request("ga.polling", { signal },
-  …)` (Web Locks, без зависимостей). Одна вкладка разбирает очередь и пишет в атомы,
-  остальные получают данные через синхронизацию `localStorage`; лидер закрылся — лок
-  переходит к следующей вкладке. `signal` — отмена при логауте.
+1. **Жизненный цикл — `withConnectHook` на `receiveStatusAtom`.** Подписчики — безголовый
+   `ReceiveMessages` (рендерит `app` рядом с `ChatPage`, т.е. только при кредах) и
+   `ConnectionIndicator`. Первый подписчик → `navigator.locks.request("ga.polling",
+   { signal }, wrap(() => pollNotifications()))`; сам промис `request` — через `wrap()`,
+   отмена гасится по `isAbort`. Логаут → экран логина → подписчиков нет → отключение отменяет
+   ожидание лока, `wrap`/`sleep` и запросы цикла; лок переходит к следующей вкладке.
+2. **Лидер** — одна вкладка разбирает очередь и пишет в атомы, остальные (`follower`) получают
+   данные через синхронизацию `localStorage`. Нет `navigator.locks` (jsdom, старые браузеры)
+   — опрос без лока, каждая вкладка сама.
+3. **Цикл** (`pollNotifications`, в кадре хука): клиент — `greenApiAtom()` после получения
+   лока, после каждого `await` сверяется, что он тот же. `receiveNotification({
+   receiveTimeout: 20, timeout: 30 с })` → `null` → сразу повтор; событие →
+   `parseNotification` → `applyReceivedMessage` → `deleteNotification` всегда (и для
+   игнорируемых, и если раскладка бросила — иначе FIFO-очередь встанет; ошибка — в
+   `console.error`). Сбой `delete` вернёт то же событие — раскладка идемпотентна.
+4. **Ошибки**: отмена → тихий выход; `ApiError kind: "auth"` → тост «Сессия недействительна,
+   войдите заново» + `logout()` (данные чистит хук `app/user-data-cleanup.ts`); прочее
+   (`network`, `http`, `TimeoutError`) → backoff `min(1 с · 2^(n−1), 30 с)`, после 2 сбоев
+   подряд — статус `reconnecting`; успешный ответ — сброс, `polling`.
+5. **Разбор** (`parseNotification`, чистая функция): `incomingMessageReceived` → `in`,
+   `outgoingMessageReceived` → `out`, `outgoingAPIMessageReceived` → `out` + `viaApi`; текст
+   из `textMessage`/`extendedTextMessage`, медиа и прочие `typeWebhook` — игнор; только личные
+   чаты (`chatType` `user` или нет, `chatId` — положительное целое); битое тело → `null` без
+   исключений; секунды → ms.
+6. **Раскладка** (`applyReceivedMessage`): `receiveChat` (новое действие `entities/chat`: чата
+   нет — создаётся, **не выбирается**, `title` — `chatName` или `chatId`; есть — обновляется
+   `title` на непустое другое `chatName`, `phone` не трогается) → сообщение с таким `id` уже
+   есть — только `touchChat` → для `viaApi` ищется ожидающая отправка с тем же текстом: самое
+   старое исходящее `sending` (включая зависшие), нет — самое старое `failed`; найдено —
+   `updateMessage({ id, status: "sent" })` → иначе `addMessage(sent)` → `touchChat`.
+   Приоритет `sending`: иначе событие новой отправки пометило бы отправленным старое
+   `failed` с тем же текстом. Отправка с телефона с ожидающими не сопоставляется.
+7. **Защита `deliver()`**: ответ `sendMessage`, чей `idMessage` уже есть в чате (событие
+   сопоставлено с другим локальным сообщением с тем же текстом), удаляет текущее локальное
+   (`removeMessage` — новое действие `entities/message`), а не создаёт второй такой же id.
+   Итог при двух одинаковых текстах — два сообщения с разными id.
 
 ## Ошибки и UI-состояния
 
@@ -319,7 +337,9 @@ type Message = {
   историю?» → «Удалить»).
 - Отправка: неактивна при пустом тексте, `Enter` — отправить, `Shift+Enter` — перенос,
   лимит 4096 на клиенте.
-- Polling: индикатор «соединение…» в шапке при серии сетевых ошибок; `401`/`403` → логаут с тостом.
+- Polling: полоса «Соединение…» (`ConnectionIndicator`) над колонками `ChatPage` — видна и
+  на узком экране в окне чата — при серии ошибок (статус `reconnecting`), только у
+  вкладки-лидера; `401`/`403` → логаут с тостом.
 - Пустые состояния: нет чатов → «Создайте чат по номеру телефона»; чат не выбран → заглушка.
 
 ## Тесты
@@ -360,6 +380,12 @@ type Message = {
    синхронизация вкладок через `localStorage`. В тестах — хелпер `deferFetch()` в
    `@test/green-api`.
 5. **Получение** — `features/receive-messages`: парсер, polling, backoff, abort, дедупликация.
+   Итог (`docs/plans/20260926-05-receive-messages.md`): опция `timeout` в `shared/api`
+   (`deliver()` перешёл на неё); `receiveChat` и `removeMessage` в сущностях; запуск через
+   `withConnectHook` + Web Lock `ga.polling` с фолбэком без лока; сопоставление
+   API-событий с отправками по тексту (приоритет `sending`) и защита `deliver()` от дубля
+   id; полоса «Соединение…» только у лидера. В тестах — стаб `stubWebLocks()`
+   (`@test/web-locks`), `respondByMethod` с `"hang"` и массивом ответов, `calledUrls()`.
 6. **Полировка и сдача** — вёрстка под web.max.ru, пустые состояния, компонентные тесты,
    README, деплой.
 
@@ -369,3 +395,11 @@ type Message = {
 - Одновременные записи двух вкладок в одном тике теряют одну из них (атом пишется целиком).
 - История до первого логина недоступна (кроме событий за последние 24 ч в очереди).
 - Только текстовые сообщения.
+- Индикатор «Соединение…» — только у вкладки-лидера; ведомая проблем лидера не видит.
+- Постоянная `http`-ошибка опроса (например, `400`, если `webhookUrl` выставили извне после
+  логина) выглядит как вечное «Соединение…».
+- Свои API-отправки сопоставляются с событиями по точному тексту: если сервер нормализует
+  текст — дубль.
+- Запись лидера может затереть одновременную отправку в другой вкладке (сообщение вернётся
+  через API-событие).
+- События очереди за последние 24 ч воссоздают удалённый чат и появляются при первом входе.
