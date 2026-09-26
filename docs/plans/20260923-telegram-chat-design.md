@@ -108,20 +108,30 @@ Notification — событие инстанса (входящее/исходя�
   `sendMessage` работают без прокси; две вкладки и узкий экран — тоже. Не проверены
   `receiveNotification`/`deleteNotification` (этап 5); если CORS проявится там — варианты:
   Vite `server.proxy` с `router` по `apiUrl` для dev, прокси для прода.
+  Этап 6: с домена деплоя не проверено — деплоя и репозитория на GitHub ещё нет (ручной
+  шаг после сдачи, см. «Post-Completion» в `docs/plans/20260926-06-polish-and-release.md`).
+  Если опрос не заработает с домена Vercel — фолбэк: `rewrites` в `vercel.json` на хост
+  GREEN-API по `idInstance` и `connect-src 'self'`.
+- CSP из `vercel.json`, CI на GitHub и деплой Vercel — написаны, но не запускались.
+  Сценарий задания на реальном инстансе после этапа 6 тоже не прогонялся.
+- Палитра web.max.ru: снять через DevTools не удалось (навигация на внешний сайт была
+  отклонена), цвета темы подобраны на глаз.
 
 ## Архитектура (FSD)
 
 ```
 src/
-  app/        провайдеры (Mantine, Reatom), глобальные стили, вход, выбор экрана;
+  app/        провайдеры (Mantine, Reatom), тема (providers/theme.ts), глобальные стили,
+              вход, выбор экрана;
               user-data-cleanup.ts — логаут ⇒ deleteAllChats() + resetChatPage(); нет
               кредов при старте ⇒ deleteAllChats()
   pages/
     login/    карточка с формой логина (LoginForm)
     chat/     model: createChatForm, sendChatMessage/retryChatMessage, draftField/sendDraft,
               activeMessagesAtom; ui: Sidebar (CreateChatForm, ChatList), ChatWindow
-              (MessageBubble, Composer); lib: formatTime (HH:MM), formatChatTime (сегодня —
-              HH:MM, иначе DD.MM.YY)
+              (MessageBubble, Composer, разделители дней), ChatAvatar, EmptyState; lib:
+              formatTime (HH:MM), formatChatTime (сегодня — HH:MM, иначе DD.MM.YY),
+              formatDayLabel («Сегодня» / «Вчера» / «25 сентября» / «3 января 2025»)
   features/
     auth/              форма логина (reatomForm: проверка инстанса, webhook-настройки,
                        сохранение кредов), кнопка «Выйти»
@@ -141,8 +151,15 @@ src/
   shared/
     api/       клиент GREEN-API (fetch, типы, ApiError, опции { signal, timeout })
     config/    PERSIST_TTL (10 лет) — для session, chat, message
-    ui/        мелкие общие компоненты (AppTitle)
+    ui/        мелкие общие компоненты (AppTitle) и инлайн-SVG иконки (icons)
 ```
+
+Тема (этап 6): `src/app/providers/theme.ts` — `createTheme` (палитра `max`, системный
+шрифт) и `cssVariablesResolver` с токенами `--ga-*` (фон ленты, пузыри, разделитель дня) для
+светлой и тёмной схем; `MantineProvider defaultColorScheme="auto"` — схема по системной,
+переключателя нет. До монтирования схему подхватывает CSS (`index.css`), скриптов нет — CSP
+без исключений для `script-src`. Иконки — свои инлайн-SVG в `shared/ui/icons.tsx`, шрифты —
+системные, новых зависимостей нет.
 
 Правила: импорт только сверху вниз, фичи не импортируют друг друга, доступ к слайсу — через
 публичный `index.ts`. Пустые слои/сегменты не создаём. Границы проверяет steiger.
@@ -345,7 +362,9 @@ type Message = {
 - Polling: полоса «Соединение…» (`ConnectionIndicator`) над колонками `ChatPage` — видна и
   на узком экране в окне чата — при серии ошибок (статус `reconnecting`), только у
   вкладки-лидера; `401`/`403` → логаут с тостом.
-- Пустые состояния: нет чатов → «Создайте чат по номеру телефона»; чат не выбран → заглушка.
+- Пустые состояния (общий `EmptyState`: иконка + текст): нет чатов → «Создайте чат по номеру
+  телефона»; чат не выбран → «Выберите чат или создайте новый»; чат без сообщений →
+  «Сообщений пока нет».
 
 ## Тесты
 
@@ -392,9 +411,15 @@ type Message = {
    id; полоса «Соединение…» только у лидера. В тестах — стаб `stubWebLocks()`
    (`@test/web-locks`), `respondByMethod` с `"hang"` и массивом ответов, `calledUrls()`.
 6. **Полировка и сдача** — вёрстка под web.max.ru, пустые состояния, компонентные тесты,
-   README, деплой.
+   README, деплой. Итог (`docs/plans/20260926-06-polish-and-release.md`): тема и токены
+   `--ga-*`, тёмная схема по системной без скрипта, свои иконки в `shared/ui`, аватары с
+   инициалами, разделители дней, кнопки-иконки с `aria-label`, фокус после «Назад»
+   (Lighthouse accessibility 100 в обеих схемах), `vercel.json` (пресет `vite`, `corepack
+   enable`, CSP), CI на GitHub Actions (Node 22/24). Палитру web.max.ru снять не удалось —
+   цвета подобраны на глаз. Ручные проверки (CI, деплой, CSP, CORS опроса на домене деплоя,
+   сценарий на реальном инстансе) не проведены — остаются на после сдачи.
 
-## Известные ограничения (в README на этапе 6)
+## Известные ограничения (продублированы в README)
 
 - Креды хранятся в браузере.
 - Одновременные записи двух вкладок в одном тике теряют одну из них (атом пишется целиком).

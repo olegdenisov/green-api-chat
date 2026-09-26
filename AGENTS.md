@@ -95,6 +95,17 @@
   преобразований (корректный снапшот — тот же объект). `subscribe: false` — без синхронизации
   (так у `activeChatIdAtom`: выбор чата у вкладки свой).
 
+## CI и деплой
+
+- CI — `.github/workflows/ci.yml`: на push в `main` и PR — `pnpm install --frozen-lockfile`,
+  `make check`, `make build` на Node 22 и 24. Деплой Vercel (Git-интеграция) от CI не
+  зависит.
+- `vercel.json`: пресет `vite`, `installCommand`/`buildCommand` с `corepack enable` (Vercel по
+  lockfile ставит pnpm 9/10, проект — pnpm 12), заголовки: CSP (`script-src 'self'`),
+  `Referrer-Policy`, `X-Content-Type-Options`. Поэтому в `index.html` не должно быть
+  inline-скриптов; `connect-src https:` — `apiUrl` задаёт пользователь. Менять CSP — вместе
+  с этим файлом; CSP на деплое ещё не проверена.
+
 ## Инструменты
 
 - oxlint (`.oxlintrc.json`): правила хуков и react-refresh — в плагине `react`
@@ -116,7 +127,17 @@
 - Глобальный CSS подключается только в `src/app/app.tsx`, в порядке: `@mantine/core/styles.css`
   → `@mantine/notifications/styles.css` → `./styles/index.css`. Так CSS Modules
   перекрывают стили Mantine.
-- Вёрстка — CSS Modules (`*.module.css`) рядом с компонентом.
+- Вёрстка — CSS Modules (`*.module.css`) рядом с компонентом. Цвета — только переменные
+  Mantine и `--ga-*` из темы, хардкода цветов в модулях нет.
+- Тема — `src/app/providers/theme.ts`: `createTheme` (палитра `max`, системный шрифт) и
+  `cssVariablesResolver` с токенами `--ga-*` (фон ленты, пузыри, разделитель дня) для
+  `light`/`dark`; там же переопределён `--mantine-color-dimmed` (контраст). `UiProvider`:
+  `defaultColorScheme="auto"` — схема по системной, переключателя нет. Скрипта схемы нет:
+  до монтирования `MantineProvider` схему подхватывает CSS в `src/app/styles/index.css`
+  (селектор `:root:not([data-mantine-color-scheme])`). Палитра подобрана на глаз, не снята с
+  web.max.ru (комментарий в `theme.ts`). `render` из `@test/render` тему не получает.
+- Иконки — свои инлайн-SVG в `src/shared/ui/icons.tsx` (`aria-hidden`, имя — у кнопки через
+  `aria-label`); новых зависимостей и веб-шрифтов нет.
 - Общие UI-компоненты — сегмент `src/shared/ui` (файлы плоско, публичный API — `index.ts`):
   например, `AppTitle` — название приложения как `h1` страницы.
 - `src/shared/config` — сегмент без слайсов, файлы плоско (`persist.ts` — `PERSIST_TTL`),
