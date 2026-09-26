@@ -8,6 +8,7 @@ import { activeChatIdAtom, chatsAtom, openChat } from "@/entities/chat";
 import { addMessage, messagesAtom } from "@/entities/message";
 import { credentialsAtom } from "@/entities/session";
 
+import { checkAccountExists } from "@test/fixtures/green-api/check-account";
 import { deleteNotificationResponse } from "@test/fixtures/green-api/delete-notification";
 import { getSettingsResponse } from "@test/fixtures/green-api/get-settings";
 import { getStateInstanceResponse } from "@test/fixtures/green-api/get-state-instance";
@@ -64,6 +65,51 @@ describe("App", () => {
     stubColorScheme(false);
     render(<App />);
     expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "light");
+  });
+
+  it("runs the whole scenario: login, new chat, sending, an incoming reply", async () => {
+    const fetches = deferFetch();
+    const user = userEvent.setup();
+    render(<App />);
+    const pending = (count: number) => waitFor(() => expect(fetches.pending()).toBe(count));
+
+    await user.type(idInput(), creds.idInstance);
+    await user.type(screen.getByLabelText("apiTokenInstance"), creds.apiTokenInstance);
+    await user.click(screen.getByRole("button", { name: "Войти" }));
+    await pending(1);
+    fetches.resolveNext(getStateInstanceResponse);
+    await pending(1);
+    fetches.resolveNext(getSettingsResponse);
+    // The chat screen: the long poll is pending.
+    expect(await screen.findByText("Выберите чат или создайте новый")).toBeInTheDocument();
+    await pending(1);
+
+    await user.type(screen.getByLabelText("Номер телефона"), "+7 987 654-32-10{Enter}");
+    await pending(2);
+    fetches.resolveAt(1, checkAccountExists);
+    expect(await screen.findByRole("heading", { level: 2, name: "@username" })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Сообщение"), "Привет{Enter}");
+    await pending(2);
+    fetches.resolveAt(1, sendMessageResponse);
+    const feed = screen.getByRole("log", { name: "Сообщения" });
+    expect(await within(feed).findByRole("img", { name: "Отправлено" })).toBeInTheDocument();
+    expect(within(feed).getByText("Привет").closest("[data-direction]")).toHaveAttribute(
+      "data-direction",
+      "out",
+    );
+
+    // The reply arrives through the notification queue into the same chat.
+    fetches.resolveAt(0, { receiptId: 1, body: incomingTextMessage });
+    const reply = await within(feed).findByText(
+      incomingTextMessage.messageData.textMessageData.textMessage,
+    );
+    expect(reply.closest("[data-direction]")).toHaveAttribute("data-direction", "in");
+    // One chat: the reply went into the chat created by number, which stays open.
+    const rows = within(screen.getByRole("list")).getAllByRole("button");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveAttribute("aria-current", "true");
+    expect(within(rows[0]!).getByText(/Я использую GREEN-API/)).toBeInTheDocument();
   });
 
   it("shows the chat when credentials were saved before", () => {

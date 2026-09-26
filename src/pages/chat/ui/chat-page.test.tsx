@@ -12,7 +12,7 @@ import { render } from "@test/render";
 
 import { ChatPage } from "./chat-page";
 
-const pageRoot = () => screen.getByRole("main").parentElement;
+const pageRoot = () => screen.getByRole("main");
 
 beforeEach(stubFetch);
 afterEach(() => notifications.clean());
@@ -27,6 +27,9 @@ describe("ChatPage", () => {
     expect(screen.getByText("Создайте чат по номеру телефона")).toBeInTheDocument();
     expect(screen.getByText("Выберите чат или создайте новый")).toBeInTheDocument();
     expect(pageRoot()).toHaveAttribute("data-view", "list");
+    // The one `main` landmark also exists in the narrow list view, where the window is hidden.
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    expect(screen.getByRole("navigation", { name: "Чаты" })).toBeInTheDocument();
     // Polling is not failing: no connection strip.
     expect(screen.queryByRole("status")).toBeNull();
   });
@@ -58,6 +61,22 @@ describe("ChatPage", () => {
 
     frame.run(() => activeChatIdAtom.set(null));
     await waitFor(() => expect(pageRoot()).toHaveAttribute("data-view", "list"));
+  });
+
+  it("returns focus to the row of the closed chat after back", async () => {
+    const user = userEvent.setup();
+    const { frame } = render(<ChatPage />);
+    frame.run(() =>
+      chatsAtom.set({
+        "1": { chatId: "1", title: "Friend", lastMessageAt: 2 },
+        "2": { chatId: "2", title: "Other", lastMessageAt: 1 },
+      }),
+    );
+
+    await user.click(await screen.findByRole("button", { name: /Other/ }));
+    await user.click(screen.getByRole("button", { name: "Назад к чатам" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /Other/ })).toHaveFocus());
   });
 
   it("treats a dangling active chat id as no chat", () => {

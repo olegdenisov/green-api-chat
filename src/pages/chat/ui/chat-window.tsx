@@ -58,40 +58,49 @@ const Feed = reatomComponent(() => {
   );
 }, "chatPage.Feed");
 
-/** Right column: header (back, title, delete), the message feed and the input. */
-export const ChatWindow = reatomComponent(({ className }: { className?: string }) => {
-  const chat = activeChatAtom();
-  const rootClass = className ? `${classes.window} ${className}` : classes.window;
+/**
+ * Right column: header (back, title, delete), the message feed and the input. `onBack` is told
+ * which chat "back" closed, so the page can return focus to its row in the list.
+ */
+export const ChatWindow = reatomComponent(
+  ({ className, onBack }: { className?: string; onBack?: (chatId: string) => void }) => {
+    const chat = activeChatAtom();
+    const rootClass = className ? `${classes.window} ${className}` : classes.window;
 
-  if (!chat) {
+    if (!chat) {
+      return (
+        <div className={rootClass} data-empty>
+          <EmptyState>Выберите чат или создайте новый</EmptyState>
+        </div>
+      );
+    }
+
     return (
-      <main className={rootClass} data-empty>
-        <EmptyState>Выберите чат или создайте новый</EmptyState>
-      </main>
+      <div className={rootClass}>
+        <header className={classes.header}>
+          {/* Only a narrow screen shows one column; there "back" returns to the list. */}
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            hiddenFrom="sm"
+            aria-label="Назад к чатам"
+            onClick={wrap(() => {
+              onBack?.(chat.chatId);
+              activeChatIdAtom.set(null);
+            })}
+          >
+            <IconArrowLeft />
+          </ActionIcon>
+          <ChatAvatar chat={chat} size={40} />
+          <Title order={2} size="h4" className={classes.title}>
+            {chat.title}
+          </Title>
+          <DeleteChatButton chatId={chat.chatId} />
+        </header>
+        <Feed key={chat.chatId} />
+        <Composer />
+      </div>
     );
-  }
-
-  return (
-    <main className={rootClass}>
-      <header className={classes.header}>
-        {/* Only a narrow screen shows one column; there "back" returns to the list. */}
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          hiddenFrom="sm"
-          aria-label="Назад к чатам"
-          onClick={wrap(() => activeChatIdAtom.set(null))}
-        >
-          <IconArrowLeft />
-        </ActionIcon>
-        <ChatAvatar chat={chat} size={40} />
-        <Title order={2} size="h4" className={classes.title}>
-          {chat.title}
-        </Title>
-        <DeleteChatButton chatId={chat.chatId} />
-      </header>
-      <Feed key={chat.chatId} />
-      <Composer />
-    </main>
-  );
-}, "chatPage.ChatWindow");
+  },
+  "chatPage.ChatWindow",
+);

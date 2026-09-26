@@ -1,4 +1,5 @@
 import { reatomComponent } from "@reatom/react";
+import { useEffect, useRef } from "react";
 
 import { activeChatAtom } from "@/entities/chat";
 import { ConnectionIndicator } from "@/features/receive-messages";
@@ -15,13 +16,34 @@ import classes from "./chat-page.module.css";
  */
 export const ChatPage = reatomComponent(() => {
   const chat = activeChatAtom();
+  const rootRef = useRef<HTMLDivElement>(null);
+  // The chat closed by "back": its row in the list gets the focus once the list is shown.
+  const closedChatId = useRef<string | null>(null);
+  const isOpen = chat !== null;
+
+  useEffect(() => {
+    const chatId = closedChatId.current;
+    if (isOpen || chatId === null) return;
+    closedChatId.current = null;
+    const root = rootRef.current;
+    const row = Array.from(root?.querySelectorAll<HTMLElement>("nav [data-chat-id]") ?? []).find(
+      (element) => element.dataset.chatId === chatId,
+    );
+    (row ?? root?.querySelector<HTMLElement>("nav"))?.focus();
+  }, [isOpen]);
+
   return (
-    <div className={classes.root}>
+    <div ref={rootRef} className={classes.root}>
       <ConnectionIndicator />
-      <div className={classes.page} data-view={chat ? "chat" : "list"}>
+      <main className={classes.page} data-view={chat ? "chat" : "list"}>
         <Sidebar className={classes.sidebar} />
-        <ChatWindow className={classes.window} />
-      </div>
+        <ChatWindow
+          className={classes.window}
+          onBack={(chatId) => {
+            closedChatId.current = chatId;
+          }}
+        />
+      </main>
     </div>
   );
 }, "chatPage.ChatPage");

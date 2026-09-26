@@ -20,7 +20,7 @@ const max: MantineColorsTuple = [
 
 export const theme = createTheme({
   primaryColor: "max",
-  primaryShade: { light: 6, dark: 5 },
+  primaryShade: { light: 7, dark: 7 },
   colors: { max },
   fontFamily:
     'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
@@ -31,15 +31,19 @@ export const theme = createTheme({
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {},
   light: {
+    // Mantine's default dimmed grey (#868e96) is 3.3:1 on white; a secondary text needs 4.5:1.
+    "--mantine-color-dimmed": "#5c6470",
     "--ga-feed-bg": "#eef1f5",
     "--ga-bubble-in-bg": "#ffffff",
     "--ga-bubble-in-text": "#111418",
-    "--ga-bubble-out-bg": "#1f7bff",
+    "--ga-bubble-out-bg": "#0f68e4",
     "--ga-bubble-out-text": "#ffffff",
     "--ga-day-bg": "rgba(17, 20, 24, 0.08)",
     "--ga-day-text": "#4b5563",
   },
   dark: {
+    // Mantine's dark dimmed (#828282) is 4:1 on the list background.
+    "--mantine-color-dimmed": "#9aa0a6",
     "--ga-feed-bg": "#141518",
     "--ga-bubble-in-bg": "#26282d",
     "--ga-bubble-in-text": "#f1f3f5",

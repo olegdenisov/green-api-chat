@@ -34,4 +34,9 @@
 .chats {
   flex: 1;
   overflow-y: auto;
+
+  /* Focused by code only (fallback target after "back"), not a tab stop. */
+  &:focus {
+    outline: none;
+  }
 }

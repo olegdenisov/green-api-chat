@@ -18,7 +18,7 @@ export function Sidebar({ className }: { className?: string }) {
       <div className={classes.form}>
         <CreateChatForm />
       </div>
-      <nav className={classes.chats} aria-label="Чаты">
+      <nav className={classes.chats} aria-label="Чаты" tabIndex={-1}>
         <ChatList />
       </nav>
     </aside>

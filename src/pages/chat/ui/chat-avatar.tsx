@@ -35,6 +35,7 @@ export function ChatAvatar({
       className={className}
       size={size}
       variant="filled"
+      autoContrast
       name={named ? chat.title : undefined}
       color={named ? "initials" : colorFor(chat.chatId)}
     />

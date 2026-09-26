@@ -36,6 +36,11 @@
   opacity: 0.7;
 }
 
+/* Full white: the faded one is below 4.5:1 on the accent bubble. */
+.row[data-direction="out"] .meta {
+  opacity: 1;
+}
+
 /* An unsent message: a red bubble, so the failure is visible without relying on the text alone. */
 .row .bubble[data-failed] {
   background: var(--mantine-color-red-filled);
