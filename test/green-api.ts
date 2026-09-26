@@ -68,11 +68,16 @@ export function calledUrls(): string[] {
 /**
  * Answers by the GREEN-API method name from the URL: `body` as JSON with `status` (200 by
  * default); `"hang"` keeps the request pending until aborted (the notification polling of a
- * rendered chat screen: `receiveNotification: "hang"`). A method missing from `responses` rejects the request and fails the test when it
- * finishes — the client would otherwise turn the rejection into `ApiError("network")`.
- * Call inside a test (uses `onTestFinished`).
+ * rendered chat screen: `receiveNotification: "hang"`). An array answers the calls of the
+ * method in order and repeats its last item (`[{ body: notification }, "hang"]` — one
+ * notification, then an empty long poll). A method missing from `responses` rejects the
+ * request and fails the test when it finishes — the client would otherwise turn the rejection
+ * into `ApiError("network")`. Call inside a test (uses `onTestFinished`).
  */
-export function respondByMethod(responses: Partial<Record<string, MethodResponse>>) {
+export function respondByMethod(
+  responses: Partial<Record<string, MethodResponse | [MethodResponse, ...MethodResponse[]]>>,
+) {
+  const calls = new Map<string, number>();
   const unexpected: string[] = [];
   onTestFinished(() => {
     if (unexpected.length > 0) {
@@ -81,7 +86,10 @@ export function respondByMethod(responses: Partial<Record<string, MethodResponse
   });
   fetchMock.mockImplementation(async (input, init) => {
     const method = methodOf(input);
-    const response = responses[method];
+    const answer = responses[method];
+    const index = calls.get(method) ?? 0;
+    calls.set(method, index + 1);
+    const response = Array.isArray(answer) ? answer[Math.min(index, answer.length - 1)] : answer;
     if (!response) {
       unexpected.push(method);
       throw new Error(`respondByMethod: unexpected GREEN-API method "${method}"`);

@@ -1,6 +1,6 @@
 import { notifications } from "@mantine/notifications";
 import { context } from "@reatom/core";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -8,9 +8,20 @@ import { activeChatIdAtom, chatsAtom, openChat } from "@/entities/chat";
 import { addMessage, messagesAtom } from "@/entities/message";
 import { credentialsAtom } from "@/entities/session";
 
+import { deleteNotificationResponse } from "@test/fixtures/green-api/delete-notification";
 import { getSettingsResponse } from "@test/fixtures/green-api/get-settings";
 import { getStateInstanceResponse } from "@test/fixtures/green-api/get-state-instance";
-import { creds, respondByMethod, stubFetch } from "@test/green-api";
+import { incomingTextMessage } from "@test/fixtures/green-api/incoming-text-message";
+import { outgoingApiMessage } from "@test/fixtures/green-api/outgoing-api-message";
+import { sendMessageResponse } from "@test/fixtures/green-api/send-message";
+import {
+  calledMethods,
+  creds,
+  deferFetch,
+  fetchMock,
+  respondByMethod,
+  stubFetch,
+} from "@test/green-api";
 
 import { App } from "./app";
 
@@ -104,6 +115,104 @@ describe("App", () => {
       expect(chatsAtom()).toEqual({});
       expect(messagesAtom()).toEqual({});
       expect(activeChatIdAtom()).toBeNull();
+    });
+  });
+
+  describe("receiving", () => {
+    const chatList = () => screen.getByRole("list");
+
+    it("starts polling after login and lists an incoming chat without selecting it", async () => {
+      respondByMethod({
+        getStateInstance: { body: getStateInstanceResponse },
+        getSettings: { body: getSettingsResponse },
+        receiveNotification: [{ body: { receiptId: 1, body: incomingTextMessage } }, "hang"],
+        deleteNotification: { body: deleteNotificationResponse },
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.type(idInput(), creds.idInstance);
+      await user.type(screen.getByLabelText("apiTokenInstance"), creds.apiTokenInstance);
+      await user.click(screen.getByRole("button", { name: "Войти" }));
+
+      const row = await screen.findByRole("button", { name: /Василиса Премудрая/ });
+      expect(
+        within(row).getByText(incomingTextMessage.messageData.textMessageData.textMessage),
+      ).toBeInTheDocument();
+      expect(row).not.toHaveAttribute("aria-current");
+      expect(chatStub()).toBeInTheDocument();
+      await waitFor(() =>
+        expect(calledMethods().filter((method) => method === "receiveNotification")).toHaveLength(
+          2,
+        ),
+      );
+      expect(calledMethods()).toContain("deleteNotification");
+    });
+
+    it("keeps one sent message when the API event outruns the sendMessage answer", async () => {
+      const chatId = outgoingApiMessage.senderData.chatId;
+      context.start(() => {
+        credentialsAtom.set(creds);
+        openChat({ chatId, title: "Василиса", lastMessageAt: 1 });
+      });
+      const fetches = deferFetch();
+      const user = userEvent.setup();
+      render(<App />);
+      const feed = () => screen.getByRole("log", { name: "Сообщения" });
+
+      // The long poll is pending; the message goes out next.
+      await waitFor(() => expect(calledMethods()).toEqual(["receiveNotification"]));
+      await user.type(screen.getByLabelText("Сообщение"), "Hello{Enter}");
+      await waitFor(() => expect(calledMethods()).toEqual(["receiveNotification", "sendMessage"]));
+
+      // The queue delivers the API event before the sendMessage answer.
+      fetches.resolveAt(0, {
+        receiptId: 1,
+        body: {
+          ...outgoingApiMessage,
+          idMessage: sendMessageResponse.idMessage,
+          messageData: { typeMessage: "textMessage", textMessageData: { textMessage: "Hello" } },
+        },
+      });
+      await waitFor(() => expect(calledMethods()).toContain("deleteNotification"));
+      fetches.resolveAt(1, deleteNotificationResponse);
+      // The event matched the pending send: one message, already sent.
+      expect(await within(feed()).findByLabelText("Отправлено")).toBeInTheDocument();
+      expect(within(feed()).getAllByText("Hello")).toHaveLength(1);
+
+      // The late answer changes nothing.
+      fetches.resolveAt(0, sendMessageResponse);
+      await waitFor(() => expect(fetches.pending()).toBe(1)); // The next long poll.
+      expect(within(feed()).getAllByText("Hello")).toHaveLength(1);
+      expect(within(feed()).getAllByLabelText("Отправлено")).toHaveLength(1);
+      expect(within(chatList()).getAllByRole("button")).toHaveLength(1);
+    });
+
+    it("stops polling on logout", async () => {
+      context.start(() => credentialsAtom.set(creds));
+      respondByMethod({ receiveNotification: "hang" });
+      const user = userEvent.setup();
+      render(<App />);
+
+      await waitFor(() => expect(calledMethods()).toEqual(["receiveNotification"]));
+      await user.click(screen.getByRole("button", { name: "Выйти" }));
+
+      expect(idInput()).toBeInTheDocument();
+      await waitFor(() => expect(fetchMock.mock.calls[0]?.[1]?.signal?.aborted).toBe(true));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(calledMethods()).toEqual(["receiveNotification"]);
+    });
+
+    it("logs out with a toast on 401 from polling", async () => {
+      context.start(() => credentialsAtom.set(creds));
+      respondByMethod({ receiveNotification: { body: {}, status: 401 } });
+      render(<App />);
+
+      expect(await screen.findByText("Сессия недействительна, войдите заново")).toBeInTheDocument();
+      expect(idInput()).toHaveValue("");
+      expect(chatStub()).not.toBeInTheDocument();
+      expect(calledMethods()).toEqual(["receiveNotification"]);
+      context.start(() => expect(credentialsAtom()).toBeNull());
     });
   });
 });

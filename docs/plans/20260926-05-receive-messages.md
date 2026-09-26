@@ -380,12 +380,14 @@ type ReceivedMessage = {
 **Files:**
 - Modify: `src/app/app.test.tsx`
 
-- [ ] после логина идёт `receiveNotification`; входящее появляется в списке чатов, чат не
+- [x] после логина идёт `receiveNotification`; входящее появляется в списке чатов, чат не
       выбран
-- [ ] гонка: отправка → `outgoingAPIMessageReceived` раньше ответа `sendMessage` (`deferFetch`
+- [x] гонка: отправка → `outgoingAPIMessageReceived` раньше ответа `sendMessage` (`deferFetch`
       с `resolveAt`) → поздний ответ → в ленте одно сообщение, `sent`
-- [ ] логаут — запросы опроса прекращаются; `401` из опроса → экран логина и тост
-- [ ] `make check` — зелёный
+- [x] логаут — запросы опроса прекращаются; `401` из опроса → экран логина и тост
+- [x] `make check` — зелёный
+- [x] ➕ `respondByMethod`: массив ответов — по порядку, последний повторяется
+      (`[{ body: notification }, "hang"]`)
 
 ### Task 9: Verify acceptance criteria
 
