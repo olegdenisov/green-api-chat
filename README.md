@@ -9,13 +9,12 @@
 Деплой: **https://green-api-chat-three.vercel.app/** — Vercel, автоматически с ветки `main`
 (см. «Деплой и CI»).
 
-Статус: **все 6 этапов выполнены**; CI на GitHub и деплой Vercel работают, CSP на деплое
-отдаётся и не мешает странице; запросы к GREEN-API с домена деплоя (в т.ч. CORS опроса) ещё не
-проверены — см. «Известные ограничения».
+CI на GitHub и деплой Vercel работают, CSP на деплое отдаётся и не мешает странице; запросы к
+GREEN-API с домена деплоя (в т.ч. CORS опроса) ещё не проверены — см. «Известные ограничения».
 Форма логина проверяет инстанс (`getStateInstance`), при необходимости включает настройки
 уведомлений и сохраняет креды в `localStorage`. На экране чата: новый чат по номеру телефона
 (`checkAccount`; уже известный номер открывается без запроса), отправка текста со статусами
-«отправляется» / «отправлено» / «не отправлено · Повторить», удаление чата с историей. Чаты и
+«отправляется» / «отправлено» / «не отправлено · Повторить», удаление чатов с историей. Чаты и
 сообщения хранятся в `localStorage` и синхронизируются между вкладками; «Выйти» стирает креды
 и все данные. На узком экране — либо список, либо окно чата. Пока пользователь залогинен,
 приложение опрашивает очередь уведомлений GREEN-API: ответы из Telegram и сообщения,
@@ -52,23 +51,49 @@ web.max.ru снять не удалось (см. комментарий в `src/
 - Vitest 5 + Testing Library (jsdom) — тесты
 - oxlint, oxfmt, steiger (линтер FSD) — качество
 
-## Требования
+## Локальный запуск
 
-- Node.js >= 22
-- pnpm (версия зафиксирована в `packageManager`, удобно через Corepack)
+Нужны Node.js >= 22 и pnpm 12. Версия pnpm зафиксирована в `packageManager` (`package.json`),
+проще всего поставить её через Corepack, который входит в Node.js.
 
-## Запуск
+1. Склонируйте репозиторий:
+
+   ```sh
+   git clone https://github.com/olegdenisov/green-api-chat.git
+   cd green-api-chat
+   ```
+
+2. Включите Corepack (один раз на машину), он подставит нужную версию pnpm:
+
+   ```sh
+   corepack enable
+   ```
+
+3. Установите зависимости и запустите dev-сервер:
+
+   ```sh
+   make install   # или pnpm install
+   make dev       # или pnpm dev
+   ```
+
+4. Откройте адрес, который выведет Vite (по умолчанию http://localhost:5173/), и войдите
+   с кредами инстанса — см. «Как пользоваться». `.env` не нужен: `idInstance`,
+   `apiTokenInstance` и при необходимости `apiUrl` вводятся в форме логина.
+
+Продакшен-сборка локально:
 
 ```sh
-make install   # зависимости
-make dev       # dev-сервер Vite
-make check     # lint → format-check → lint-fsd → typecheck → test
-make build     # сборка в dist/
-make help      # все команды
+make build     # проверка типов и сборка в dist/
+make preview   # раздать dist/ (по умолчанию http://localhost:4173/)
 ```
 
-Креды инстанса (`idInstance`, `apiTokenInstance`, при необходимости `apiUrl`) вводятся в
-форме логина — `.env` не нужен.
+Остальные команды:
+
+```sh
+make test      # тесты
+make check     # lint → format-check → lint-fsd → typecheck → test
+make help      # все команды
+```
 
 ## Деплой и CI
 
@@ -89,16 +114,32 @@ make help      # все команды
 ## Структура
 
 [Feature-Sliced Design](https://feature-sliced.design/): слои в `src/` — `app` → `pages`
-→ `widgets` → `features` → `entities` → `shared`, импорт только сверху вниз. Сейчас есть
-`app` (провайдеры и тема, стили, выбор экрана, очистка данных при логауте), `pages/login`,
-`pages/chat` (сайдбар, окно чата, `chat-avatar` и их модели — код с одним потребителем живёт
-в странице), `features/auth` (форма логина, «Выйти»), `features/delete-chats` (удаление
-чатов с историей), `features/receive-messages` (опрос очереди уведомлений, индикатор
-соединения), `entities/session` (креды, `logout`, клиент API), `entities/chat`,
-`entities/message`, `shared/api` (клиент GREEN-API), `shared/config` (срок хранения данных),
-`shared/ui` (заголовок приложения, `icons` — инлайн-SVG); `widgets` пока нет. Тестовые
-утилиты — в `test/` (мок `fetch` для GREEN-API, заглушка Web Locks) и `vitest.setup.ts` вне
-`src/`. Вне `src/`: `.github/workflows/ci.yml` (CI), `vercel.json` (деплой и заголовки).
+→ `widgets` → `features` → `entities` → `shared`, импорт только сверху вниз. `widgets` пока
+нет — код с одним потребителем живёт в странице.
+
+- `app` — провайдеры и тема, стили, выбор экрана, очистка данных при логауте.
+- `pages`
+  - `pages/login` — страница логина.
+  - `pages/chat` — сайдбар, окно чата, `chat-avatar` и их модели.
+- `features`
+  - `features/auth` — форма логина, «Выйти».
+  - `features/delete-chats` — удаление чатов с историей.
+  - `features/receive-messages` — опрос очереди уведомлений, индикатор соединения.
+- `entities`
+  - `entities/session` — креды, `logout`, клиент API.
+  - `entities/chat`
+  - `entities/message`
+- `shared`
+  - `shared/api` — клиент GREEN-API.
+  - `shared/config` — срок хранения данных.
+  - `shared/ui` — заголовок приложения, `icons` (инлайн-SVG).
+
+Вне `src/`:
+
+- `test/` — тестовые утилиты: мок `fetch` для GREEN-API, заглушка Web Locks.
+- `vitest.setup.ts` — настройка тестов.
+- `.github/workflows/ci.yml` — CI.
+- `vercel.json` — деплой и заголовки.
 
 ## Известные ограничения
 
