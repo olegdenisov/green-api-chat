@@ -358,14 +358,14 @@
 **Files:**
 - Create: `vercel.json`
 
-- [ ] сверить по документации Vercel: пресет `vite`, поддержка pnpm 12 (Corepack), версия
-      Node проекта
-- [ ] `vercel.json`: `framework: "vite"`, `installCommand` — только если нужен для pnpm 12;
+- [x] сверить по документации Vercel: пресет `vite`, поддержка pnpm 12 (Corepack), версия
+      Node проекта (Vercel по lockfile ставит pnpm 9/10, pnpm 12 не поддержан — нужен `corepack enable`; Node — `engines >=22` → 24.x)
+- [x] `vercel.json`: `framework: "vite"`, `installCommand` (+ `buildCommand`, оба с `corepack enable`, иначе `pnpm` на Vercel — 9/10);
       `headers` (CSP, `Referrer-Policy`, `X-Content-Type-Options`) — см. «Solution
       Overview»
-- [ ] `make build`: в `dist/index.html` нет inline-`<script>` (CSP `script-src 'self'`
+- [x] `make build`: в `dist/index.html` нет inline-`<script>` (CSP `script-src 'self'`
       их заблокирует); сама CSP проверяется на preview-деплое (Post-Completion)
-- [ ] `oxfmt` форматирует `vercel.json`; `make check` — зелёный
+- [x] `oxfmt` форматирует `vercel.json`; `make check` — зелёный
 
 ### Task 9: GitHub Actions CI
 
