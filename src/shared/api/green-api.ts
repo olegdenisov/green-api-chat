@@ -15,7 +15,14 @@ import type {
 
 export type RequestOptions = {
   signal?: AbortSignal;
+  /** Milliseconds; on expiry the request rejects with a `TimeoutError` `DOMException`. */
+  timeout?: number;
 };
+
+/** Only the transport options: `receiveTimeout` and the like stay out of `request()`. */
+function transport(options: RequestOptions | undefined): Pick<RequestParams, "signal" | "timeout"> {
+  return { signal: options?.signal, timeout: options?.timeout };
+}
 
 export type ReceiveNotificationOptions = RequestOptions & {
   /** Long-polling timeout, seconds (server default: 5). */
@@ -63,17 +70,17 @@ export function createGreenApi(creds: Credentials): GreenApi {
 
   return {
     getStateInstance: (options) =>
-      requestBody({ method: "getStateInstance", httpMethod: "GET", signal: options?.signal }),
+      requestBody({ method: "getStateInstance", httpMethod: "GET", ...transport(options) }),
 
     getSettings: (options) =>
-      requestBody({ method: "getSettings", httpMethod: "GET", signal: options?.signal }),
+      requestBody({ method: "getSettings", httpMethod: "GET", ...transport(options) }),
 
     setSettings: (patch, options) =>
       requestBody({
         method: "setSettings",
         httpMethod: "POST",
         body: patch,
-        signal: options?.signal,
+        ...transport(options),
       }),
 
     checkAccount: async (phoneNumber, options) => {
@@ -81,7 +88,7 @@ export function createGreenApi(creds: Credentials): GreenApi {
         method: "checkAccount",
         httpMethod: "POST",
         body: { phoneNumber },
-        signal: options?.signal,
+        ...transport(options),
       });
       if (isRateLimitExceeded(response)) {
         // Raw failure in `cause`: `data.retryAfter` tells how long to wait.
@@ -95,7 +102,7 @@ export function createGreenApi(creds: Credentials): GreenApi {
         method: "sendMessage",
         httpMethod: "POST",
         body: { chatId, message },
-        signal: options?.signal,
+        ...transport(options),
       }),
 
     receiveNotification: (options) =>
@@ -107,7 +114,7 @@ export function createGreenApi(creds: Credentials): GreenApi {
           options?.receiveTimeout === undefined
             ? undefined
             : { receiveTimeout: options.receiveTimeout },
-        signal: options?.signal,
+        ...transport(options),
       }),
 
     deleteNotification: (receiptId, options) =>
@@ -115,7 +122,7 @@ export function createGreenApi(creds: Credentials): GreenApi {
         method: "deleteNotification",
         httpMethod: "DELETE",
         pathSuffix: receiptId,
-        signal: options?.signal,
+        ...transport(options),
       }),
   };
 }

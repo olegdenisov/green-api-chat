@@ -236,14 +236,14 @@ type ReceivedMessage = {
 - Modify: `src/shared/api/request.test.ts`
 - Modify: `src/pages/chat/model/send-message.ts`
 
-- [ ] `RequestOptions.timeout` (мс) и объединение сигналов в `request()` по «`request()` с
+- [x] `RequestOptions.timeout` (мс) и объединение сигналов в `request()` по «`request()` с
       таймаутом»; все методы клиента пробрасывают опцию
-- [ ] `deliver()` — `{ signal, timeout: SEND_TIMEOUT }`, ручное объединение удалить
-- [ ] тесты `request`: таймаут → `TimeoutError` (fake timers), не `ApiError`; внешняя отмена
+- [x] `deliver()` — `{ signal, timeout: SEND_TIMEOUT }`, ручное объединение удалить
+- [x] тесты `request`: таймаут → `TimeoutError` (fake timers), не `ApiError`; внешняя отмена
       → `signal.reason`; ответ до таймаута — таймер снят (`vi.getTimerCount()`), слушатель
       снят; без `timeout` — как раньше
-- [ ] тесты `send-message.test.ts` этапа 4 — без изменений, зелёные
-- [ ] `make check` — зелёный
+- [x] тесты `send-message.test.ts` этапа 4 — без изменений, зелёные
+- [x] `make check` — зелёный
 
 ### Task 2: `receiveChat` и `removeMessage` в сущностях
 

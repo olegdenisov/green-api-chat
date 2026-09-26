@@ -39,23 +39,14 @@ function isCurrent({ api, chatId, id, attemptAt }: Attempt): boolean {
 async function deliver(attempt: Attempt): Promise<void> {
   const { api, chatId, id, text } = attempt;
   const { controller, unsubscribe } = abortVar.subscribe();
-  // One controller for both the `abortVar` cancellation and the timeout, without
-  // `AbortSignal.any()`: it is missing in Safari < 17.4 and Chrome < 116, which Vite's default
-  // target still covers (Vite adds no polyfills). `request()` rethrows `signal.reason` as is,
-  // and a `TimeoutError` is not an `AbortError`, so a timeout ends up as a failure, not a
-  // cancellation. A plain timer instead of `AbortSignal.timeout()`: the latter ignores fake
-  // timers in tests.
-  const combined = new AbortController();
-  const onAbort = () => combined.abort(controller.signal.reason);
-  if (controller.signal.aborted) onAbort();
-  else controller.signal.addEventListener("abort", onAbort, { once: true });
-  const timer = setTimeout(
-    () => combined.abort(new DOMException("The send timed out", "TimeoutError")),
-    SEND_TIMEOUT,
-  );
-  const { signal } = combined;
   try {
-    const { idMessage } = await wrap(api.sendMessage({ chatId, message: text }, { signal }));
+    // A timeout rejects with a `TimeoutError`, not an `AbortError`: a failure, not a cancellation.
+    const { idMessage } = await wrap(
+      api.sendMessage(
+        { chatId, message: text },
+        { signal: controller.signal, timeout: SEND_TIMEOUT },
+      ),
+    );
     // Logout does not cancel requests in flight: drop a late answer for the old session.
     if (!isCurrent(attempt)) return;
     // No `idMessage` in a 200 (not per the docs): keep the local id, it is still unique.
@@ -68,8 +59,6 @@ async function deliver(attempt: Attempt): Promise<void> {
     if (!isCurrent(attempt)) return;
     updateMessage(chatId, id, { status: "failed" });
   } finally {
-    clearTimeout(timer);
-    controller.signal.removeEventListener("abort", onAbort);
     unsubscribe();
   }
 }

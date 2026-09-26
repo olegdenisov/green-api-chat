@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import {
   checkAccountExists,
@@ -25,7 +25,7 @@ import {
 } from "@test/green-api";
 
 import { ApiError } from "./api-error";
-import { createGreenApi, type GreenApi } from "./green-api";
+import { createGreenApi, type GreenApi, type RequestOptions } from "./green-api";
 import type { SendMessageRequest } from "./types";
 
 const PHONE = checkAccountExists.phoneNumber;
@@ -186,17 +186,17 @@ describe("createGreenApi: notifications", () => {
   });
 });
 
-const calls: [string, (client: GreenApi, signal?: AbortSignal) => Promise<unknown>][] = [
-  ["getStateInstance", (client, signal) => client.getStateInstance({ signal })],
-  ["getSettings", (client, signal) => client.getSettings({ signal })],
-  ["setSettings", (client, signal) => client.setSettings(setSettingsRequest, { signal })],
-  ["checkAccount", (client, signal) => client.checkAccount(PHONE, { signal })],
-  ["sendMessage", (client, signal) => client.sendMessage(sendMessageRequest, { signal })],
+const calls: [string, (client: GreenApi, options?: RequestOptions) => Promise<unknown>][] = [
+  ["getStateInstance", (client, options) => client.getStateInstance(options)],
+  ["getSettings", (client, options) => client.getSettings(options)],
+  ["setSettings", (client, options) => client.setSettings(setSettingsRequest, options)],
+  ["checkAccount", (client, options) => client.checkAccount(PHONE, options)],
+  ["sendMessage", (client, options) => client.sendMessage(sendMessageRequest, options)],
   [
     "receiveNotification",
-    (client, signal) => client.receiveNotification({ receiveTimeout: 20, signal }),
+    (client, options) => client.receiveNotification({ receiveTimeout: 20, ...options }),
   ],
-  ["deleteNotification", (client, signal) => client.deleteNotification(1, { signal })],
+  ["deleteNotification", (client, options) => client.deleteNotification(1, options)],
 ];
 
 const bodyRequired = calls.filter(([name]) => name !== "receiveNotification");
@@ -216,7 +216,7 @@ describe("createGreenApi: signal", () => {
     respondJson({});
     const controller = new AbortController();
 
-    await call(api, controller.signal);
+    await call(api, { signal: controller.signal });
     expect(lastCall().signal).toBe(controller.signal);
   });
 
@@ -225,8 +225,25 @@ describe("createGreenApi: signal", () => {
     const controller = new AbortController();
     const reason = new Error("stop");
 
-    const promise = call(api, controller.signal);
+    const promise = call(api, { signal: controller.signal });
     controller.abort(reason);
     await expect(promise).rejects.toBe(reason);
+  });
+});
+
+describe("createGreenApi: timeout", () => {
+  it.each(calls)("%s rejects with a TimeoutError after the timeout", async (_name, call) => {
+    vi.useFakeTimers();
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    hangUntilAbort();
+
+    const settled = call(api, { timeout: 500 }).catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(500);
+
+    const error = await settled;
+    expect(error).not.toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ name: "TimeoutError" });
   });
 });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { BASE, creds, fetchMock, hangUntilAbort, respond, stubFetch, TOKEN } from "@test/green-api";
 
@@ -277,5 +277,93 @@ describe("request: abort", () => {
     fetchMock.mockResolvedValue(response);
 
     await expect(get(controller.signal)).rejects.toBe(reason);
+  });
+});
+
+describe("request: timeout", () => {
+  const getWithTimeout = (signal?: AbortSignal) =>
+    request({ creds, method: "getStateInstance", httpMethod: "GET", signal, timeout: 1000 });
+
+  function useFakeTimers() {
+    vi.useFakeTimers();
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+  }
+
+  it("rejects with a TimeoutError, not ApiError, once the timeout elapses", async () => {
+    useFakeTimers();
+    hangUntilAbort();
+
+    const promise = getWithTimeout();
+    const settled = promise.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(fetchMock.mock.calls[0]![1]?.signal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+
+    const error = await settled;
+    expect(error).not.toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ name: "TimeoutError" });
+  });
+
+  it("rethrows the external reason when aborted before the timeout", async () => {
+    useFakeTimers();
+    hangUntilAbort();
+    const controller = new AbortController();
+    const reason = new DOMException("Aborted", "AbortError");
+
+    const promise = getWithTimeout(controller.signal);
+    controller.abort(reason);
+
+    await expect(promise).rejects.toBe(reason);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("rethrows the reason of an already aborted signal without fetching", async () => {
+    const controller = new AbortController();
+    const reason = new DOMException("Aborted", "AbortError");
+    controller.abort(reason);
+
+    await expect(getWithTimeout(controller.signal)).rejects.toBe(reason);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("clears the timer and the abort listener after a response", async () => {
+    useFakeTimers();
+    respond('{"stateInstance":"authorized"}');
+    const controller = new AbortController();
+    const removeListener = vi.spyOn(controller.signal, "removeEventListener");
+
+    await expect(getWithTimeout(controller.signal)).resolves.toEqual({
+      stateInstance: "authorized",
+    });
+
+    expect(vi.getTimerCount()).toBe(0);
+    expect(removeListener).toHaveBeenCalledWith("abort", expect.any(Function));
+    // The request's own signal is not aborted by a later abort of the caller's one.
+    const requestSignal = fetchMock.mock.calls[0]![1]?.signal;
+    controller.abort();
+    expect(requestSignal?.aborted).toBe(false);
+  });
+
+  it("clears the timer after an error response", async () => {
+    useFakeTimers();
+    respond("error", 500);
+
+    await expect(getWithTimeout()).rejects.toMatchObject({ kind: "http", status: 500 });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("sets no timer without the option", async () => {
+    useFakeTimers();
+    hangUntilAbort();
+    const controller = new AbortController();
+
+    const promise = get(controller.signal);
+
+    expect(vi.getTimerCount()).toBe(0);
+    expect(fetchMock.mock.calls[0]![1]?.signal).toBe(controller.signal);
+    controller.abort();
+    await expect(promise).rejects.toMatchObject({ name: "AbortError" });
   });
 });
