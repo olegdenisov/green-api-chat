@@ -2,7 +2,7 @@ import { context, notify, wrap } from "@reatom/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { activeChatIdAtom, chatsAtom, sortedChatsAtom, type Chat } from "@/entities/chat";
-import { messagesAtom, SEND_TIMEOUT, type Message } from "@/entities/message";
+import { messagesAtom, SEND_TIMEOUT, updateMessage, type Message } from "@/entities/message";
 import { credentialsAtom, logout } from "@/entities/session";
 
 import { sendMessageResponse } from "@test/fixtures/green-api/send-message";
@@ -236,6 +236,55 @@ describe("sendChatMessage", () => {
     } finally {
       if (descriptor) Object.defineProperty(AbortSignal, "any", descriptor);
     }
+  });
+});
+
+// The polling (`features/receive-messages`, not importable from `pages`) may match a send's
+// `outgoingAPIMessageReceived` before the `sendMessage` answer: simulated with `updateMessage`.
+describe("sendChatMessage after the polling matched the send", () => {
+  it("a late answer for an already matched message is a no-op", async () => {
+    const response = deferFetch();
+    await context.start(async () => {
+      setup();
+      const pending = sendChatMessage(friend.chatId, "Hello");
+      const [sending] = messagesOf(friend.chatId);
+      await wrap(vi.waitFor(() => expect(response.pending()).toBe(1)));
+
+      updateMessage(friend.chatId, sending!.id, {
+        id: sendMessageResponse.idMessage,
+        status: "sent",
+      });
+      response.resolveNext(sendMessageResponse);
+      await wrap(pending);
+
+      expect(messagesOf(friend.chatId)).toEqual([
+        { ...sending, id: sendMessageResponse.idMessage, status: "sent" },
+      ]);
+    });
+  });
+
+  it("drops the local message whose idMessage another message already has", async () => {
+    const response = deferFetch();
+    await context.start(async () => {
+      setup();
+      const first = sendChatMessage(friend.chatId, "Same");
+      const second = sendChatMessage(friend.chatId, "Same");
+      const [a, b] = messagesOf(friend.chatId);
+      await wrap(vi.waitFor(() => expect(response.pending()).toBe(2)));
+
+      // The event of the second send came first and was matched with the oldest pending one.
+      updateMessage(friend.chatId, a!.id, { id: "id-b", status: "sent" });
+      response.resolveAt(1, { idMessage: "id-b" });
+      await wrap(second);
+
+      expect(messagesOf(friend.chatId)).toEqual([{ ...a, id: "id-b", status: "sent" }]);
+      expect(messagesOf(friend.chatId).some((message) => message.id === b!.id)).toBe(false);
+
+      // The first send's answer: its local message is gone — nothing to update.
+      response.resolveNext({ idMessage: "id-a" });
+      await wrap(first);
+      expect(messagesOf(friend.chatId)).toEqual([{ ...a, id: "id-b", status: "sent" }]);
+    });
   });
 });
 

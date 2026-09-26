@@ -312,21 +312,21 @@ type ReceivedMessage = {
 - Create: `src/features/receive-messages/model/apply-notification.test.ts`
 - Modify: `src/pages/chat/model/send-message.ts`, `send-message.test.ts`
 
-- [ ] `applyReceivedMessage` по шагам «Раскладка» (приоритет `sending` над `failed`,
+- [x] `applyReceivedMessage` по шагам «Раскладка» (приоритет `sending` над `failed`,
       сопоставление только при `viaApi`)
-- [ ] `deliver()`: `sentId` уже есть в чате → `removeMessage(chatId, id)` вместо
+- [x] `deliver()`: `sentId` уже есть в чате → `removeMessage(chatId, id)` вместо
       `updateMessage`
-- [ ] тесты раскладки: входящее в новый чат (создан, не выбран), в существующий (`title` →
+- [x] тесты раскладки: входящее в новый чат (создан, не выбран), в существующий (`title` →
       `chatName`, `lastMessageAt` поднят); повтор того же `idMessage` — без дубля
-- [ ] тесты сопоставления (атомы задаются напрямую, без `sendChatMessage` — `features` не
+- [x] тесты сопоставления (атомы задаются напрямую, без `sendChatMessage` — `features` не
       импортирует `pages`): API-событие → local `sending` получает `idMessage`/`sent`;
       `failed` «ок» + `sending` «ок» → сопоставляется `sending`; нет `sending` → `failed`;
       два одинаковых `sending` — по порядку; с телефона (`viaApi: false`) при ожидающей
       отправке с тем же текстом — добавляется отдельно, ожидающая не тронута
-- [ ] тесты `deliver()` (`send-message.test.ts`): поздний ответ после сопоставления — no-op
+- [x] тесты `deliver()` (`send-message.test.ts`): поздний ответ после сопоставления — no-op
       (одно сообщение); ответ с `idMessage`, который уже есть в чате у другого сообщения →
       текущее локальное удалено, дубля id нет
-- [ ] `make check` — зелёный
+- [x] `make check` — зелёный
 
 ### Task 6: Цикл опроса
 

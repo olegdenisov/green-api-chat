@@ -5,6 +5,7 @@ import {
   addMessage,
   isSendingStale,
   messagesAtom,
+  removeMessage,
   SEND_TIMEOUT,
   updateMessage,
 } from "@/entities/message";
@@ -51,6 +52,12 @@ async function deliver(attempt: Attempt): Promise<void> {
     if (!isCurrent(attempt)) return;
     // No `idMessage` in a 200 (not per the docs): keep the local id, it is still unique.
     const sentId = typeof idMessage === "string" && idMessage !== "" ? idMessage : id;
+    // The polling already matched this send's event with another local message of the same
+    // text: that one is this message now, so drop the duplicate instead of repeating the id.
+    if (sentId !== id && messagesAtom()[chatId]?.some((message) => message.id === sentId)) {
+      removeMessage(chatId, id);
+      return;
+    }
     updateMessage(chatId, id, { id: sentId, status: "sent" });
   } catch (error) {
     // Cancelled through `abortVar`: the message is left as is; `isSendingStale` covers it. A
