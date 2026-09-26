@@ -102,8 +102,11 @@ Notification — событие инстанса (входящее/исходя�
 
 ### Непроверенное
 
-- CORS при запросах из браузера. Решили не проверять заранее; если проявится — вернёмся
-  (варианты: Vite `server.proxy` с `router` по `apiUrl` для dev, прокси для прода).
+- CORS при запросах из браузера. Проверено вручную на реальном инстансе после этапа 4
+  (2026-09-26): `getStateInstance`, `getSettings`/`setSettings`, `checkAccount`,
+  `sendMessage` работают без прокси; две вкладки и узкий экран — тоже. Не проверены
+  `receiveNotification`/`deleteNotification` (этап 5); если CORS проявится там — варианты:
+  Vite `server.proxy` с `router` по `apiUrl` для dev, прокси для прода.
 
 ## Архитектура (FSD)
 
