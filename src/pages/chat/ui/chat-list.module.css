@@ -27,9 +27,11 @@
   }
 
   /* The two layers of .ga-focus (src/app/styles/index.css), but inset: an outer ring would be
-     clipped by the scrolling nav and would overlap the neighbouring rows. */
+     clipped by the scrolling nav and would overlap the neighbouring rows. The transparent
+     outline is for forced-colors mode, which drops box-shadow; inset too, for the same reason. */
   &:focus-visible {
-    outline: none;
+    outline: rem(2px) solid transparent;
+    outline-offset: rem(-2px);
     box-shadow:
       inset 0 0 0 rem(2px) var(--mantine-primary-color-filled),
       inset 0 0 0 rem(5px) var(--ga-focus-halo);
