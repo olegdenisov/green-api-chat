@@ -183,7 +183,7 @@ describe("ChatWindow", () => {
     await user.click(retry);
 
     expect(await screen.findByLabelText("Отправлено")).toBeInTheDocument();
-    expect(screen.queryByText(/Не отправлено/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Не отправлено" })).not.toBeInTheDocument();
   });
 
   it("returns to the list on back", async () => {

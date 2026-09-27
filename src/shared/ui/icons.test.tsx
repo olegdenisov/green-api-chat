@@ -1,7 +1,17 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { IconArrowLeft, IconLogo, IconLogout, IconSend, IconTrash } from "./icons";
+import {
+  IconAlert,
+  IconArrowLeft,
+  IconCheck,
+  IconChecks,
+  IconClock,
+  IconLogo,
+  IconLogout,
+  IconSend,
+  IconTrash,
+} from "./icons";
 
 describe("icons", () => {
   it.each([
@@ -10,6 +20,10 @@ describe("icons", () => {
     ["IconTrash", IconTrash],
     ["IconLogout", IconLogout],
     ["IconLogo", IconLogo],
+    ["IconClock", IconClock],
+    ["IconCheck", IconCheck],
+    ["IconChecks", IconChecks],
+    ["IconAlert", IconAlert],
   ])("%s is decorative and sized by the prop", (_name, Component) => {
     const { container } = render(<Component size={32} />);
     const svg = container.querySelector("svg");
