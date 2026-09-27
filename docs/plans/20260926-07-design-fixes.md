@@ -320,16 +320,16 @@ export const theme = createTheme({
 - Modify: `index.html`
 - Modify: `public/favicon.svg`
 
-- [ ] шкалы `dawn` и `dark`, `primaryColor`/`primaryShade`/`colors`; новый комментарий-шапка
+- [x] шкалы `dawn` и `dark`, `primaryColor`/`primaryShade`/`colors`; новый комментарий-шапка
       вместо текста про web.max.ru
-- [ ] `cssVariablesResolver` — все токены из таблицы Technical Details (в т.ч.
+- [x] `cssVariablesResolver` — все токены из таблицы Technical Details (в т.ч.
       `--ga-status-read`, `--ga-bubble-*-meta`, `--ga-bubble-failed-*`, `--ga-row-active-*`,
       `--ga-send-disabled-*`, `--ga-avatar-{1..5}-*`; `--mantine-color-body` в обеих схемах)
-- [ ] `index.css` (dark `#1a1c2b`/`#ecebf5` + комментарий), `theme-color` dark `#1a1c2b`,
+- [x] `index.css` (dark `#1a1c2b`/`#ecebf5` + комментарий), `theme-color` dark `#1a1c2b`,
       favicon `#3c487c`
-- [ ] тест темы: ключи `light`/`dark` совпадают (существующий); `primaryColor === "dawn"`;
+- [x] тест темы: ключи `light`/`dark` совпадают (существующий); `primaryColor === "dawn"`;
       `--mantine-color-text` в `dark` — `#ecebf5`; все 5 пар `--ga-avatar-*` в обеих схемах
-- [ ] `make check` — зелёный перед задачей 2
+- [x] `make check` — зелёный перед задачей 2
 
 ### Task 2: Хром по палитре и мелкие правки вёрстки
 **Model:** sonnet — точные правки CSS и пропсов из плана
