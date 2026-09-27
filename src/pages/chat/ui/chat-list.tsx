@@ -17,7 +17,7 @@ export const ChatList = reatomComponent(() => {
   const activeChatId = activeChatIdAtom();
 
   if (chats.length === 0) {
-    return <EmptyState>Создайте чат по номеру телефона</EmptyState>;
+    return <EmptyState>Нажмите «+», чтобы начать чат по номеру телефона</EmptyState>;
   }
 
   const now = Date.now();

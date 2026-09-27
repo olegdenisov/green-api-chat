@@ -478,23 +478,23 @@ export const theme = createTheme({
   форма закрыта: `aria-expanded="false"`, поля нет)
 - Modify: `src/shared/ui/icons.tsx`, `src/shared/ui/icons.test.tsx` (`IconPlus`)
 
-- [ ] `createChatOpenAtom` (`chatPage.createChatOpen`, не persist); успешный `onSubmit` (и
+- [x] `createChatOpenAtom` (`chatPage.createChatOpen`, не persist); успешный `onSubmit` (и
       ветка известного номера) закрывает форму; `resetChatPage` закрывает
-- [ ] `Sidebar` → `reatomComponent`: «+» (`aria-label="Новый чат"`, `aria-expanded`,
+- [x] `Sidebar` → `reatomComponent`: «+» (`aria-label="Новый чат"`, `aria-expanded`,
       `aria-controls` на всегда смонтированную обёртку), форма внутри — только открытой,
       фокус в поле
-- [ ] Escape (`onKeyDown` на обёртке) и повторный «+»: `createChatForm.reset()`, закрыть,
+- [x] Escape (`onKeyDown` на обёртке) и повторный «+»: `createChatForm.reset()`, закрыть,
       фокус на «+»
-- [ ] `ChatPage`: при смене `activeChatId` на непустой, если фокус на `<body>`, — фокус в
+- [x] `ChatPage`: при смене `activeChatId` на непустой, если фокус на `<body>`, — фокус в
       «Сообщение»; уже стоящий фокус не трогать
-- [ ] пустой список: «Нажмите «+», чтобы начать чат по номеру телефона»
-- [ ] тесты модели: успех закрывает, ошибка — нет; `resetChatPage` закрывает
-- [ ] тесты UI: «+» открывает и фокусирует поле; Escape закрывает, фокус на «+», запрос в
+- [x] пустой список: «Нажмите «+», чтобы начать чат по номеру телефона»
+- [x] тесты модели: успех закрывает, ошибка — нет; `resetChatPage` закрывает
+- [x] тесты UI: «+» открывает и фокусирует поле; Escape закрывает, фокус на «+», запрос в
       полёте отменён (`hangUntilAbort`); ошибка оставляет форму открытой; успех закрывает
       форму, открывает чат, фокус — в «Сообщение»; клик по строке чата при фокусе на строке
       фокус не переносит
-- [ ] обновить перечисленные существующие тесты
-- [ ] `make check` — зелёный перед задачей 8
+- [x] обновить перечисленные существующие тесты
+- [x] `make check` — зелёный перед задачей 8
 
 ### Task 8: Verify acceptance criteria
 **Model:** sonnet — checks the result against the plan, fixes gaps

@@ -7,6 +7,7 @@ export {
   IconClock,
   IconLogo,
   IconLogout,
+  IconPlus,
   IconSend,
   IconTrash,
 } from "./icons";

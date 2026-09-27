@@ -13,7 +13,9 @@ describe("ChatList", () => {
   it("shows the empty state without chats", () => {
     render(<ChatList />);
 
-    expect(screen.getByText("Создайте чат по номеру телефона")).toBeInTheDocument();
+    expect(
+      screen.getByText("Нажмите «+», чтобы начать чат по номеру телефона"),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });

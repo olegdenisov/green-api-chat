@@ -1,4 +1,4 @@
-import { abortVar, reatomField, reatomForm, withChangeHook, wrap } from "@reatom/core";
+import { abortVar, atom, reatomField, reatomForm, withChangeHook, wrap } from "@reatom/core";
 
 import { findChatByPhone, openChat } from "@/entities/chat";
 import { greenApiAtom, requireApi } from "@/entities/session";
@@ -9,6 +9,12 @@ import { CreateChatError } from "./create-chat-error";
 export function normalizePhone(value: string): string {
   return value.replace(/\D/g, "");
 }
+
+/**
+ * Whether the new-chat form is shown (the "+" in the sidebar). In memory only: a reload starts
+ * with it closed. A successful submit and `resetChatPage` close it.
+ */
+export const createChatOpenAtom = atom(false, "chatPage.createChatOpen");
 
 const phone = reatomField("", {
   name: "chatPage.createChatForm.phone",
@@ -39,6 +45,9 @@ export const createChatForm = reatomForm(
 
       const known = findChatByPhone(number);
       if (known) {
+        // Closed before the chat opens: the field unmounts first, so `ChatPage` sees the focus
+        // lost when the chat changes and moves it to the message input.
+        createChatOpenAtom.set(false);
         openChat(known);
         return;
       }
@@ -55,6 +64,7 @@ export const createChatForm = reatomForm(
         if (!("exist" in response)) throw new CreateChatError("instance-not-ready");
         if (!response.exist) throw new CreateChatError("not-registered");
 
+        createChatOpenAtom.set(false);
         openChat({
           chatId: response.chatId,
           // `||`: an empty `username` is no title either.

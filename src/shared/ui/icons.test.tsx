@@ -9,6 +9,7 @@ import {
   IconClock,
   IconLogo,
   IconLogout,
+  IconPlus,
   IconSend,
   IconTrash,
 } from "./icons";
@@ -19,6 +20,7 @@ describe("icons", () => {
     ["IconSend", IconSend],
     ["IconTrash", IconTrash],
     ["IconLogout", IconLogout],
+    ["IconPlus", IconPlus],
     ["IconLogo", IconLogo],
     ["IconClock", IconClock],
     ["IconCheck", IconCheck],

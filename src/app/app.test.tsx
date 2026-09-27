@@ -84,6 +84,7 @@ describe("App", () => {
     expect(await screen.findByText("Выберите чат или создайте новый")).toBeInTheDocument();
     await pending(1);
 
+    await user.click(screen.getByRole("button", { name: "Новый чат" }));
     await user.type(screen.getByLabelText("Номер телефона"), "+7 987 654-32-10{Enter}");
     await pending(2);
     fetches.resolveAt(1, checkAccountExists);
@@ -173,6 +174,7 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "Friend" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Новый чат" }));
     await user.type(screen.getByLabelText("Номер телефона"), "79991234567");
     await user.click(screen.getByRole("button", { name: "Выйти" }));
 
@@ -181,6 +183,11 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Войти" }));
 
     expect(await screen.findByText("Выберите чат или создайте новый")).toBeInTheDocument();
+    // The next session starts with the new-chat form closed and empty.
+    const newChat = screen.getByRole("button", { name: "Новый чат" });
+    expect(newChat).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText("Номер телефона")).not.toBeInTheDocument();
+    await user.click(newChat);
     expect(screen.getByLabelText("Номер телефона")).toHaveValue("");
     expect(screen.queryByText("Friend")).not.toBeInTheDocument();
     context.start(() => {

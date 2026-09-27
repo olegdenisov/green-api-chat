@@ -6,20 +6,21 @@ import { credentialsAtom } from "@/entities/session";
 
 import { fetchMock, creds, hangUntilAbort, stubFetch } from "@test/green-api";
 
-import { createChatForm } from "./create-chat";
+import { createChatForm, createChatOpenAtom } from "./create-chat";
 import { resetChatPage } from "./reset-chat-page";
 import { draftField } from "./draft";
 
 beforeEach(stubFetch);
 
 describe("resetChatPage", () => {
-  it("clears the new-chat form, cancels its request and clears the draft", async () => {
+  it("closes and clears the new-chat form, cancels its request and clears the draft", async () => {
     hangUntilAbort();
     await context.start(async () => {
       credentialsAtom.set(creds);
       chatsAtom.set({ "1": { chatId: "1", title: "Friend", lastMessageAt: 1 } });
       activeChatIdAtom.set("1");
       notify();
+      createChatOpenAtom.set(true);
       draftField.change("Hello");
       createChatForm.fields.phone.change("79876543210");
       notify();
@@ -33,6 +34,7 @@ describe("resetChatPage", () => {
       expect(createChatForm.submit.ready()).toBe(true);
       expect(createChatForm.submit.error()).toBeUndefined();
       expect(createChatForm.fields.phone()).toBe("");
+      expect(createChatOpenAtom()).toBe(false);
       expect(draftField()).toBe("");
     });
   });

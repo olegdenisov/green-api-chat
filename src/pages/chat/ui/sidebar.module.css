@@ -29,6 +29,11 @@
 .form {
   padding: 0 var(--mantine-spacing-md) var(--mantine-spacing-sm);
   border-bottom: rem(1px) solid var(--mantine-color-default-border);
+
+  /* Closed: the wrapper stays mounted as the `aria-controls` target of the "+". */
+  &[hidden] {
+    display: none;
+  }
 }
 
 .chats {

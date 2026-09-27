@@ -23,7 +23,7 @@ import {
 } from "@test/green-api";
 
 import { CreateChatError } from "./create-chat-error";
-import { createChatForm, normalizePhone } from "./create-chat";
+import { createChatForm, createChatOpenAtom, normalizePhone } from "./create-chat";
 
 const { phone } = createChatForm.fields;
 
@@ -79,6 +79,60 @@ describe("createChatForm validation", () => {
       await submit();
       expect(phone.validation().error).toBeUndefined();
       expect(calledMethods()).toEqual(["checkAccount"]);
+    });
+  });
+});
+
+describe("createChatOpenAtom", () => {
+  it("is closed by default", () => {
+    context.start(() => expect(createChatOpenAtom()).toBe(false));
+  });
+
+  it("closes after a known number opens its chat", async () => {
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      chatsAtom.set({ [existing.chatId]: existing });
+      createChatOpenAtom.set(true);
+      fill(existing.phone!);
+      await submit();
+
+      expect(createChatOpenAtom()).toBe(false);
+    });
+  });
+
+  it("closes after a new chat is created", async () => {
+    respondByMethod({ checkAccount: { body: checkAccountExists } });
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      createChatOpenAtom.set(true);
+      fill("79876543210");
+      await submit();
+
+      expect(createChatOpenAtom()).toBe(false);
+    });
+  });
+
+  it("stays open on an error", async () => {
+    respondByMethod({ checkAccount: { body: checkAccountNotExists } });
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      createChatOpenAtom.set(true);
+      fill("79876543210");
+      await submit();
+
+      expect(createChatForm.submit.error()).toBeInstanceOf(CreateChatError);
+      expect(createChatOpenAtom()).toBe(true);
+    });
+  });
+
+  it("stays open on a failed validation", async () => {
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      createChatOpenAtom.set(true);
+      fill("123");
+      await submit();
+
+      expect(createChatOpenAtom()).toBe(true);
     });
   });
 });
