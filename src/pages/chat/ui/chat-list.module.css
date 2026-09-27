@@ -9,8 +9,9 @@
   width: 100%;
   align-items: center;
   gap: var(--mantine-spacing-sm);
-  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  padding: rem(10px) var(--mantine-spacing-sm);
   border: 0;
+  border-radius: rem(16px);
   background: transparent;
   color: var(--mantine-color-text);
   font: inherit;
@@ -18,22 +19,17 @@
   cursor: pointer;
 
   @mixin hover {
-    background: var(--mantine-color-default-hover);
+    background: var(--ga-field-bg);
   }
 
   &:focus-visible {
-    outline: rem(2px) solid var(--mantine-primary-color-filled);
-    outline-offset: rem(-2px);
+    outline: none;
+    box-shadow: inset 0 0 0 rem(2px) var(--mantine-primary-color-filled);
   }
 
   &[data-active] {
-    background: var(--ga-row-active-bg);
+    background: var(--ga-primary-soft);
     color: var(--mantine-color-text);
-    box-shadow: inset rem(3px) 0 0 var(--ga-row-active-bar);
-
-    &:focus-visible {
-      outline-color: var(--mantine-primary-color-filled);
-    }
   }
 }
 
@@ -55,6 +51,7 @@
 .title {
   min-width: 0;
   overflow: hidden;
+  font-size: rem(15px);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -63,15 +60,14 @@
 .time,
 .preview {
   color: var(--mantine-color-dimmed);
-  font-size: var(--mantine-font-size-sm);
 }
 
 .time {
   flex-shrink: 0;
-  font-size: var(--mantine-font-size-xs);
+  font-size: rem(12px);
 
   .item[data-active] & {
-    color: var(--ga-row-active-time);
+    color: var(--ga-primary-soft-text);
     font-weight: 600;
   }
 }
@@ -80,6 +76,7 @@
 .preview {
   min-height: calc(1em * var(--mantine-line-height));
   overflow: hidden;
+  font-size: rem(13.5px);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

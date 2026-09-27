@@ -31,14 +31,18 @@ function colorFor(chatId: string): number {
  * Chat picture: initials of the title; for a number or an empty title — Mantine's placeholder
  * icon. The background/foreground colour is picked by `chatId` from the theme's `--ga-avatar-*`
  * tokens (`cssVariablesResolver`), applied through `vars` to Mantine's own `--avatar-bg`/
- * `--avatar-color`. Decorative: the chat name is always next to it.
+ * `--avatar-color`. Rounded-square shape (mockup 5a): `radius` sets `--avatar-radius`, not a
+ * circle — `autoContrast` is not used, the pastel pairs are picked for contrast already.
+ * Decorative: the chat name is always next to it.
  */
 export function ChatAvatar({
   chat,
-  size = 48,
+  size = 46,
+  radius = 16,
 }: {
   chat: Pick<Chat, "chatId" | "title">;
   size?: number;
+  radius?: number;
 }) {
   const name = initialsName(chat.title);
   const colorIndex = colorFor(chat.chatId);
@@ -46,6 +50,7 @@ export function ChatAvatar({
     <Avatar
       aria-hidden="true"
       size={size}
+      radius={radius}
       variant="filled"
       name={name}
       vars={() => ({
