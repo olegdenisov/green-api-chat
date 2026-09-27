@@ -102,7 +102,8 @@ make help      # все команды
 ## Деплой и CI
 
 - **CI** — GitHub Actions (`.github/workflows/ci.yml`): на push в `main` и на pull request
-  выполняются `pnpm install --frozen-lockfile`, `make check` и `make build` на Node 22 и 24.
+  на Node 24 идут две параллельные проверки: `check` (линтеры, форматирование, steiger,
+  `tsc`, `make build`) и `test` (`make test`).
 - **Деплой** — Git-интеграция Vercel, автоматический: push в `main` — production, PR и
   другие ветки — preview (ссылка — в статусе коммита/PR на GitHub); в репозитории
   только `vercel.json`: пресет `vite`, `corepack enable` перед `pnpm` (Vercel по lockfile
