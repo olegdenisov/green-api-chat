@@ -23,9 +23,9 @@
   }
 
   /*
-   * An unsent message: a soft pink tint, not a solid red fill — the palette has no red, and a
-   * borrowed `red-filled` would not read as an accident of this theme. `.row[data-direction]`
-   * raises the specificity to (0,4,0), above the out-bubble rule (0,3,0).
+   * An unsent message: a soft pink tint (--ga-bubble-failed-bg), not a solid red fill; the text
+   * keeps the outgoing colours, only «Не отправлено» and «Повторить» are --ga-danger-text.
+   * `.row[data-direction]` raises the specificity to (0,4,0), above the out-bubble rule (0,3,0).
    */
   .row[data-direction] &[data-failed] {
     background: var(--ga-bubble-failed-bg);
@@ -47,10 +47,6 @@
   color: var(--ga-bubble-in-meta);
 
   .row[data-direction="out"] & {
-    color: var(--ga-bubble-out-meta);
-  }
-
-  .bubble[data-failed] & {
     color: var(--ga-bubble-out-meta);
   }
 }
@@ -79,7 +75,9 @@
   font-size: inherit;
   font-weight: 500;
 
+  /* Mantine's hover would switch the colour to the primary one. */
   @mixin hover {
-    background: var(--ga-surface);
+    background: var(--ga-field-bg);
+    color: var(--ga-danger-text);
   }
 }

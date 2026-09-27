@@ -122,7 +122,7 @@ describe("App", () => {
 
     expect(chatStub()).toBeInTheDocument();
     expect(screen.queryByLabelText("idInstance")).not.toBeInTheDocument();
-    // ReceiveMessages renders nothing; no connection strip while polling is not failing.
+    // ReceiveMessages renders nothing; no connection indicator while polling is not failing.
     expect(screen.queryByRole("status")).toBeNull();
   });
 
@@ -330,7 +330,7 @@ describe("App", () => {
       expect(within(chatList()).getAllByRole("button")).toHaveLength(1);
     });
 
-    it("shows the connection strip after network errors and hides it on recovery", async () => {
+    it("shows the connection indicator after network errors and hides it on recovery", async () => {
       vi.useFakeTimers();
       try {
         context.start(() => credentialsAtom.set(creds));
@@ -340,23 +340,23 @@ describe("App", () => {
           .mockRejectedValueOnce(new TypeError("Failed to fetch"))
           .mockResolvedValueOnce(new Response("null"));
         render(<App />);
-        const strip = () => screen.queryByRole("status");
+        const indicator = () => screen.queryByRole("status");
 
-        // First failure: a pause of 1 s, no strip yet.
+        // First failure: a pause of 1 s, no indicator yet.
         await act(() => vi.advanceTimersByTimeAsync(0));
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(strip()).toBeNull();
+        expect(indicator()).toBeNull();
 
-        // Second failure: the strip appears, the next try is in 2 s.
+        // Second failure: the indicator appears, the next try is in 2 s.
         await act(() => vi.advanceTimersByTimeAsync(1000));
         expect(fetchMock).toHaveBeenCalledTimes(2);
-        expect(strip()).toHaveTextContent("Переподключение…");
+        expect(indicator()).toHaveTextContent("Переподключение…");
         await act(() => vi.advanceTimersByTimeAsync(1999));
         expect(fetchMock).toHaveBeenCalledTimes(2);
 
-        // An empty answer is a success: the strip hides, the next long poll is pending.
+        // An empty answer is a success: the indicator hides, the next long poll is pending.
         await act(() => vi.advanceTimersByTimeAsync(1));
-        expect(strip()).toBeNull();
+        expect(indicator()).toBeNull();
         expect(fetchMock).toHaveBeenCalledTimes(4);
       } finally {
         vi.useRealTimers();

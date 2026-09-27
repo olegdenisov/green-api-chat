@@ -1,11 +1,8 @@
 import {
   ActionIcon,
-  Button,
   createTheme,
   defaultVariantColorsResolver,
   Input,
-  Notification,
-  Popover,
   type CSSVariablesResolver,
   type MantineColorsTuple,
   type VariantColorsResolver,
@@ -79,6 +76,7 @@ export const theme = createTheme({
   colors: { lavender, dark },
   fontFamily:
     'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+  // Buttons, popovers, notifications, inputs: --mantine-radius-default.
   defaultRadius: 14,
   variantColorResolver,
   focusClassName: FOCUS_CLASS_NAME,
@@ -94,9 +92,6 @@ export const theme = createTheme({
         wrapper: props.variant === "unstyled" ? {} : { "--input-bg": "var(--ga-field-bg)" },
       }),
     }),
-    Button: Button.extend({ defaultProps: { radius: 14 } }),
-    Popover: Popover.extend({ defaultProps: { radius: 14 } }),
-    Notification: Notification.extend({ defaultProps: { radius: 14 } }),
   },
 });
 
@@ -105,7 +100,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
   // The same in both schemes; `light`/`dark` hold only what differs.
   variables: {
     // Avatar pairs 1..5: their number is `AVATAR_COLOR_COUNT` in chat-avatar.tsx — change them
-    // together (theme.test.ts checks that pair 6 does not exist).
+    // together.
     "--ga-avatar-1-bg": "#e9e5ff",
     "--ga-avatar-1-fg": "#4a3bb5",
     "--ga-avatar-2-bg": "#ffe3d3",
@@ -122,8 +117,8 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     // Mantine's default dimmed grey (#868e96) is 3.3:1 on white; a secondary text needs 4.5:1.
     "--mantine-color-dimmed": "#6b6880",
     "--mantine-color-body": "#ffffff",
-    // Placeholder only: 3.5:1 on white — not for text that must be read.
-    "--mantine-color-placeholder": "#8a879c",
+    // Placeholders and the disabled send icon: 4.5:1 on white and on the field background.
+    "--mantine-color-placeholder": "#6f6c85",
     // Mantine's red-6 (#fa5252) is 3.3:1 on white.
     "--mantine-color-error": "#b42336",
     "--mantine-color-default-border": "#e4e0f2",
@@ -159,6 +154,8 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     "--ga-day-bg": "#f1eeff",
     "--ga-day-text": "#5a4bc9",
     "--ga-composer-shadow": "rgba(60, 50, 120, 0.08)",
+    // Outer halo of the focus ring (src/app/styles/index.css, the composer pill).
+    "--ga-focus-halo": "#e9e5ff",
   },
   dark: {
     "--mantine-color-text": "#eeecf6",
@@ -198,5 +195,6 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     "--ga-day-bg": "#2a2640",
     "--ga-day-text": "#c9c1ff",
     "--ga-composer-shadow": "rgba(0, 0, 0, 0.32)",
+    "--ga-focus-halo": "#3a3366",
   },
 });

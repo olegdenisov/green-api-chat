@@ -11,9 +11,14 @@ body {
 }
 
 /* Hardcoded: Mantine's CSS variables are not injected yet. The values duplicate --ga-app-bg
-   (the chat root's background, so there is no flash) and --mantine-color-text of the dark
-   scheme from src/app/providers/theme.ts, and the dark theme-color in index.html; change them
-   together. */
+   (the chat root's background, so there is no flash) and --mantine-color-text of both schemes
+   from src/app/providers/theme.ts, and theme-color in index.html; change them together
+   (theme.test.ts checks). */
+:root:not([data-mantine-color-scheme]) body {
+  background-color: #f7f5fc;
+  color: #1d1b2e;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-mantine-color-scheme]) body {
     background-color: #121119;
@@ -27,5 +32,5 @@ body {
   outline: none;
   box-shadow:
     0 0 0 2px var(--mantine-primary-color-filled),
-    0 0 0 5px var(--ga-bubble-out-bg);
+    0 0 0 5px var(--ga-focus-halo);
 }

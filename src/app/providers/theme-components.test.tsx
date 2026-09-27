@@ -1,10 +1,10 @@
-import { ActionIcon, MantineProvider, Textarea, TextInput } from "@mantine/core";
+import { ActionIcon, MantineProvider, rem, Textarea, TextInput } from "@mantine/core";
 import { render } from "@test/render";
 import { screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
-import { FOCUS_CLASS_NAME, theme } from "./theme";
+import { cssVariablesResolver, FOCUS_CLASS_NAME, theme } from "./theme";
 
 // `render` from @test/render uses Mantine's default theme: the app theme is added here.
 function renderWithTheme(ui: ReactNode) {
@@ -41,8 +41,28 @@ describe("theme components", () => {
 
     const button = screen.getByRole("button", { name: "Выйти" });
     expect(button.style.getPropertyValue("--ai-bg")).toBe("var(--ga-field-bg)");
-    expect(button.style.getPropertyValue("--ai-radius")).not.toBe("");
+    expect(button.style.getPropertyValue("--ai-radius")).toBe(rem(12));
     expect(button).toHaveClass(FOCUS_CLASS_NAME);
+  });
+
+  it("emits the overrides of the filled colours into the scheme blocks of Mantine's CSS", () => {
+    render(
+      <MantineProvider
+        theme={theme}
+        cssVariablesResolver={cssVariablesResolver}
+        forceColorScheme="dark"
+      >
+        x
+      </MantineProvider>,
+    );
+
+    const css = [...document.querySelectorAll("style")].map((style) => style.textContent).join("");
+    const block = (scheme: string) =>
+      new RegExp(`\\[data-mantine-color-scheme="${scheme}"\\][^{]*\\{([^}]*)\\}`).exec(css)?.[1] ??
+      "";
+    expect(block("dark")).toContain("--mantine-color-lavender-filled: #b7adff;");
+    // In dark red-8 is Mantine's own filled shade (primaryShade.dark 8): only light overrides it.
+    expect(block("light")).toContain("--mantine-color-red-filled: var(--mantine-color-red-8);");
   });
 
   it("puts --ga-on-primary text on the filled primary ActionIcon", () => {

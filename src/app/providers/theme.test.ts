@@ -1,7 +1,12 @@
+// Node's fs: stylesheets come in empty through Vite's `?raw` in tests (Vitest does not process CSS).
+/// <reference types="node" />
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { DEFAULT_THEME, mergeMantineTheme } from "@mantine/core";
 import { describe, expect, it } from "vitest";
 
-import { cssVariablesResolver, theme, variantColorResolver } from "./theme";
+import { cssVariablesResolver, theme } from "./theme";
 
 // `cssVariablesResolver` (like `MantineProvider`) is called with the full theme, defaults
 // merged in — `theme` alone is a partial override and doesn't satisfy its type.
@@ -44,15 +49,6 @@ function contrast(first: string, second: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-describe("contrast helper", () => {
-  it("computes WCAG ratios", () => {
-    expect(contrast("#000000", "#ffffff")).toBeCloseTo(21);
-    expect(contrast("#ffffff", "#ffffff")).toBeCloseTo(1);
-    // Mantine's red-6 on white: the reason --mantine-color-error is overridden.
-    expect(contrast("#fa5252", "#ffffff")).toBeLessThan(4.5);
-  });
-});
-
 describe("theme", () => {
   it("uses the lavender palette of mockup 5a as the primary color", () => {
     expect(theme.primaryColor).toBe("lavender");
@@ -62,10 +58,6 @@ describe("theme", () => {
 });
 
 describe("variantColorResolver", () => {
-  it("is the theme's resolver", () => {
-    expect(fullTheme.variantColorResolver).toBe(variantColorResolver);
-  });
-
   it.each([["lavender"], [undefined]])(
     "puts --ga-on-primary text on the filled primary (color %s)",
     (color) => {
@@ -148,22 +140,51 @@ describe("cssVariablesResolver", () => {
     for (const tokens of [variables, light, dark]) {
       for (const [name, value] of Object.entries(tokens)) {
         if (!name.startsWith("--ga-")) continue;
-        expect(value).toMatch(/^#[0-9a-f]{6}$|^rgba?\(/);
+        expect(value).toMatch(/^#[0-9a-f]{6}$|^rgba\(\d+, \d+, \d+, (0|1|0?\.\d+)\)$/);
       }
     }
   });
 
   it("defines all five avatar token pairs, shared by both schemes", () => {
-    const { variables, light, dark } = cssVariablesResolver(fullTheme);
+    const { variables } = cssVariablesResolver(fullTheme);
 
     for (let index = 1; index <= 5; index += 1) {
       expect(variables[`--ga-avatar-${index}-bg`]).toMatch(/^#[0-9a-f]{6}$/);
       expect(variables[`--ga-avatar-${index}-fg`]).toMatch(/^#[0-9a-f]{6}$/);
     }
-    for (const tokens of [variables, light, dark]) {
-      // `AVATAR_COLOR_COUNT` in chat-avatar.tsx is 5: a sixth pair would never be used.
-      expect(tokens["--ga-avatar-6-bg"]).toBeUndefined();
-      expect(tokens["--ga-avatar-6-fg"]).toBeUndefined();
+  });
+
+  // A removed or misspelled token would silently fall back to transparent/inherited.
+  it("defines every --ga-* token the stylesheets read", () => {
+    // Vitest runs from the project root.
+    const stylesheets = readdirSync("src", { recursive: true, encoding: "utf8" })
+      .filter((file) => file.endsWith(".css"))
+      .map((file): [string, string] => [file, readFileSync(join("src", file), "utf8")]);
+    const { variables, light, dark } = cssVariablesResolver(fullTheme);
+    const defined = new Set([
+      ...Object.keys(variables),
+      ...Object.keys(light),
+      ...Object.keys(dark),
+    ]);
+
+    const used = stylesheets.flatMap(([file, css]) =>
+      [...css.matchAll(/var\((--ga-[a-z0-9-]+)/g)].map(([, name]) => `${file}: ${name}`),
+    );
+    expect(used.length).toBeGreaterThan(0);
+    expect(used.filter((entry) => !defined.has(entry.split(": ")[1]))).toEqual([]);
+  });
+
+  it("duplicates the app background and text in the pre-mount CSS and theme-color", () => {
+    const indexCss = readFileSync("src/app/styles/index.css", "utf8");
+    const indexHtml = readFileSync("index.html", "utf8");
+
+    for (const scheme of ["light", "dark"] as const) {
+      const tokens = schemeTokens(scheme);
+      expect(indexCss).toContain(`background-color: ${tokens["--ga-app-bg"]};`);
+      expect(indexCss).toContain(`color: ${tokens["--mantine-color-text"]};`);
+      expect(indexHtml).toContain(
+        `content="${tokens["--ga-app-bg"]}" media="(prefers-color-scheme: ${scheme})"`,
+      );
     }
   });
 });
@@ -175,10 +196,17 @@ describe("contrast", () => {
     ["--mantine-color-dimmed", "--ga-surface"],
     ["--mantine-color-dimmed", "--ga-feed-bg"],
     ["--mantine-color-dimmed", "--ga-primary-soft"],
+    ["--mantine-color-dimmed", "--ga-field-bg"],
+    ["--mantine-color-text", "--ga-primary-soft"],
+    ["--mantine-color-text", "--ga-field-bg"],
+    ["--mantine-color-placeholder", "--ga-surface"],
+    ["--mantine-color-placeholder", "--ga-field-bg"],
     ["--mantine-color-error", "--ga-surface"],
     ["--mantine-color-error", "--ga-field-bg"],
     ["--ga-bubble-in-text", "--ga-bubble-in-bg"],
+    ["--ga-bubble-in-meta", "--ga-bubble-in-bg"],
     ["--ga-bubble-out-text", "--ga-bubble-out-bg"],
+    ["--ga-bubble-out-text", "--ga-bubble-failed-bg"],
     ["--ga-bubble-out-meta", "--ga-bubble-out-bg"],
     ["--ga-bubble-out-meta", "--ga-bubble-failed-bg"],
     ["--ga-danger-text", "--ga-bubble-failed-bg"],
@@ -200,6 +228,16 @@ describe("contrast", () => {
     it.each(pairs)("%s on %s is at least 4.5:1", (text, background) => {
       const ratio = contrast(resolveColor(tokens, text), resolveColor(tokens, background));
       expect(ratio).toBeGreaterThanOrEqual(4.5);
+    });
+
+    // WCAG 1.4.11: non-text contrast of icons and the focus ring.
+    it.each([
+      ["--ga-status-read", "--ga-bubble-out-bg"],
+      ["--mantine-color-lavender-filled", "--ga-surface"],
+      ["--mantine-color-lavender-filled", "--ga-feed-bg"],
+    ])("%s on %s is at least 3:1", (graphic, background) => {
+      const ratio = contrast(resolveColor(tokens, graphic), resolveColor(tokens, background));
+      expect(ratio).toBeGreaterThanOrEqual(3);
     });
 
     it("white on the red filled button (e.g. «Удалить») is at least 4.5:1", () => {

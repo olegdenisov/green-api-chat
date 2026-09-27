@@ -1,3 +1,4 @@
+import { rem } from "@mantine/core";
 import { cleanup, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -105,7 +106,7 @@ describe("ChatAvatar", () => {
     const host = renderAvatar({ chatId: "1", title: "Alice" });
 
     expect(host.firstElementChild).toHaveStyle({
-      "--avatar-radius": "calc(1rem * var(--mantine-scale))",
+      "--avatar-radius": rem(16),
     });
   });
 
@@ -113,7 +114,7 @@ describe("ChatAvatar", () => {
     const host = renderAvatar({ chatId: "1", title: "Alice" }, 14);
 
     expect(host.firstElementChild).toHaveStyle({
-      "--avatar-radius": "calc(0.875rem * var(--mantine-scale))",
+      "--avatar-radius": rem(14),
     });
   });
 });

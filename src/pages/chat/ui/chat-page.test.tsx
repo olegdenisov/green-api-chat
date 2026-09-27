@@ -33,7 +33,7 @@ describe("ChatPage", () => {
     // The one `main` landmark also exists in the narrow list view, where the window is hidden.
     expect(screen.getAllByRole("main")).toHaveLength(1);
     expect(screen.getByRole("navigation", { name: "Чаты" })).toBeInTheDocument();
-    // Polling is not failing: no connection strip.
+    // Polling is not failing: no connection indicator.
     expect(screen.queryByRole("status")).toBeNull();
   });
 

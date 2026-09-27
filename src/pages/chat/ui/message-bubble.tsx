@@ -45,7 +45,8 @@ const STATUS_VIEW: Record<
 
 /**
  * Status of an outgoing message: a clock sending, a check sent, a double check delivered, a
- * peach double check read, otherwise an alert and «Повторить».
+ * double check in --ga-status-read read; a failed one — the text «Не отправлено» and a
+ * «Повторить» pill.
  */
 const OutgoingStatus = reatomComponent(
   ({ message, failed }: { message: Message; failed: boolean }) => {
