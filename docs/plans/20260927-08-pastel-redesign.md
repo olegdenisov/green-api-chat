@@ -299,11 +299,11 @@ const dark: MantineColorsTuple = [
 - Modify: `src/shared/ui/icons.test.tsx`
 - Modify: `src/shared/ui/index.ts`
 
-- [ ] `strokeWidth` 1.8 в `Icon`; пути существующих иконок сверить с Lucide (`arrow-left`, `trash-2`, `plus`, `log-out`, `clock`, `check`, `check-check`)
-- [ ] добавить `IconSearch`, `IconMessageCircle`, `IconArrowUp`, `IconArrowRight`, `IconRotateCcw`, `IconWifi` (пути Lucide, лицензия ISC — комментарий-ссылка в файле)
-- [ ] экспорт новых иконок из `index.ts`; `IconLogo`, `IconSend`, `IconAlert` пока остаются (удаление — задача 8)
-- [ ] тесты: новые иконки рендерят `svg` с `aria-hidden`, `stroke-width="1.8"`, `size` задаёт ширину/высоту
-- [ ] `make check` — зелёный
+- [x] `strokeWidth` 1.8 в `Icon`; пути существующих иконок сверить с Lucide (`arrow-left`, `trash-2`, `plus`, `log-out`, `clock`, `check`, `check-check`)
+- [x] добавить `IconSearch`, `IconMessageCircle`, `IconArrowUp`, `IconArrowRight`, `IconRotateCcw`, `IconWifi` (пути Lucide, лицензия ISC — комментарий-ссылка в файле)
+- [x] экспорт новых иконок из `index.ts`; `IconLogo`, `IconSend`, `IconAlert` пока остаются (удаление — задача 8)
+- [x] тесты: новые иконки рендерят `svg` с `aria-hidden`, `stroke-width="1.8"`, `size` задаёт ширину/высоту
+- [x] `make check` — зелёный
 
 ### Task 4: Каркас и сайдбар, форма нового чата (M)
 **Model:** sonnet — раскладка и разметка заданы планом, поведение фокуса покрыто тестами
