@@ -444,18 +444,18 @@ export const theme = createTheme({
 - Modify: `src/pages/chat/ui/message-bubble.test.tsx`
 - Modify: `src/pages/chat/ui/chat-window.test.tsx` (стр. 186)
 
-- [ ] иконки `IconClock`, `IconCheck`, `IconChecks`, `IconAlert` в стиле существующих;
+- [x] иконки `IconClock`, `IconCheck`, `IconChecks`, `IconAlert` в стиле существующих;
       добавить в `it.each` `icons.test.tsx`
-- [ ] `OutgoingStatus`: иконка внутри `span role="img" aria-label` («Отправляется»,
+- [x] `OutgoingStatus`: иконка внутри `span role="img" aria-label` («Отправляется»,
       «Отправлено», «Доставлено», «Прочитано») — SVG остаётся `aria-hidden`; прочитанное —
       `--ga-status-read`
-- [ ] ошибка: `IconAlert` в `span role="img" aria-label="Не отправлено"` + «Повторить»;
+- [x] ошибка: `IconAlert` в `span role="img" aria-label="Не отправлено"` + «Повторить»;
       failed-пузырь и `.meta` — по Technical Details, без `opacity`; комментарий про контраст
       исправлен
-- [ ] тесты: каждый статус — `getByRole("img", { name })`; «Повторить» вызывает повтор;
+- [x] тесты: каждый статус — `getByRole("img", { name })`; «Повторить» вызывает повтор;
       устаревшее `sending` → «Не отправлено»; у входящего статуса нет;
       `chat-window.test.tsx:186` → `queryByRole("img", { name: "Не отправлено" })`
-- [ ] `make check` — зелёный перед задачей 7
+- [x] `make check` — зелёный перед задачей 7
 
 ### Task 7: Кнопка «+» раскрывает форму нового чата
 **Model:** opus — фокус, отмена сабмита и сброс при логауте должны сойтись

@@ -33,7 +33,19 @@ describe("MessageBubble", () => {
 
     expect(row()).toHaveAttribute("data-direction", "out");
     expect(screen.getByText("09:05")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Отправлено" })).toHaveTextContent("✓");
+    expect(screen.getByRole("img", { name: "Отправлено" })).toBeInTheDocument();
+  });
+
+  it("shows a delivered message with a double check mark", () => {
+    render(<MessageBubble message={{ ...outgoing, status: "delivered" }} />);
+
+    expect(screen.getByRole("img", { name: "Доставлено" })).toBeInTheDocument();
+  });
+
+  it("shows a read message with a peach double check mark", () => {
+    render(<MessageBubble message={{ ...outgoing, status: "read" }} />);
+
+    expect(screen.getByRole("img", { name: "Прочитано" })).toBeInTheDocument();
   });
 
   it("shows an incoming message on the left without a status", () => {
@@ -43,10 +55,10 @@ describe("MessageBubble", () => {
     expect(screen.queryByRole("img", { name: "Отправлено" })).not.toBeInTheDocument();
   });
 
-  it("shows a sending message with an ellipsis", () => {
+  it("shows a sending message with a clock", () => {
     render(<MessageBubble message={{ ...outgoing, status: "sending" }} />);
 
-    expect(screen.getByRole("img", { name: "Отправляется" })).toHaveTextContent("…");
+    expect(screen.getByRole("img", { name: "Отправляется" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Повторить" })).not.toBeInTheDocument();
   });
 
@@ -54,7 +66,7 @@ describe("MessageBubble", () => {
     const attemptAt = now - SEND_TIMEOUT - 1;
     render(<MessageBubble message={{ ...outgoing, status: "sending", attemptAt }} />);
 
-    expect(screen.getByText(/Не отправлено/)).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Не отправлено" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
   });
 
@@ -86,7 +98,7 @@ describe("MessageBubble", () => {
       messagesAtom.set({ "1": [failed] });
     });
 
-    expect(screen.getByText(/Не отправлено/)).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Не отправлено" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Повторить" }));
 
     await waitFor(() =>

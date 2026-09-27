@@ -4,6 +4,7 @@ import { reatomComponent } from "@reatom/react";
 import { useEffect, useState } from "react";
 
 import { isSendingStale, type Message, sendingStaleAt } from "@/entities/message";
+import { IconAlert, IconCheck, IconChecks, IconClock } from "@/shared/ui";
 
 import { formatTime } from "../lib/format-time";
 import { retryChatMessage } from "../model/send-message";
@@ -31,13 +32,19 @@ function useFailed(message: Message): boolean {
   return message.status === "failed" || isSendingStale(message, now);
 }
 
-/** Status of an outgoing message: «…» sending, «✓» sent, otherwise «Не отправлено · Повторить». */
+/**
+ * Status of an outgoing message: a clock sending, a check sent, a double check delivered, a
+ * peach double check read, otherwise an alert and «Повторить».
+ */
 const OutgoingStatus = reatomComponent(
   ({ message, failed }: { message: Message; failed: boolean }) => {
     if (failed) {
       return (
         <span>
-          Не отправлено ·{" "}
+          <span role="img" aria-label="Не отправлено">
+            <IconAlert size={14} />
+          </span>{" "}
+          ·{" "}
           <Button
             variant="transparent"
             color="red"
@@ -53,12 +60,24 @@ const OutgoingStatus = reatomComponent(
     if (message.status === "sending")
       return (
         <span role="img" aria-label="Отправляется">
-          …
+          <IconClock size={14} />
+        </span>
+      );
+    if (message.status === "delivered")
+      return (
+        <span role="img" aria-label="Доставлено">
+          <IconChecks size={14} />
+        </span>
+      );
+    if (message.status === "read")
+      return (
+        <span role="img" aria-label="Прочитано" className={classes.statusRead}>
+          <IconChecks size={14} />
         </span>
       );
     return (
       <span role="img" aria-label="Отправлено">
-        ✓
+        <IconCheck size={14} />
       </span>
     );
   },

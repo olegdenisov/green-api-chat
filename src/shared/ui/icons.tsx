@@ -73,3 +73,43 @@ export function IconLogo(props: IconProps) {
     </Icon>
   );
 }
+
+/** A message sending: a clock face. */
+export function IconClock(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </Icon>
+  );
+}
+
+/** A message sent: a single check mark. */
+export function IconCheck(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M20 6 9 17l-5-5" />
+    </Icon>
+  );
+}
+
+/** A message delivered or read: a double check mark. */
+export function IconChecks(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M18 6 7 17l-5-5" />
+      <path d="m22 10-7.5 7.5L13 16" />
+    </Icon>
+  );
+}
+
+/** A message not sent: an alert. */
+export function IconAlert(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5" />
+      <path d="M12 16h.01" />
+    </Icon>
+  );
+}
