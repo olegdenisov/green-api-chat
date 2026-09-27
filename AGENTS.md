@@ -102,9 +102,9 @@
 
 ## CI и деплой
 
-- CI — `.github/workflows/ci.yml`: на push в `main` и PR — `pnpm install --frozen-lockfile`,
-  `make check`, `make build` на Node 22 и 24. Деплой Vercel (Git-интеграция) от CI не
-  зависит.
+- CI — `.github/workflows/ci.yml`: на push в `main` и PR, Node 24, два параллельных job'а —
+  `check` (`make lint`, `format-check`, `lint-fsd`, `typecheck`, `build`) и `test`
+  (`make test`). Матрицы версий Node нет. Деплой Vercel (Git-интеграция) от CI не зависит.
 - `vercel.json`: пресет `vite`, `installCommand`/`buildCommand` с `corepack enable` (Vercel по
   lockfile ставит pnpm 9/10, проект — pnpm 12), заголовки: CSP (`script-src 'self'`),
   `Referrer-Policy`, `X-Content-Type-Options`. Поэтому в `index.html` не должно быть
