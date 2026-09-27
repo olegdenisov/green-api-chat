@@ -135,31 +135,70 @@
   перекрывают стили Mantine.
 - Вёрстка — CSS Modules (`*.module.css`) рядом с компонентом. Цвета — только переменные
   Mantine и `--ga-*` из темы, хардкода цветов в модулях нет.
-- Тема — `src/app/providers/theme.ts`: `createTheme` — палитра `dawn` (`primaryColor`,
-  `primaryShade: { light: 7, dark: 6 }`), основана на палитре №4705 с color.romanuke.com
-  (индиго `#3c487c`, лаванда `#797eba`, персик `#f8d4c4`, пудровый розовый `#e5b1b9`) —
-  заменила прежний синий акцент «по мотивам web.max.ru»; своя тёмная шкала `dark` с оттенком
-  индиго вместо нейтральной шкалы Mantine, чтобы хром и лента были из одного семейства.
+- Тема — `src/app/providers/theme.ts`: палитра «Minimal Pastel» (макет 5a,
+  `docs/design/pastel-5a/`) — пастельные фоны и один насыщенный акцент `#6C5CE7`; заменила
+  палитру №4705/`dawn` с color.romanuke.com с этапа 7. `createTheme`: `primaryColor:
+"lavender"` (шкала `lavender`, `[6]` = `#6c5ce7`), `primaryShade: { light: 6, dark: 8 }`
+  (не `dark: 3` — `primaryShade` красит все цвета, `red-filled` в dark стал бы нечитаемым),
+  `defaultRadius: 14`; своя шкала `dark` с оттенком индиго вместо нейтральной шкалы Mantine.
+  Тёмный primary (`#b7adff`) — не через `primaryShade`, а переопределением
+  `--mantine-color-lavender-filled`/`-filled-hover` в `cssVariablesResolver` (dark), у light —
+  та же пара с дефолтными оттенками Mantine (нужна для параллельности ключей `light`/`dark`).
+  `variantColorResolver` (обёртка над `defaultVariantColorsResolver`, экспорт
+  `variantColorResolver`): `variant="filled"` на primary → `color: var(--ga-on-primary)`
+  (белый в light, тёмный `#1d1b2e` в dark — Mantine иначе жёстко ставит белый на `filled`,
+  а белый на `#b7adff` — 2:1); свой вариант `variant="field"` — нейтральная иконка-кнопка на
+  `--ga-field-bg` (logout, «Назад», удаление чата). `--mantine-color-red-filled`/`-filled-hover`
+  переопределены на `red-8`/`red-9` в обеих схемах (иначе в light `red-6` при
+  `primaryShade.light: 6` даёт 3.3:1 для белого текста). `theme.components`: `ActionIcon`
+  радиус 12; `Input` — `defaultProps.variant: "filled"` + фон `--ga-field-bg` через `styles`
+  (не `vars` — типизированные `vars` `Input` не включают `--input-bg`; `--input-bd` не тронут,
+  чтобы остались рамки фокуса/ошибки; `unstyled` — у композера — фон не переопределяется);
+  `Button`/`Popover`/`Notification` — радиус 14. `focusClassName: FOCUS_CLASS_NAME` (класс
+  `ga-focus`) — кольцо фокуса в `index.css` (`box-shadow` двумя слоями, primary + фон пузыря
+  исходящих); строки списка — своё внутреннее кольцо (`chat-list.module.css`, `inset`), поле
+  композера — кольцо на «пилюле» через `:focus-within`.
   `cssVariablesResolver` задаёт токены `--ga-*` (одинаковые в обеих схемах — в `variables`,
-  различающиеся — в `light`/`dark`): фон ленты (`--ga-feed-bg`),
-  пузыри входящих/исходящих (`--ga-bubble-in-*`/`--ga-bubble-out-*`, включая `-meta`), мягкая
-  ошибка отправки (`--ga-bubble-failed-bg`/`-border`/`-text`/`-meta` — розовый тинт с рамкой,
-  не сплошная заливка), цвет «прочитано» (`--ga-status-read`), разделитель дня
-  (`--ga-day-bg`/`-text`), полоса статуса соединения (`--ga-notice-bg`/`-text`; те же значения,
-  что у разделителя дня, но отдельный токен — `features` не зависит от детали `pages`), активная строка списка (`--ga-row-active-bg`/`-bar`/`-time` — тинт
-  и полоса слева, не сплошная заливка), disabled-кнопка отправки
-  (`--ga-send-disabled-bg`/`-icon`) и пять пар аватарных токенов
-  (`--ga-avatar-{1..5}-bg`/`-fg`, цвет по хешу `chatId`, применяются через `vars` на `Avatar`).
-  Там же переопределены `--mantine-color-text`, `--mantine-color-dimmed` (контраст),
-  `--mantine-color-body`, `--mantine-color-default-border`/`-hover`. Тест темы (`theme.test.ts`)
-  сверяет, что ключи `light`/`dark` совпадают и не повторяют ключи `variables`. `UiProvider`: `defaultColorScheme="auto"` —
-  схема по системной, переключателя нет. Скрипта схемы нет: до монтирования `MantineProvider`
-  схему подхватывает CSS в `src/app/styles/index.css` (селектор
+  различающиеся — в `light`/`dark`): фон приложения/карточек/поля/границы (`--ga-app-bg`,
+  `--ga-surface`, `--ga-feed-bg`, `--ga-field-bg`, `--ga-border`), текст на primary
+  (`--ga-on-primary`), мягкий фон и текст на нём (`--ga-primary-soft`/`-text` — активная
+  строка списка, плашка дня переиспользует те же значения через отдельные `--ga-day-bg`/
+  `-text`), пузыри входящих/исходящих (`--ga-bubble-in-*`/`--ga-bubble-out-*`, включая
+  `-meta`), мягкая ошибка отправки одним токеном `--ga-bubble-failed-bg` (текст и мета берут
+  `--ga-danger-text`/`--ga-bubble-out-meta` — своих `-border`/`-text`/`-meta` для failed
+  больше нет), цвет «прочитано» (`--ga-status-read`), полоса переподключения
+  (`--ga-warning-bg`/`-text`, переиспользуется как есть — отдельного `--ga-notice-*` больше
+  нет), тень композера (`--ga-composer-shadow`) и пять пар аватарных токенов
+  (`--ga-avatar-{1..5}-bg`/`-fg`, цвет по хешу `chatId`, применяются через `vars` на `Avatar`,
+  число пар — `AVATAR_COLOR_COUNT` в `chat-avatar.tsx`). Там же переопределены
+  `--mantine-color-text`, `--mantine-color-dimmed`/`-placeholder`/`-error` (контраст),
+  `--mantine-color-body`, `--mantine-color-default-border`/`-hover`. Активная строка списка
+  и disabled-кнопка отправки больше не имеют своих токенов (`--ga-row-active-*`,
+  `--ga-send-disabled-*` удалены в задаче 9) — используют `--ga-primary-soft`/`-text` и
+  `--ga-field-bg`/`--mantine-color-placeholder` напрямую. Тест темы (`theme.test.ts`) сверяет,
+  что ключи `light`/`dark` совпадают и не повторяют ключи `variables`, контраст пар (хелпер
+  WCAG, ≥ 4.5:1) и что каждый `--ga-*` — цветовое значение. `UiProvider`:
+  `defaultColorScheme="auto"` — схема по системной, переключателя нет. Скрипта схемы нет: до
+  монтирования `MantineProvider` схему подхватывает CSS в `src/app/styles/index.css` (селектор
   `:root:not([data-mantine-color-scheme])`) — там же и в `index.html` (`theme-color`) и
-  `public/favicon.svg` цвета для тёмной схемы и логотипа продублированы (не через CSS-переменные,
-  комментарий в `index.css` о дублировании). `render` из `@test/render` тему не получает.
-- Иконки — свои инлайн-SVG в `src/shared/ui/icons.tsx` (`aria-hidden`, имя — у кнопки через
-  `aria-label`); новых зависимостей и веб-шрифтов нет.
+  `public/favicon.svg` (`#6c5ce7`) цвета для тёмной схемы и логотипа продублированы (не через
+  CSS-переменные, комментарий в `index.css` о дублировании). `render` из `@test/render` тему
+  не получает — тестам компонентов темы (резолвер, `Input` с ошибкой, `ActionIcon
+variant="field"`) нужен свой `MantineProvider theme={theme}`.
+- Каркас (`ChatPage`, макет 5a): сайдбар и окно чата — «плавающие» карточки (`--ga-surface`,
+  радиус 22, `overflow: hidden`) на фоне `--ga-app-bg` с отступом/зазором 12
+  (`chat-page.module.css`, составной селектор `.page > .sidebar, .page > .window` — сильнее
+  правила `.window` из `chat-window.module.css` независимо от порядка загрузки CSS Modules);
+  на узком экране (`< $mantine-breakpoint-sm`) — без отступа и радиуса, карточка на весь
+  экран, переключение список/чат — по `data-view`, без изменений. Аватары — скруглённые
+  квадраты (`ChatAvatar` проп `radius`, по умолчанию 16 в списке/46 размер, 14/42 в шапке
+  чата, не круг — `autoContrast` не используется, контраст пар уже подобран).
+- Иконки — свои инлайн-SVG в `src/shared/ui/icons.tsx`, `strokeWidth` 1.8 (единый набор,
+  пути сверены с Lucide — ISC, комментарий-ссылка в файле; `aria-hidden`, имя — у кнопки через
+  `aria-label`); новых зависимостей и веб-шрифтов нет. `IconLogo`/`IconSend`/`IconAlert`
+  удалены в задаче 8 (логотип и статус «Не отправлено» больше не используют их); логотип
+  приложения (сайдбар, логин, пустые состояния) — `IconMessageCircle` в мягком квадрате
+  (`--ga-primary-soft`/`-text`).
 - Общие UI-компоненты — сегмент `src/shared/ui` (файлы плоско, публичный API — `index.ts`):
   например, `AppTitle` — название приложения как `h1` страницы.
 - `src/shared/config` — сегмент без слайсов, файлы плоско (`persist.ts` — `PERSIST_TTL`),
@@ -169,10 +208,13 @@
   `$mantine-breakpoint-xs…xl` для `@media`.
 - A11y: у кнопок-иконок (`ActionIcon`) имя — `aria-label`, в т.ч. «+» нового чата
   (`aria-label="Новый чат"`, `aria-expanded`, `aria-controls` на всегда смонтированную обёртку
-  формы, `sidebar.tsx`). Статус сообщения в пузыре — `role="img"` + `aria-label`
-  («Отправляется», «Отправлено», «Доставлено», «Прочитано», «Не отправлено»; `span` без роли
-  `aria-label` не поддерживает, сам SVG остаётся `aria-hidden`). Тесты ищут элементы по
-  ролям/именам, не по классам. Единственный landmark `<main>` — `.page` в `ChatPage`
+  формы, `sidebar.tsx`); заголовок сайдбара — `h1` «Чаты» (`Title order={1}`), `AppTitle`
+  («GREEN-API chat») остаётся `h1` только на логине. Статус сообщения в пузыре — `role="img"` +
+  `aria-label` для `sending`/`sent`/`delivered`/`read` («Отправляется», «Отправлено»,
+  «Доставлено», «Прочитано»; `span` без роли `aria-label` не поддерживает, сам SVG остаётся
+  `aria-hidden`); `failed` — видимый текст «Не отправлено» (`--ga-danger-text`, без `role="img"`
+  — брифу важно, чтобы ошибку видели, а не только слышали) рядом с кнопкой «Повторить». Тесты
+  ищут элементы по ролям/именам, не по классам. Единственный landmark `<main>` — `.page` в `ChatPage`
   (`ChatWindow` — обычный `div`). Фокус в `ChatPage` (один эффект на переход `activeChatId` и на закрытие формы нового
   чата; срабатывает только если фокус потерян — упал на `<body>`, потому что элемент
   размонтировался, или остался на элементе, который больше не отрисован: `checkVisibility()`

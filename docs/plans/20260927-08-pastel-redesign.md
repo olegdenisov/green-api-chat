@@ -428,10 +428,10 @@ const dark: MantineColorsTuple = [
 ### Task 11: [Final] Update documentation
 **Model:** sonnet — docs describe built behavior
 
-- [ ] `AGENTS.md`, «Стили»: палитра 5a (`lavender`, `primaryShade`, override `lavender-filled` в dark, dark-шкала), `variantColorResolver` (`--ga-on-primary`, вариант `field`), `Input` `filled`, `focusClassName`, новый список токенов, карточки, радиусы, иконки stroke 1.8; `h1` «Чаты» в `ChatPage`, `AppTitle` — только логин; индикатор «Переподключение…»
-- [ ] `README.md:25-27` (индикатор), `:169-171` (палитра №4705) — новая палитра и текст индикатора
-- [ ] `docs/plans/20260923-telegram-chat-design.md:130,158,180,404,504,531-533` — палитра и «Переподключение…»
-- [ ] переместить план в `docs/plans/completed/`
+- [x] `AGENTS.md`, «Стили»: палитра 5a (`lavender`, `primaryShade`, override `lavender-filled` в dark, dark-шкала), `variantColorResolver` (`--ga-on-primary`, вариант `field`), `Input` `filled`, `focusClassName`, новый список токенов, карточки, радиусы, иконки stroke 1.8; `h1` «Чаты» в `ChatPage`, `AppTitle` — только логин; индикатор «Переподключение…»
+- [x] `README.md:25-27` (индикатор), `:169-171` (палитра №4705) — новая палитра и текст индикатора
+- [x] `docs/plans/20260923-telegram-chat-design.md:130,158,180,404,504,531-533` — палитра и «Переподключение…»
+- [x] переместить план в `docs/plans/completed/` (skipped — harness moves the plan file after all phases finish; moving it mid-run would break later review/finalize/stats phases that read this path)
 
 ## Post-Completion
 
