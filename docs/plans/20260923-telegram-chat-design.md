@@ -39,7 +39,7 @@
 | метод | запрос | ответ |
 | --- | --- | --- |
 | `getStateInstance` | `GET` | `{ stateInstance }`: `authorized`, `notAuthorized`, `blocked`, `suspended`, `starting`, `pendingPassword` |
-| `getSettings` | `GET` | настройки инстанса, в т.ч. `webhookUrl`, `incomingWebhook`, `outgoingAPIMessageWebhook`, `outgoingMessageWebhook` (`"yes"`/`"no"`); `webhookUrl` должен быть пустым, иначе `receiveNotification`/`deleteNotification` отвечают `400` |
+| `getSettings` | `GET` | настройки инстанса, в т.ч. `webhookUrl`, `incomingWebhook`, `outgoingAPIMessageWebhook`, `outgoingMessageWebhook`, `outgoingWebhook` (`"yes"`/`"no"`); `webhookUrl` должен быть пустым, иначе `receiveNotification`/`deleteNotification` отвечают `400` |
 | `setSettings` | `POST` любые из полей выше, кроме `wid`/`typeInstance` (хотя бы одно) | `{ saveSettings: true }`; **инстанс перезапускается, применение до 5 минут** |
 | `checkAccount` | `POST { phoneNumber: number }` (только цифры, integer; API также принимает `username`/`force` — не используем) | `{ exist, chatId, username?, phoneNumber?, fromCache }`; нет аккаунта — `{ exist: false, chatId: "" }` |
 | `sendMessage` | `POST { chatId, message }`, до 4096 символов | `{ idMessage }` |
@@ -139,7 +139,8 @@ src/
               кредов при старте ⇒ deleteAllChats()
   pages/
     login/    карточка с формой логина (LoginForm)
-    chat/     model: createChatForm, sendChatMessage/retryChatMessage, draftField/sendDraft,
+    chat/     model: createChatForm, createChatOpenAtom (форма за «+», не persist),
+              sendChatMessage/retryChatMessage, draftField/sendDraft,
               activeMessagesAtom; ui: Sidebar (CreateChatForm, ChatList), ChatWindow
               (MessageBubble, Composer, разделители дней), ChatAvatar, EmptyState; lib:
               formatTime (HH:MM), formatChatTime (сегодня — HH:MM, иначе DD.MM.YY),
@@ -148,8 +149,10 @@ src/
     auth/              форма логина (reatomForm: проверка инстанса, webhook-настройки,
                        сохранение кредов), кнопка «Выйти»
     delete-chats/      deleteChat (чат + история), deleteAllChats, DeleteChatButton
-    receive-messages/  model: parseNotification (чистая), applyReceivedMessage (раскладка с
-                       дедупликацией), pollNotifications (цикл, backoff), receiveStatusAtom
+    receive-messages/  model: parseNotification (чистая, результат с kind: message |
+                       status), applyReceivedMessage (раскладка с дедупликацией),
+                       applyMessageStatus (статус доставки по idMessage, только
+                       повышение ранга), pollNotifications (цикл, backoff), receiveStatusAtom
                        (статус, простой атом), pollingAtom (withConnectHook → Web Lock →
                        цикл); ui: ReceiveMessages (безголовый,
                        рендерит app), ConnectionIndicator (полоса «Соединение…» в ChatPage)
@@ -163,7 +166,8 @@ src/
   shared/
     api/       клиент GREEN-API (fetch, типы, ApiError, опции { signal, timeout })
     config/    PERSIST_TTL (10 лет) — для session, chat, message
-    ui/        мелкие общие компоненты (AppTitle) и инлайн-SVG иконки (icons)
+    ui/        мелкие общие компоненты (AppTitle) и инлайн-SVG иконки (icons: в т.ч.
+               IconClock/IconCheck/IconChecks/IconAlert — статусы, IconPlus — «+»)
 ```
 
 Тема: `src/app/providers/theme.ts` — `createTheme` и `cssVariablesResolver` с токенами
@@ -372,7 +376,12 @@ type Message = {
   после правки любого поля — исчезает. Включение webhook-настроек при необходимости. Ошибки
   валидации — у полей; провал валидации `Alert` не даёт (узнаётся по тождеству с
   `loginForm.validation.trigger.error()`). `apiUrl` — только `https://` (токен идёт в URL).
-- Новый чат: номер → только цифры (10–15) → чат с таким `phone` есть — просто открывается,
+- Новый чат: форма скрыта за «+» в шапке списка (`aria-expanded`/`aria-controls`; открыта ли —
+  `createChatOpenAtom`, не persist). Открытие — фокус в поле номера; Escape или повторный «+» —
+  `createChatForm.reset()` (отменяет запрос в полёте), форма закрывается, фокус — на «+».
+  Успех (и известный номер, в т.ч. уже открытого чата) закрывает форму, фокус — в
+  «Сообщение»; ошибка оставляет форму открытой с номером; логаут (`resetChatPage`) закрывает.
+  Номер → только цифры (10–15) → чат с таким `phone` есть — просто открывается,
   без запроса; иначе `checkAccount`. `chatId` из ответа уже есть (чат пришёл входящим) —
   открывается существующий, `phone` дописывается. Поле сбрасывается только при успехе.
   Ошибки — под полем (`pages/chat/model/create-chat-error.ts`):

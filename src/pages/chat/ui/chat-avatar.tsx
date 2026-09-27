@@ -2,6 +2,8 @@ import { Avatar } from "@mantine/core";
 
 import type { Chat } from "@/entities/chat";
 
+// The number of `--ga-avatar-N-*` pairs in `cssVariablesResolver` (app/providers/theme.ts) —
+// change them together: a pair past the last one is undefined and the avatar goes transparent.
 const AVATAR_COLOR_COUNT = 5;
 
 /**

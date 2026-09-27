@@ -26,6 +26,7 @@ export const Composer = reatomComponent(() => {
     >
       <Textarea
         aria-label="Сообщение"
+        data-composer-input
         placeholder="Сообщение"
         autosize
         minRows={1}

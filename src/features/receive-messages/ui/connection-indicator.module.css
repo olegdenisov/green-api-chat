@@ -6,6 +6,6 @@
   padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
   border-bottom: rem(1px) solid var(--mantine-color-default-border);
   /* Peach from the palette, in place of Mantine's yellow — it stood out from the rest. */
-  background: var(--ga-day-bg);
-  color: var(--ga-day-text);
+  background: var(--ga-notice-bg);
+  color: var(--ga-notice-text);
 }

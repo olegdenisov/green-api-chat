@@ -15,6 +15,7 @@ import { getStateInstanceResponse } from "@test/fixtures/green-api/get-state-ins
 import { incomingTextMessage } from "@test/fixtures/green-api/incoming-text-message";
 import { outgoingApiMessage } from "@test/fixtures/green-api/outgoing-api-message";
 import { outgoingMessage } from "@test/fixtures/green-api/outgoing-message";
+import { outgoingMessageStatusDelivered } from "@test/fixtures/green-api/outgoing-message-status";
 import { sendMessageResponse } from "@test/fixtures/green-api/send-message";
 import {
   calledMethods,
@@ -265,6 +266,48 @@ describe("App", () => {
       expect(within(feed()).getAllByText("Hello")).toHaveLength(1);
       expect(within(feed()).getAllByLabelText("Отправлено")).toHaveLength(1);
       expect(within(chatList()).getAllByRole("button")).toHaveLength(1);
+    });
+
+    it("shows the delivery status from the queue in the bubble without raising the chat", async () => {
+      const chatId = outgoingMessageStatusDelivered.chatId;
+      const idMessage = outgoingMessageStatusDelivered.idMessage;
+      context.start(() => {
+        credentialsAtom.set(creds);
+        chatsAtom.set({
+          [chatId]: { chatId, title: "Василиса", lastMessageAt: 1 },
+          "20000000": { chatId: "20000000", title: "Кощей", lastMessageAt: 2 },
+        });
+        activeChatIdAtom.set(chatId);
+        // Already sent: the API event matched it before.
+        addMessage({
+          id: idMessage,
+          chatId,
+          text: "Hello",
+          direction: "out",
+          status: "sent",
+          timestamp: 1,
+          attemptAt: 1,
+        });
+      });
+      respondByMethod({
+        receiveNotification: [
+          { body: { receiptId: 1, body: outgoingMessageStatusDelivered } },
+          "hang",
+        ],
+        deleteNotification: { body: deleteNotificationResponse },
+      });
+      render(<App />);
+      const feed = () => screen.getByRole("log", { name: "Сообщения" });
+      const chatOrder = () =>
+        within(chatList())
+          .getAllByRole("button")
+          .map((row) => row.getAttribute("data-chat-id"));
+      expect(chatOrder()).toEqual(["20000000", chatId]);
+
+      expect(await within(feed()).findByRole("img", { name: "Доставлено" })).toBeInTheDocument();
+      expect(within(feed()).queryByRole("img", { name: "Отправлено" })).not.toBeInTheDocument();
+      // A status is not a new message: the list order stays.
+      expect(chatOrder()).toEqual(["20000000", chatId]);
     });
 
     it("shows a message sent from the phone in the open chat as outgoing", async () => {

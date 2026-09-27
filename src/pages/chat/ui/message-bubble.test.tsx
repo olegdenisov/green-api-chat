@@ -33,19 +33,22 @@ describe("MessageBubble", () => {
 
     expect(row()).toHaveAttribute("data-direction", "out");
     expect(screen.getByText("09:05")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Отправлено" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Отправлено" })).toHaveAttribute("data-status", "sent");
   });
 
   it("shows a delivered message with a double check mark", () => {
     render(<MessageBubble message={{ ...outgoing, status: "delivered" }} />);
 
-    expect(screen.getByRole("img", { name: "Доставлено" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Доставлено" })).toHaveAttribute(
+      "data-status",
+      "delivered",
+    );
   });
 
   it("shows a read message with a peach double check mark", () => {
     render(<MessageBubble message={{ ...outgoing, status: "read" }} />);
 
-    expect(screen.getByRole("img", { name: "Прочитано" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Прочитано" })).toHaveAttribute("data-status", "read");
   });
 
   it("shows an incoming message on the left without a status", () => {

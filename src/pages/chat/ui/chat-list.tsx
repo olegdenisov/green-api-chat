@@ -26,6 +26,8 @@ export const ChatList = reatomComponent(() => {
       {chats.map((chat) => {
         const active = chat.chatId === activeChatId;
         const last = messages[chat.chatId]?.at(-1);
+        let preview = "Нет сообщений";
+        if (last) preview = last.direction === "out" ? `Вы: ${last.text}` : last.text;
         return (
           <li key={chat.chatId}>
             <button
@@ -42,13 +44,7 @@ export const ChatList = reatomComponent(() => {
                   <span className={classes.title}>{chat.title}</span>
                   <span className={classes.time}>{formatChatTime(chat.lastMessageAt, now)}</span>
                 </span>
-                <span className={classes.preview}>
-                  {last
-                    ? last.direction === "out"
-                      ? `Вы: ${last.text}`
-                      : last.text
-                    : "Нет сообщений"}
-                </span>
+                <span className={classes.preview}>{preview}</span>
               </span>
             </button>
           </li>

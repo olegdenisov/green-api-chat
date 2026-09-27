@@ -47,12 +47,8 @@ export const applyReceivedMessage = action((message: ReceivedMessage) => {
   touchChat(chatId, timestamp);
 }, "receiveMessages.apply");
 
-/** Rank of the statuses a notification may raise: a status only ever goes up. */
-const RANK = { sent: 1, delivered: 2, read: 3 } as const satisfies Partial<
-  Record<Message["status"], number>
->;
-
-const isRanked = (status: Message["status"]): status is keyof typeof RANK => status in RANK;
+/** Statuses a notification may raise, in rank order: a status only ever goes up. */
+const RANKED: readonly Message["status"][] = ["sent", "delivered", "read"];
 
 /**
  * Raises an outgoing message found by `idMessage` to `delivered`/`read`. Only `sent`/`delivered`
@@ -62,7 +58,9 @@ const isRanked = (status: Message["status"]): status is keyof typeof RANK => sta
  */
 export const applyMessageStatus = action(({ chatId, id, status }: ReceivedStatus) => {
   const message = messagesAtom()[chatId]?.find((item) => item.id === id);
-  if (!message || message.direction !== "out" || !isRanked(message.status)) return;
-  if (RANK[status] <= RANK[message.status]) return;
+  if (!message || message.direction !== "out") return;
+  const current = RANKED.indexOf(message.status);
+  // -1: `sending`/`failed` are not raised.
+  if (current === -1 || RANKED.indexOf(status) <= current) return;
   updateMessage(chatId, id, { status });
 }, "receiveMessages.applyStatus");
