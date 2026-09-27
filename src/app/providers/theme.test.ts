@@ -142,6 +142,17 @@ describe("cssVariablesResolver", () => {
     expect(dark["--mantine-color-default-hover"]).not.toBe(fullTheme.colors.dark[6]);
   });
 
+  it("gives every --ga-* token a colour value (hex or rgba)", () => {
+    const { variables, light, dark } = cssVariablesResolver(fullTheme);
+
+    for (const tokens of [variables, light, dark]) {
+      for (const [name, value] of Object.entries(tokens)) {
+        if (!name.startsWith("--ga-")) continue;
+        expect(value).toMatch(/^#[0-9a-f]{6}$|^rgba?\(/);
+      }
+    }
+  });
+
   it("defines all five avatar token pairs, shared by both schemes", () => {
     const { variables, light, dark } = cssVariablesResolver(fullTheme);
 

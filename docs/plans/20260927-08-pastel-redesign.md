@@ -409,11 +409,11 @@ const dark: MantineColorsTuple = [
 - Modify: `src/app/providers/theme.test.ts`
 - Modify: `src/**/*.module.css` (по результатам grep)
 
-- [ ] grep `var(--ga-` по `src/**/*.css` и `theme.ts`: удалить токены без читателей (список в Technical Details), каждый прочитанный токен определён в обеих схемах
-- [ ] grep `#[0-9a-fA-F]{3,8}\b|rgba?\(` по `src/**/*.css` — цветов нет, кроме `src/app/styles/index.css` (дубли с комментарием)
-- [ ] grep `color="red"|color="gray"` в `.tsx` — убрать остатки, расходящиеся с макетом («Удалить» в поповере остаётся красной)
-- [ ] тест темы: у каждого `--ga-*` — значение-цвет (регэксп), список ключей обновлён
-- [ ] `make check` — зелёный
+- [x] grep `var(--ga-` по `src/**/*.css` и `theme.ts`: удалить токены без читателей (список в Technical Details), каждый прочитанный токен определён в обеих схемах
+- [x] grep `#[0-9a-fA-F]{3,8}\b|rgba?\(` по `src/**/*.css` — цветов нет, кроме `src/app/styles/index.css` (дубли с комментарием)
+- [x] grep `color="red"|color="gray"` в `.tsx` — убрать остатки, расходящиеся с макетом («Удалить» в поповере остаётся красной) — других остатков нет: `Alert color="red"` в `login-form.tsx` — семантическая ошибка входа, не связана с редизайном
+- [x] тест темы: у каждого `--ga-*` — значение-цвет (регэксп), список ключей обновлён
+- [x] `make check` — зелёный
 
 ### Task 10: Verify acceptance criteria
 **Model:** sonnet — checks the result against the plan, fixes gaps
