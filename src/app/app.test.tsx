@@ -350,7 +350,7 @@ describe("App", () => {
         // Second failure: the strip appears, the next try is in 2 s.
         await act(() => vi.advanceTimersByTimeAsync(1000));
         expect(fetchMock).toHaveBeenCalledTimes(2);
-        expect(strip()).toHaveTextContent("Соединение…");
+        expect(strip()).toHaveTextContent("Переподключение…");
         await act(() => vi.advanceTimersByTimeAsync(1999));
         expect(fetchMock).toHaveBeenCalledTimes(2);
 

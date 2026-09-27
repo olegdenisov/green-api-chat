@@ -30,7 +30,7 @@ describe("ConnectionIndicator", () => {
     const { frame } = render(<ConnectionIndicator />);
 
     frame.run(() => receiveStatusAtom.set("reconnecting"));
-    expect(await screen.findByRole("status")).toHaveTextContent("Соединение…");
+    expect(await screen.findByRole("status")).toHaveTextContent("Переподключение…");
 
     frame.run(() => receiveStatusAtom.set("polling"));
     await waitFor(() => expect(indicator()).toBeNull());

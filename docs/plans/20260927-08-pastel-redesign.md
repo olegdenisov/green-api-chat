@@ -394,12 +394,12 @@ const dark: MantineColorsTuple = [
 - Modify: `src/pages/chat/ui/chat-page.module.css` (место индикатора)
 - Modify: `src/shared/ui/icons.tsx`, `src/shared/ui/icons.test.tsx`, `src/shared/ui/index.ts`
 
-- [ ] логин: страница app-bg; карточка surface, радиус 22, без тени и рамки; логотип — `IconMessageCircle` в soft-квадрате; `AppTitle` (бренд) остаётся `h1`; поля и «Войти» — из темы
-- [ ] индикатор: pill warning-bg / warning-text, радиус 999, `IconWifi` вместо `Loader` + «Переподключение…», `role="status"`; место — по центру над карточками в отступе `.root` (на узком экране — полоса на всю ширину); только при `reconnecting`
-- [ ] проверить вид тостов и поповера удаления в обеих схемах (темой из задачи 2); если чего-то не хватает — дополнить `theme.components` и отметить ➕ в плане
-- [ ] удалить `IconLogo`, `IconSend`, `IconAlert` (grep — потребителей нет) из `icons.tsx`, `index.ts`, тестов
-- [ ] тесты: `connection-indicator.test.tsx` (статус через `receiveStatusAtom` внутри слайса — как сейчас) — текст «Переподключение…»; `app.test.tsx:353` — новый текст; логин — `h1` «GREEN-API chat» на месте
-- [ ] `make check` — зелёный
+- [x] логин: страница app-bg; карточка surface, радиус 22, без тени и рамки; логотип — `IconMessageCircle` в soft-квадрате; `AppTitle` (бренд) остаётся `h1`; поля и «Войти» — из темы
+- [x] индикатор: pill warning-bg / warning-text, радиус 999, `IconWifi` вместо `Loader` + «Переподключение…», `role="status"`; место — по центру над карточками в отступе `.root` (на узком экране — полоса на всю ширину); только при `reconnecting`
+- [x] проверить вид тостов и поповера удаления в обеих схемах (темой из задачи 2); если чего-то не хватает — дополнить `theme.components` и отметить ➕ в плане — проверено кодревью и вживую (`make dev` + Chrome DevTools, светлая/тёмная): `DeleteChatButton` уже нейтральная (`variant="field"`) с красной «Удалить» из задачи 1 (`red-8`/`red-9`); тосты `SETTINGS_TOASTS`/`SESSION_EXPIRED_TOAST` — цвета `green`/`yellow`/`red`, не primary, резолвер их не трогает, `Notification.extend` (радиус) из задачи 2 уже покрывает форму — дополнений не потребовалось
+- [x] удалить `IconLogo`, `IconSend`, `IconAlert` (grep — потребителей нет) из `icons.tsx`, `index.ts`, тестов
+- [x] тесты: `connection-indicator.test.tsx` (статус через `receiveStatusAtom` внутри слайса — как сейчас) — текст «Переподключение…»; `app.test.tsx:353` — новый текст; логин — `h1` «GREEN-API chat» на месте
+- [x] `make check` — зелёный
 
 ### Task 9: Чистка токенов и хардкода (S)
 **Model:** sonnet — механическая чистка, grep и тесты ловят промахи

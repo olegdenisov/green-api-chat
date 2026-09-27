@@ -4,18 +4,25 @@
   align-items: center;
   justify-content: center;
   padding: var(--mantine-spacing-md);
-  background: var(--ga-feed-bg);
+  background: var(--ga-app-bg);
 }
 
 .card {
   width: 100%;
   max-width: rem(400px);
+  background: var(--ga-surface);
 }
 
 .logo {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: rem(56px);
+  height: rem(56px);
   margin: 0 auto var(--mantine-spacing-sm);
-  color: var(--mantine-primary-color-filled);
+  border-radius: rem(16px);
+  background: var(--ga-primary-soft);
+  color: var(--ga-primary-soft-text);
 }
 
 /* Overrides Mantine Title defaults (margin: 0). */
