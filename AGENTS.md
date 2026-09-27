@@ -61,6 +61,11 @@
   и для Telegram).
 - `chatId` в Telegram — число строкой, без `@c.us`.
 - Входящие — через очередь уведомлений (`receiveNotification` + `deleteNotification`).
+- Статусы доставки исходящих — уведомление `outgoingMessageStatus`; требует флаг
+  `outgoingWebhook` (включается вместе с прочими webhook-флагами в `setSettings` при логине,
+  только при логине — у сохранённой сессии не проверяется). Обрабатываются только
+  `delivered`/`read` (оба приходят с `idMessage`); `failed`/`noAccount` в документации — без
+  `idMessage`, сообщение не сопоставить, событие просто удаляется из очереди.
 - Подробности, ошибки и принятые решения — в дизайн-документе.
 
 ### `shared/api`
@@ -130,13 +135,27 @@
   перекрывают стили Mantine.
 - Вёрстка — CSS Modules (`*.module.css`) рядом с компонентом. Цвета — только переменные
   Mantine и `--ga-*` из темы, хардкода цветов в модулях нет.
-- Тема — `src/app/providers/theme.ts`: `createTheme` (палитра `max`, системный шрифт) и
-  `cssVariablesResolver` с токенами `--ga-*` (фон ленты, пузыри, разделитель дня) для
-  `light`/`dark`; там же переопределён `--mantine-color-dimmed` (контраст). `UiProvider`:
-  `defaultColorScheme="auto"` — схема по системной, переключателя нет. Скрипта схемы нет:
-  до монтирования `MantineProvider` схему подхватывает CSS в `src/app/styles/index.css`
-  (селектор `:root:not([data-mantine-color-scheme])`). Палитра подобрана на глаз, не снята с
-  web.max.ru (комментарий в `theme.ts`). `render` из `@test/render` тему не получает.
+- Тема — `src/app/providers/theme.ts`: `createTheme` — палитра `dawn` (`primaryColor`,
+  `primaryShade: { light: 7, dark: 6 }`), основана на палитре №4705 с color.romanuke.com
+  (индиго `#3c487c`, лаванда `#797eba`, персик `#f8d4c4`, пудровый розовый `#e5b1b9`) —
+  заменила прежний синий акцент «по мотивам web.max.ru»; своя тёмная шкала `dark` с оттенком
+  индиго вместо нейтральной шкалы Mantine, чтобы хром и лента были из одного семейства.
+  `cssVariablesResolver` задаёт токены `--ga-*` для `light`/`dark`: фон ленты (`--ga-feed-bg`),
+  пузыри входящих/исходящих (`--ga-bubble-in-*`/`--ga-bubble-out-*`, включая `-meta`), мягкая
+  ошибка отправки (`--ga-bubble-failed-bg`/`-border`/`-text`/`-meta` — розовый тинт с рамкой,
+  не сплошная заливка), цвет «прочитано» (`--ga-status-read`), разделитель дня
+  (`--ga-day-bg`/`-text`), активная строка списка (`--ga-row-active-bg`/`-bar`/`-time` — тинт
+  и полоса слева, не сплошная заливка), disabled-кнопка отправки
+  (`--ga-send-disabled-bg`/`-icon`) и пять пар аватарных токенов
+  (`--ga-avatar-{1..5}-bg`/`-fg`, цвет по хешу `chatId`, применяются через `vars` на `Avatar`).
+  Там же переопределены `--mantine-color-text`, `--mantine-color-dimmed` (контраст),
+  `--mantine-color-body`, `--mantine-color-default-border`/`-hover`. Тест темы (`theme.test.ts`)
+  сверяет, что ключи `light`/`dark` совпадают. `UiProvider`: `defaultColorScheme="auto"` —
+  схема по системной, переключателя нет. Скрипта схемы нет: до монтирования `MantineProvider`
+  схему подхватывает CSS в `src/app/styles/index.css` (селектор
+  `:root:not([data-mantine-color-scheme])`) — там же и в `index.html` (`theme-color`) и
+  `public/favicon.svg` цвета для тёмной схемы и логотипа продублированы (не через CSS-переменные,
+  комментарий в `index.css` о дублировании). `render` из `@test/render` тему не получает.
 - Иконки — свои инлайн-SVG в `src/shared/ui/icons.tsx` (`aria-hidden`, имя — у кнопки через
   `aria-label`); новых зависимостей и веб-шрифтов нет.
 - Общие UI-компоненты — сегмент `src/shared/ui` (файлы плоско, публичный API — `index.ts`):
@@ -146,19 +165,30 @@
 - PostCSS (`postcss.config.cjs`, как в гайде Mantine для Vite): миксины
   `postcss-preset-mantine` (`@mixin hover`, `light`/`dark`, `rem()`) и переменные
   `$mantine-breakpoint-xs…xl` для `@media`.
-- A11y: у кнопок-иконок (`ActionIcon`) имя — `aria-label`; статус сообщения в пузыре —
-  `role="img"` + `aria-label` (`span` без роли `aria-label` не поддерживает). Тесты ищут
-  элементы по ролям/именам, не по классам. Единственный landmark `<main>` — `.page` в
-  `ChatPage` (`ChatWindow` — обычный `div`). Фокус после ухода из чата (кнопка «Назад» или
-  удаление чата через `DeleteChatButton`) возвращает `ChatPage`: эффект следит за переходом
-  `activeChatId` → `null` и, если фокус упал на `<body>` (элемент, на котором он был,
-  размонтировался), переводит его на строку закрытого чата в `nav` (`[data-chat-id]`) или,
-  если строки нет (чат удалён), на сам `nav` (`tabIndex={-1}`, `sidebar.tsx`). Открытие
-  другого чата в списке при узком экране фокус не переносит: выбранная строка скрывается
-  (`display: none` у колонки списка), фокус падает на `<body>` — известное ограничение, план
-  этого не требовал. Mantine `Popover` в `DeleteChatButton` — свой `returnFocus` для
-  Escape/«Отмена» (кнопка остаётся в DOM); строки чатов — обычные `<button data-chat-id>` с
-  `aria-current`, не `NavLink`.
+- A11y: у кнопок-иконок (`ActionIcon`) имя — `aria-label`, в т.ч. «+» нового чата
+  (`aria-label="Новый чат"`, `aria-expanded`, `aria-controls` на всегда смонтированную обёртку
+  формы, `sidebar.tsx`). Статус сообщения в пузыре — `role="img"` + `aria-label`
+  («Отправляется», «Отправлено», «Доставлено», «Прочитано», «Не отправлено»; `span` без роли
+  `aria-label` не поддерживает, сам SVG остаётся `aria-hidden`). Тесты ищут элементы по
+  ролям/именам, не по классам. Единственный landmark `<main>` — `.page` в `ChatPage`
+  (`ChatWindow` — обычный `div`). Фокус в `ChatPage` (один эффект на переход `activeChatId`,
+  срабатывает только если фокус упал на `<body>` — элемент, на котором он был, размонтировался;
+  фокус, стоящий где-то ещё, не трогается):
+  - уход из чата (кнопка «Назад» или удаление чата через `DeleteChatButton`, `activeChatId` →
+    `null`) — на строку закрытого чата в `nav` (`[data-chat-id]`) или, если строки нет (чат
+    удалён), на сам `nav` (`tabIndex={-1}`, `sidebar.tsx`);
+  - открытие чата (`activeChatId` на непустой — успешный сабмит формы нового чата, который её
+    закрывает, или скрытие строки списка на узком экране) — в поле «Сообщение» композера
+    (`textarea[aria-label="Сообщение"]` в корне страницы). Это же снимает прежнее известное
+    ограничение «открытие чата на узком экране — фокус на `<body>`».
+
+  Форма нового чата: «+» открывает и переносит фокус в поле номера; Escape (`onKeyDown` на
+  обёртке) или повторный «+» — `createChatForm.reset()` (отменяет запрос в полёте), форма
+  закрывается, фокус — обратно на «+».
+
+  Mantine `Popover` в `DeleteChatButton` — свой `returnFocus` для Escape/«Отмена» (кнопка
+  остаётся в DOM); строки чатов — обычные `<button data-chat-id>` с `aria-current`, не
+  `NavLink`.
 
 ## Reatom
 
