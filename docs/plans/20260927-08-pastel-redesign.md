@@ -319,12 +319,12 @@ const dark: MantineColorsTuple = [
 - Modify: `src/pages/chat/ui/create-chat-form.test.tsx`
 - Modify: `src/features/auth/ui/logout-button.tsx`
 
-- [ ] каркас: фон app-bg, `padding`/`gap` 12, карточки сайдбара и окна — surface, радиус 22, `overflow: hidden`; `< $mantine-breakpoint-sm` — без отступа и радиуса; переключение список ↔ чат по `data-view` не трогать
-- [ ] шапка сайдбара: `IconMessageCircle` в soft-квадрате (primary-soft / primary-soft-text, 36/12), `h1` «Чаты» 18/650 (`Title order={1}`, вместо `AppTitle`); «+» — `ActionIcon` 38/12, `variant={open ? "light" : "filled"}` (видимое состояние `aria-expanded`; атрибуты и логика без изменений); выход — `ActionIcon variant="field"` с `IconLogout`
-- [ ] форма нового чата: поле в стиле поиска (`IconSearch` в `leftSection`, фон из темы), плейсхолдер «+7 999 123-45-67» и `aria-label` без изменений; справа — primary `ActionIcon type="submit"` 38/12 с `IconArrowRight`, `aria-label="Создать"`, `loading` в ожидании; ошибка — через `--mantine-color-error` (задача 1)
-- [ ] тесты: `sidebar.test.tsx` и `chat-page.test.tsx:25` — `h1` «Чаты»; «+» и «Выйти» по имени; тесты фокуса/Escape без изменений логики
-- [ ] тест формы: кнопка по имени «Создать», в ожидании `disabled`/`data-loading`, сабмит и ошибка — как раньше
-- [ ] `make check` — зелёный
+- [x] каркас: фон app-bg, `padding`/`gap` 12, карточки сайдбара и окна — surface, радиус 22, `overflow: hidden`; `< $mantine-breakpoint-sm` — без отступа и радиуса; переключение список ↔ чат по `data-view` не трогать
+- [x] шапка сайдбара: `IconMessageCircle` в soft-квадрате (primary-soft / primary-soft-text, 36/12), `h1` «Чаты» 18/650 (`Title order={1}`, вместо `AppTitle`); «+» — `ActionIcon` 38/12, `variant={open ? "light" : "filled"}` (видимое состояние `aria-expanded`; атрибуты и логика без изменений); выход — `ActionIcon variant="field"` с `IconLogout`
+- [x] форма нового чата: поле в стиле поиска (`IconSearch` в `leftSection`, фон из темы), плейсхолдер «+7 999 123-45-67» и `aria-label` без изменений; справа — primary `ActionIcon type="submit"` 38/12 с `IconArrowRight`, `aria-label="Создать"`, `loading` в ожидании; ошибка — через `--mantine-color-error` (задача 1)
+- [x] тесты: `sidebar.test.tsx` и `chat-page.test.tsx:25` — `h1` «Чаты»; «+» и «Выйти» по имени; тесты фокуса/Escape без изменений логики
+- [x] тест формы: кнопка по имени «Создать», в ожидании `disabled`/`data-loading`, сабмит и ошибка — как раньше
+- [x] `make check` — зелёный
 
 ### Task 5: Список чатов и аватары (S)
 **Model:** sonnet — стили и параметры аватара заданы, хеш не меняется

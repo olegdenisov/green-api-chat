@@ -1,7 +1,9 @@
-import { Button, Group, TextInput } from "@mantine/core";
+import { ActionIcon, Group, TextInput } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { bindField, reatomComponent } from "@reatom/react";
 import type { FormEvent } from "react";
+
+import { IconArrowRight, IconSearch } from "@/shared/ui";
 
 import { createChatErrorMessage } from "../model/create-chat-error";
 import { createChatForm } from "../model/create-chat";
@@ -44,12 +46,13 @@ export const CreateChatForm = reatomComponent(() => {
           // Not `disabled`: that drops the focus, and after an error the number is edited again.
           readOnly={pending}
           error={error}
+          leftSection={<IconSearch size={18} />}
           flex={1}
           {...phoneProps}
         />
-        <Button type="submit" loading={pending}>
-          Создать
-        </Button>
+        <ActionIcon type="submit" variant="filled" size={38} loading={pending} aria-label="Создать">
+          <IconArrowRight />
+        </ActionIcon>
       </Group>
     </form>
   );

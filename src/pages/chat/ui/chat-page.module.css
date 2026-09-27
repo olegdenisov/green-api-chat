@@ -2,27 +2,42 @@
   display: flex;
   height: 100dvh;
   flex-direction: column;
+  background: var(--ga-app-bg);
 }
 
 .page {
   display: grid;
   min-height: 0;
   flex: 1;
+  gap: rem(12px);
+  padding: rem(12px);
   grid-template-columns: rem(320px) minmax(0, 1fr);
 }
 
-/* Narrow screen: one column — the list, or the open chat. */
+/* The two floating cards. A compound selector (two classes) beats a single-class rule from
+   sidebar.module.css/chat-window.module.css regardless of CSS module load order. */
+.page > .sidebar,
+.page > .window {
+  background: var(--ga-surface);
+  border-radius: rem(22px);
+  overflow: hidden;
+}
+
+/* Narrow screen: one column — the list, or the open chat — edge to edge (no card padding/radius). */
 @media (width < $mantine-breakpoint-sm) {
   .page {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+  }
+
+  .page > .sidebar,
+  .page > .window {
+    border-radius: 0;
   }
 
   .page[data-view="chat"] .sidebar,
   .page[data-view="list"] .window {
     display: none;
-  }
-
-  .sidebar {
-    border-right: 0;
   }
 }
