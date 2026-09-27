@@ -509,20 +509,22 @@ export const theme = createTheme({
 ### Task 9: [Final] Update documentation
 **Model:** sonnet — docs describe built behavior
 
-- [ ] README: стр. 7, 25–29 — палитра №4705 вместо «синего акцента… на глаз»; стр. 162 —
+- [x] README: стр. 7, 25–29 — палитра №4705 вместо «синего акцента… на глаз»; стр. 162 —
       убрать web.max.ru; стр. 17 — статусы «отправляется / отправлено / доставлено /
       прочитано / не отправлено · Повторить», «+» для нового чата; ограничения: статусы
       только после перелогина у старой сессии, `failed`/`noAccount` не показываются, статус
       раньше id теряется
-- [ ] `AGENTS.md`, «Стили»: палитра `dawn`, своя шкала `dark`, токены `--ga-*` (аватары,
+- [x] `AGENTS.md`, «Стили»: палитра `dawn`, своя шкала `dark`, токены `--ga-*` (аватары,
       активная строка, failed, статусы), переопределения `--mantine-color-*`, дубли в
       `index.css`/`index.html`/favicon; A11y — имена статусов, «+» с `aria-expanded`, фокус
       при закрытии формы и при открытии чата (снять «известное ограничение» про узкий
       экран); `resetChatPage` — «и закрывает форму»; GREEN-API — `outgoingWebhook`,
       `outgoingMessageStatus` без `idMessage` у ошибок
-- [ ] `docs/plans/20260923-telegram-chat-design.md`: статусы доставки, флаг
+- [x] `docs/plans/20260923-telegram-chat-design.md`: статусы доставки, флаг
       `outgoingWebhook`, ограничения; текст пустого списка (стр. 367)
-- [ ] move this plan to `docs/plans/completed/`
+- [x] move this plan to `docs/plans/completed/` (skipped intentionally — the harness moves
+      the plan file after all phases finish; moving it mid-run would break later review/
+      finalize/stats phases that read this file)
 
 ## Post-Completion
 

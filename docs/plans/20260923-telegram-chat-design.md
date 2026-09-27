@@ -87,6 +87,13 @@ Notification — событие инстанса (входящее/исходя�
 - Примеры исходящих уведомлений на страницах `OutgoingMessage`/`OutgoingApiMessage` опускают
   `messageData`; его форма — на странице `outgoing-message/TextMessage` (как у входящего
   `textMessage`).
+- `outgoingMessageStatus` (этап 7, статусы доставки): `{ typeWebhook, chatId, instanceData,
+  timestamp, idMessage?, status, description? }`; `status` — `delivered`, `read` (оба с
+  `idMessage`, по каждому сообщению), `failed`, `noAccount` (в примерах документации —
+  **без** `idMessage`; у `noAccount` `chatId` вида `77777777777@c.us`). Требует флаг
+  `outgoingWebhook` (вместе с `outgoingMessageWebhook`/`outgoingAPIMessageWebhook`).
+  Обрабатываются только `delivered`/`read` с непустым `idMessage` — `failed`/`noAccount` не
+  сопоставить с сообщением, событие просто удаляется из очереди.
 
 ### Решения по документации
 
@@ -95,10 +102,12 @@ Notification — событие инстанса (входящее/исходя�
   целое); события из групп удаляем без обработки.
 - Имя чата: `username` из `checkAccount` или номер; при входящем — обновляем на `chatName`.
 - `setSettings` при логине — один запрос, только если есть что менять: включаем выключенные
-  `incomingWebhook`/`outgoingMessageWebhook`/`outgoingAPIMessageWebhook` и очищаем непустой
-  `webhookUrl` (иначе уведомления уходят на него, а не в очередь). Тост: входящие появятся в
-  течение ~5 минут; если `webhookUrl` очищен — тост говорит и об этом. Сбой
-  `getSettings`/`setSettings` (`ApiError`) логин не блокирует — предупреждающий тост.
+  `incomingWebhook`/`outgoingMessageWebhook`/`outgoingAPIMessageWebhook`/`outgoingWebhook`
+  (этап 7 — последний, нужен для статусов доставки) и очищаем непустой `webhookUrl` (иначе
+  уведомления уходят на него, а не в очередь). Тост: входящие и статусы появятся в течение
+  ~5 минут; если `webhookUrl` очищен — тост говорит и об этом. Сбой `getSettings`/`setSettings`
+  (`ApiError`) логин не блокирует — предупреждающий тост. Флаг проверяется только при логине:
+  у сессии, уже сохранённой в `localStorage` до этапа 7, статусов не будет до перелогина.
 - `checkAccount` не повторяем автоматически; на `rate_limit_exceeded`/`469` — понятная ошибка.
 
 ### Непроверенное
@@ -117,7 +126,8 @@ Notification — событие инстанса (входящее/исходя�
   `vercel.json` отдаётся, страница грузится без нарушений. Запросы к GREEN-API с домена
   деплоя и сценарий задания на реальном инстансе после этапа 6 не прогонялись.
 - Палитра web.max.ru: снять через DevTools не удалось (навигация на внешний сайт была
-  отклонена), цвета темы подобраны на глаз.
+  отклонена), цвета темы были подобраны на глаз (этап 6) — на этапе 7 заменены осознанной
+  палитрой №4705 с color.romanuke.com, см. этап 7 и раздел «Архитектура».
 
 ## Архитектура (FSD)
 
@@ -156,12 +166,18 @@ src/
     ui/        мелкие общие компоненты (AppTitle) и инлайн-SVG иконки (icons)
 ```
 
-Тема (этап 6): `src/app/providers/theme.ts` — `createTheme` (палитра `max`, системный
-шрифт) и `cssVariablesResolver` с токенами `--ga-*` (фон ленты, пузыри, разделитель дня) для
-светлой и тёмной схем; `MantineProvider defaultColorScheme="auto"` — схема по системной,
-переключателя нет. До монтирования схему подхватывает CSS (`index.css`), скриптов нет — CSP
-без исключений для `script-src`. Иконки — свои инлайн-SVG в `shared/ui/icons.tsx`, шрифты —
-системные, новых зависимостей нет.
+Тема: `src/app/providers/theme.ts` — `createTheme` и `cssVariablesResolver` с токенами
+`--ga-*` (фон ленты, пузыри, разделитель дня, аватары, активная строка, ошибка отправки,
+статусы) для светлой и тёмной схем; `MantineProvider defaultColorScheme="auto"` — схема по
+системной, переключателя нет. До монтирования схему подхватывает CSS (`index.css`), скриптов
+нет — CSP без исключений для `script-src`. Иконки — свои инлайн-SVG в `shared/ui/icons.tsx`
+(в т.ч. статусы доставки), шрифты — системные, новых зависимостей нет.
+
+Палитра (этап 7) — №4705 с color.romanuke.com: `dawn` (`#3c487c` `#797eba` `#a7a0c9` `#f8d4c4`
+`#e5b1b9` — индиго, лаванда, персик, пудровый розовый) вместо прежнего синего акцента «по
+мотивам web.max.ru»; своя тёмная шкала `dark` с оттенком индиго вместо нейтральной шкалы
+Mantine. Цвета вне темы (`index.css`, `index.html` `theme-color`, `favicon.svg`) продублированы
+из тех же токенов — см. `AGENTS.md`.
 
 Правила: импорт только сверху вниз, фичи не импортируют друг друга, доступ к слайсу — через
 публичный `index.ts`. Пустые слои/сегменты не создаём. Границы проверяет steiger.
@@ -194,7 +210,7 @@ type Message = {
   chatId: string
   text: string
   direction: 'in' | 'out'
-  status: 'sending' | 'sent' | 'failed'
+  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed' // этап 7: delivered/read
   timestamp: number // ms (этап 5 переводит секунды GREEN-API в ms)
   attemptAt?: number // ms, начало последней попытки отправки; только у исходящих
 }
@@ -290,7 +306,8 @@ type Message = {
 3. **Цикл** (`pollNotifications`, в кадре хука): клиент — `greenApiAtom()` после получения
    лока, после каждого `await` сверяется, что он тот же. `receiveNotification({
    receiveTimeout: 20, timeout: 30 с })` → `null` → сразу повтор; событие →
-   `parseNotification` → `applyReceivedMessage` → `deleteNotification` всегда (и для
+   `parseNotification` → по `kind` результата (`"message"` → `applyReceivedMessage`, `"status"`
+   → `applyMessageStatus`, `null` — игнорируется) → `deleteNotification` всегда (и для
    игнорируемых, и если раскладка бросила — иначе FIFO-очередь встанет; ошибка — в
    `console.error`). Сбой `delete` вернёт то же событие — раскладка идемпотентна.
 4. **Ошибки**: отмена → тихий выход; `ApiError kind: "auth"` → тост «Сессия недействительна,
@@ -298,11 +315,17 @@ type Message = {
    (`network`, `http`, `rate-limit`, `TimeoutError`) → backoff `min(1 с · 2^(n−1), 30 с)`
    (потолок 30 с и для `469` — сознательно, см. «Известные ограничения»), после 2 сбоев
    подряд — статус `reconnecting`; успешный ответ — сброс, `polling`.
-5. **Разбор** (`parseNotification`, чистая функция): `incomingMessageReceived` → `in`,
-   `outgoingMessageReceived` → `out`, `outgoingAPIMessageReceived` → `out` + `viaApi`; текст
-   из `textMessage`/`extendedTextMessage`, медиа и прочие `typeWebhook` — игнор; только личные
-   чаты (`chatType` `user` или нет, `chatId` — положительное целое); битое тело → `null` без
-   исключений; секунды → ms.
+5. **Разбор** (`parseNotification`, чистая функция, размеченный union по `kind`):
+   `incomingMessageReceived` → `{ kind: "message", direction: "in" }`,
+   `outgoingMessageReceived` → `{ kind: "message", direction: "out" }`,
+   `outgoingAPIMessageReceived` → то же + `viaApi`; текст из
+   `textMessage`/`extendedTextMessage`, медиа и прочие `typeWebhook` (кроме
+   `outgoingMessageStatus`) — `null`; только личные чаты (`chatType` `user` или нет, `chatId`
+   — положительное целое); битое тело → `null` без исключений; секунды → ms.
+   `outgoingMessageStatus` с `status` `delivered`/`read` и непустым `idMessage` →
+   `{ kind: "status", id: idMessage, status }`; `failed`/`noAccount` (без `idMessage` в
+   документации), прочий статус или групповой `chatId` → `null`. Неизвестный `typeWebhook` —
+   ветка `default` (без «ловушки» по union).
 6. **Раскладка** (`applyReceivedMessage`): `receiveChat` (новое действие `entities/chat`: чата
    нет — создаётся, **не выбирается**, `title` — `chatName` или `chatId`; есть — обновляется
    `title` на непустое другое `chatName`, `phone` не трогается) → сообщение с таким `id` уже
@@ -315,6 +338,14 @@ type Message = {
    сопоставлено с другим локальным сообщением с тем же текстом), удаляет текущее локальное
    (`removeMessage` — новое действие `entities/message`), а не создаёт второй такой же id.
    Итог при двух одинаковых текстах — два сообщения с разными id.
+8. **Статусы доставки** (этап 7, `applyMessageStatus`, `receiveMessages.applyStatus`):
+   поднимает исходящее сообщение с найденным `idMessage` до `delivered`/`read` — только если
+   новый ранг выше текущего (`sent < delivered < read`); повтор из очереди и `delivered`
+   после `read` — no-op. Входящие, `sending`/`failed` (локальный id, статус их не найдёт),
+   неизвестный чат или id — no-op; чат не создаётся и не поднимается в списке (без
+   `receiveChat`/`touchChat`). Гонка: статус адресуется по `idMessage`, который сообщение
+   получает из ответа `sendMessage` или предшествующего `outgoingAPIMessageReceived` —
+   статус, пришедший раньше того и другого, теряется (сообщение остаётся с «✓»), буфера нет.
 
 ## Ошибки и UI-состояния
 
@@ -364,9 +395,10 @@ type Message = {
 - Polling: полоса «Соединение…» (`ConnectionIndicator`) над колонками `ChatPage` — видна и
   на узком экране в окне чата — при серии ошибок (статус `reconnecting`), только у
   вкладки-лидера; `401`/`403` → логаут с тостом.
-- Пустые состояния (общий `EmptyState`: иконка + текст): нет чатов → «Создайте чат по номеру
-  телефона»; чат не выбран → «Выберите чат или создайте новый»; чат без сообщений →
-  «Сообщений пока нет».
+- Пустые состояния (общий `EmptyState`: иконка + текст): нет чатов → «Нажмите «+», чтобы начать
+  чат по номеру телефона» (этап 7 — раньше без кнопки «+»); чат не выбран → «Выберите чат или
+  создайте новый»; чат без сообщений → «Сообщений пока нет» (в строке списка для такого чата —
+  «Нет сообщений»).
 
 ## Безопасность
 
@@ -470,6 +502,16 @@ type Message = {
    enable`, CSP), CI на GitHub Actions (Node 22/24). Палитру web.max.ru снять не удалось —
    цвета подобраны на глаз. CI, деплой и CSP проверены после этапа; CORS опроса на домене
    деплоя и сценарий на реальном инстансе не проверены — остаются на после сдачи.
+7. **Палитра №4705, правки дизайна и статусы доставки.** Итог
+   (`docs/plans/20260926-07-design-fixes.md`): подобранную на глаз тему сменила осознанная
+   палитра №4705 с color.romanuke.com (`dawn` — индиго/лаванда/персик/пудровый розовый, своя
+   тёмная шкала `dark`) — «палитра web.max.ru» и «подобраны на глаз» из этапа 6 больше не
+   актуальны; правки по ревью дизайна (лента прижата к низу, мягкий розовый пузырь ошибки
+   вместо ярко-красного, активная строка — тинт и полоса вместо заливки, аватары — цвета
+   палитры по хешу `chatId` вместо инициалов/Mantine, «Нет сообщений» у пустого чата, кнопка
+   «+» раскрывает форму нового чата); статусы доставки `delivered`/`read` из
+   `outgoingMessageStatus` (флаг `outgoingWebhook`, только при логине), SVG-иконки статусов.
+   Известные ограничения — ниже.
 
 ## Известные ограничения (продублированы в README)
 
@@ -497,3 +539,12 @@ type Message = {
 - `469` в опросе ждёт максимум 30 с, а не часы: лимиты Telegram касаются `checkAccount`, для
   очереди уведомлений `469` не ожидается.
 - События очереди за последние 24 ч воссоздают удалённый чат и появляются при первом входе.
+- Статусы доставки (`outgoingMessageStatus`) начинают приходить только после перелогина: флаг
+  `outgoingWebhook` включается в `setSettings` при входе, у уже сохранённой сессии не
+  проверяется.
+- `failed`/`noAccount` не отображаются статусом — в документации GREEN-API у них нет
+  `idMessage`, сообщение не сопоставить (ошибка отправки по-прежнему видна из ответа
+  `sendMessage`/таймаута, не из очереди).
+- Статус, пришедший в очереди раньше, чем сообщению присвоен `idMessage` (ответ `sendMessage`
+  или предшествующий `outgoingAPIMessageReceived`), теряется — сообщение остаётся с «✓», без
+  буфера для более поздней сверки.
