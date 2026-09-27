@@ -30,10 +30,8 @@
   padding: 0 var(--mantine-spacing-md) var(--mantine-spacing-sm);
   border-bottom: rem(1px) solid var(--mantine-color-default-border);
 
-  /* Closed: the wrapper stays mounted as the `aria-controls` target of the "+". */
-  &[hidden] {
-    display: none;
-  }
+  /* Closed, the wrapper stays mounted (the `aria-controls` target of the "+") and is hidden by
+     the `hidden` attribute: do not give `.form` a `display`, it would override that. */
 }
 
 .chats {

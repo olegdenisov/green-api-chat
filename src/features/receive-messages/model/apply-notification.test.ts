@@ -343,6 +343,18 @@ describe("applyMessageStatus", () => {
     });
   });
 
+  it("a status for another chat leaves a message with the same id alone", () => {
+    context.start(() => {
+      messagesAtom.set({ [chatId]: [outgoing("api-1", "sent")] });
+      const snapshot = messagesAtom();
+
+      applyMessageStatus({ ...status("read"), chatId: "20000000" });
+
+      expect(messagesAtom()).toBe(snapshot);
+      expect(statusOf()).toBe("sent");
+    });
+  });
+
   it("an unknown chat is not created", () => {
     context.start(() => {
       applyMessageStatus(status("delivered"));

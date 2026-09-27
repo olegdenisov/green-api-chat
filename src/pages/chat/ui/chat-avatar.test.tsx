@@ -64,6 +64,22 @@ describe("ChatAvatar", () => {
     expect(color("79991234567")).toBe(first);
   });
 
+  it("spreads chats over several of the five colour tokens", () => {
+    const indices = ["1", "2", "3", "4", "5", "79991234567", "79997654321", "100500"].map(
+      (chatId) => {
+        cleanup();
+        const style = renderAvatar({ chatId, title: "" }).firstElementChild?.getAttribute("style");
+        return Number(style?.match(/--avatar-bg:\s*var\(--ga-avatar-(\d+)-bg\)/)?.[1]);
+      },
+    );
+
+    for (const index of indices) {
+      expect(index).toBeGreaterThanOrEqual(1);
+      expect(index).toBeLessThanOrEqual(5);
+    }
+    expect(new Set(indices).size).toBeGreaterThanOrEqual(2);
+  });
+
   it("uses the same colour token for the placeholder and the initials avatar of one chat", () => {
     cleanup();
     const placeholder = renderAvatar({

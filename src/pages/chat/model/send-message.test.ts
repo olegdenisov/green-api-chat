@@ -263,6 +263,32 @@ describe("sendChatMessage after the polling matched the send", () => {
     });
   });
 
+  it.each(["delivered", "read"] as const)(
+    "a late answer keeps the %s status the polling already set",
+    async (status) => {
+      const response = deferFetch();
+      await context.start(async () => {
+        setup();
+        const pending = sendChatMessage(friend.chatId, "Hello");
+        const [sending] = messagesOf(friend.chatId);
+        await wrap(vi.waitFor(() => expect(response.pending()).toBe(1)));
+
+        // Polling: the API send event matched it, then its outgoingMessageStatus came.
+        updateMessage(friend.chatId, sending!.id, {
+          id: sendMessageResponse.idMessage,
+          status: "sent",
+        });
+        updateMessage(friend.chatId, sendMessageResponse.idMessage, { status });
+        response.resolveNext(sendMessageResponse);
+        await wrap(pending);
+
+        expect(messagesOf(friend.chatId)).toEqual([
+          { ...sending, id: sendMessageResponse.idMessage, status },
+        ]);
+      });
+    },
+  );
+
   it("a failed answer for an already matched message keeps it sent", async () => {
     const response = deferFetch();
     await context.start(async () => {

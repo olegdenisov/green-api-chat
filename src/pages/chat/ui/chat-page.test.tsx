@@ -61,6 +61,69 @@ describe("ChatPage", () => {
     await waitFor(() => expect(screen.getByLabelText("Сообщение")).toHaveFocus());
   });
 
+  it("opens a chat known by number without a request and focuses the message input", async () => {
+    // Any fetch fails the test: a known number is not checked.
+    respondByMethod({});
+    const user = userEvent.setup();
+    const { frame } = render(<ChatPage />);
+    frame.run(() => {
+      credentialsAtom.set(creds);
+      chatsAtom.set({
+        "1": { chatId: "1", title: "Friend", phone: "79876543210", lastMessageAt: 2 },
+      });
+    });
+
+    await user.click(screen.getByRole("button", { name: "Новый чат" }));
+    await user.type(screen.getByLabelText("Номер телефона"), "+7 987 654-32-10{Enter}");
+
+    await waitFor(() => expect(frame.run(() => activeChatIdAtom())).toBe("1"));
+    expect(screen.queryByLabelText("Номер телефона")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Сообщение")).toHaveFocus());
+  });
+
+  it("focuses the message input after a submit of the number of the chat already open", async () => {
+    respondByMethod({});
+    const user = userEvent.setup();
+    const { frame } = render(<ChatPage />);
+    frame.run(() => {
+      credentialsAtom.set(creds);
+      chatsAtom.set({
+        "1": { chatId: "1", title: "Friend", phone: "79876543210", lastMessageAt: 2 },
+      });
+    });
+    await user.click(await screen.findByRole("button", { name: /Friend/ }));
+
+    await user.click(screen.getByRole("button", { name: "Новый чат" }));
+    await user.type(screen.getByLabelText("Номер телефона"), "79876543210{Enter}");
+
+    // The active chat does not change; only the form closes with the focused field.
+    await waitFor(() => expect(screen.queryByLabelText("Номер телефона")).not.toBeInTheDocument());
+    expect(frame.run(() => activeChatIdAtom())).toBe("1");
+    await waitFor(() => expect(screen.getByLabelText("Сообщение")).toHaveFocus());
+  });
+
+  it("moves the focus to the message input when the clicked row is hidden (narrow screen)", async () => {
+    // jsdom has no layout and no `checkVisibility`: emulate the narrow-screen CSS, where the
+    // list column of `data-view="chat"` gets `display: none`.
+    Object.defineProperty(Element.prototype, "checkVisibility", {
+      configurable: true,
+      value(this: Element) {
+        return this.closest('main[data-view="chat"] aside') === null;
+      },
+    });
+    try {
+      const user = userEvent.setup();
+      const { frame } = render(<ChatPage />);
+      frame.run(() => chatsAtom.set({ "1": { chatId: "1", title: "Friend", lastMessageAt: 1 } }));
+
+      await user.click(await screen.findByRole("button", { name: /Friend/ }));
+
+      await waitFor(() => expect(screen.getByLabelText("Сообщение")).toHaveFocus());
+    } finally {
+      Reflect.deleteProperty(Element.prototype, "checkVisibility");
+    }
+  });
+
   it("keeps the focus on a clicked chat row", async () => {
     const user = userEvent.setup();
     const { frame } = render(<ChatPage />);

@@ -118,13 +118,14 @@ function parseStatus(
 export function parseNotification(body: unknown): ParsedNotification | null {
   if (!isRecord(body)) return null;
   const typeWebhook = (body as Loose<Notification>).typeWebhook as Notification["typeWebhook"];
+  const message = body as Loose<MessageNotification>;
   switch (typeWebhook) {
     case "incomingMessageReceived":
-      return parseMessage(body as Loose<MessageNotification>, "in", false);
+      return parseMessage(message, "in", false);
     case "outgoingMessageReceived":
-      return parseMessage(body as Loose<MessageNotification>, "out", false);
+      return parseMessage(message, "out", false);
     case "outgoingAPIMessageReceived":
-      return parseMessage(body as Loose<MessageNotification>, "out", true);
+      return parseMessage(message, "out", true);
     case "outgoingMessageStatus":
       return parseStatus(body as Loose<OutgoingMessageStatusNotification>);
     default:

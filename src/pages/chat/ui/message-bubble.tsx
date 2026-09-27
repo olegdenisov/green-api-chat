@@ -32,13 +32,25 @@ function useFailed(message: Message): boolean {
   return message.status === "failed" || isSendingStale(message, now);
 }
 
+/** Name, icon and class of each non-failed status; `failed` is rendered separately. */
+const STATUS_VIEW: Record<
+  Exclude<Message["status"], "failed">,
+  [label: string, Icon: typeof IconCheck, className?: string]
+> = {
+  sending: ["Отправляется", IconClock],
+  sent: ["Отправлено", IconCheck],
+  delivered: ["Доставлено", IconChecks],
+  read: ["Прочитано", IconChecks, classes.statusRead],
+};
+
 /**
  * Status of an outgoing message: a clock sending, a check sent, a double check delivered, a
  * peach double check read, otherwise an alert and «Повторить».
  */
 const OutgoingStatus = reatomComponent(
   ({ message, failed }: { message: Message; failed: boolean }) => {
-    if (failed) {
+    // `failed` already covers the `failed` status; the check narrows the type for `STATUS_VIEW`.
+    if (failed || message.status === "failed") {
       return (
         <span>
           <span role="img" aria-label="Не отправлено">
@@ -47,7 +59,7 @@ const OutgoingStatus = reatomComponent(
           ·{" "}
           <Button
             variant="transparent"
-            color="red"
+            color="gray"
             size="compact-xs"
             className={classes.retry}
             onClick={wrap(() => void retryChatMessage(message.chatId, message.id))}
@@ -57,27 +69,10 @@ const OutgoingStatus = reatomComponent(
         </span>
       );
     }
-    if (message.status === "sending")
-      return (
-        <span role="img" aria-label="Отправляется">
-          <IconClock size={14} />
-        </span>
-      );
-    if (message.status === "delivered")
-      return (
-        <span role="img" aria-label="Доставлено">
-          <IconChecks size={14} />
-        </span>
-      );
-    if (message.status === "read")
-      return (
-        <span role="img" aria-label="Прочитано" className={classes.statusRead}>
-          <IconChecks size={14} />
-        </span>
-      );
+    const [label, Icon, className] = STATUS_VIEW[message.status];
     return (
-      <span role="img" aria-label="Отправлено">
-        <IconCheck size={14} />
+      <span role="img" aria-label={label} className={className} data-status={message.status}>
+        <Icon size={14} />
       </span>
     );
   },

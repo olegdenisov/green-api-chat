@@ -45,8 +45,8 @@ export const createChatForm = reatomForm(
 
       const known = findChatByPhone(number);
       if (known) {
-        // Closed before the chat opens: the field unmounts first, so `ChatPage` sees the focus
-        // lost when the chat changes and moves it to the message input.
+        // The field unmounts with the form: `ChatPage` sees the focus lost and moves it to the
+        // message input — also when this chat is already open (only the form changes then).
         createChatOpenAtom.set(false);
         openChat(known);
         return;

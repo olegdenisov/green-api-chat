@@ -103,6 +103,20 @@ describe("Sidebar", () => {
     expect(frame.run(() => createChatForm.submit.error())).toBeUndefined();
   });
 
+  it("Escape outside the form (on the +) leaves the form open with the number", async () => {
+    const user = userEvent.setup();
+    const { frame } = renderSidebar();
+
+    await user.click(plus());
+    await user.type(phoneInput(), "79876543210");
+    plus().focus();
+    await user.keyboard("{Escape}");
+
+    expect(plus()).toHaveAttribute("aria-expanded", "true");
+    expect(phoneInput()).toHaveValue("79876543210");
+    expect(frame.run(() => createChatOpenAtom())).toBe(true);
+  });
+
   it("keeps the form open with the error and the number after a failed submit", async () => {
     respondByMethod({ checkAccount: { body: checkAccountNotExists } });
     const user = userEvent.setup();
