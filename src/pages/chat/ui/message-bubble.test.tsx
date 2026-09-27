@@ -45,7 +45,7 @@ describe("MessageBubble", () => {
     );
   });
 
-  it("shows a read message with a peach double check mark", () => {
+  it("shows a read message with a highlighted double check mark", () => {
     render(<MessageBubble message={{ ...outgoing, status: "read" }} />);
 
     expect(screen.getByRole("img", { name: "Прочитано" })).toHaveAttribute("data-status", "read");
@@ -62,6 +62,7 @@ describe("MessageBubble", () => {
     render(<MessageBubble message={{ ...outgoing, status: "sending" }} />);
 
     expect(screen.getByRole("img", { name: "Отправляется" })).toBeInTheDocument();
+    expect(screen.queryByText("Не отправлено")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Повторить" })).not.toBeInTheDocument();
   });
 
@@ -87,6 +88,7 @@ describe("MessageBubble", () => {
     expect(screen.getByRole("img", { name: "Отправляется" })).toBeInTheDocument();
 
     await act(() => vi.advanceTimersByTimeAsync(2));
+    expect(screen.getByText("Не отправлено")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
     expect(row()?.querySelector("[data-failed]")).not.toBeNull();
   });

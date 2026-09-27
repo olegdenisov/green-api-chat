@@ -1,8 +1,9 @@
 import { Anchor, Paper, Text } from "@mantine/core";
 
 import { LoginForm } from "@/features/auth";
-import { AppTitle, IconMessageCircle } from "@/shared/ui";
+import { IconMessageCircle } from "@/shared/ui";
 
+import { AppTitle } from "./app-title";
 import classes from "./login-page.module.css";
 
 const CONSOLE_URL = "https://console.green-api.com";

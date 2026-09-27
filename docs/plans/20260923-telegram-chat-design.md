@@ -139,7 +139,7 @@ src/
               user-data-cleanup.ts — логаут ⇒ deleteAllChats() + resetChatPage(); нет
               кредов при старте ⇒ deleteAllChats()
   pages/
-    login/    карточка с формой логина (LoginForm)
+    login/    карточка с формой логина (LoginForm) и AppTitle (название приложения, h1)
     chat/     model: createChatForm, createChatOpenAtom (форма за «+», не persist),
               sendChatMessage/retryChatMessage, draftField/sendDraft,
               activeMessagesAtom; ui: Sidebar (CreateChatForm, ChatList), ChatWindow
@@ -167,7 +167,7 @@ src/
   shared/
     api/       клиент GREEN-API (fetch, типы, ApiError, опции { signal, timeout })
     config/    PERSIST_TTL (10 лет) — для session, chat, message
-    ui/        мелкие общие компоненты (AppTitle) и инлайн-SVG иконки (icons: в т.ч.
+    ui/        инлайн-SVG иконки (icons: в т.ч.
                IconClock/IconCheck/IconChecks — статусы, IconPlus — «+»)
 ```
 

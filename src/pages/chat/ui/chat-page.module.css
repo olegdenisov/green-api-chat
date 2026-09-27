@@ -15,12 +15,16 @@
 }
 
 /* The two floating cards. A compound selector (two classes) beats a single-class rule from
-   sidebar.module.css/chat-window.module.css regardless of CSS module load order. */
+   sidebar.module.css/chat-window.module.css regardless of CSS module load order. The window
+   keeps its own --ga-feed-bg (feed and composer zone), its header is --ga-surface. */
 .page > .sidebar,
 .page > .window {
-  background: var(--ga-surface);
   border-radius: rem(22px);
   overflow: hidden;
+}
+
+.page > .sidebar {
+  background: var(--ga-surface);
 }
 
 /* Narrow screen: one column — the list, or the open chat — edge to edge (no card padding/radius). */

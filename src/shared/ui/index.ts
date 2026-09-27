@@ -1,4 +1,3 @@
-export { AppTitle } from "./app-title";
 export {
   IconArrowLeft,
   IconArrowRight,

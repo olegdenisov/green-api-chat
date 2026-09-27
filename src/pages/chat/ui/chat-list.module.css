@@ -1,6 +1,10 @@
+/* Inset from the card edges, so the rounded hover/active rows float inside the sidebar card. */
 .list {
+  display: flex;
+  flex-direction: column;
+  gap: rem(2px);
   margin: 0;
-  padding: 0;
+  padding: 0 var(--mantine-spacing-xs) var(--mantine-spacing-xs);
   list-style: none;
 }
 
@@ -29,7 +33,6 @@
 
   &[data-active] {
     background: var(--ga-primary-soft);
-    color: var(--mantine-color-text);
   }
 }
 

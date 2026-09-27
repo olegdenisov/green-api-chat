@@ -13,10 +13,17 @@
   background: var(--ga-surface);
   box-shadow: 0 rem(2px) rem(10px) var(--ga-composer-shadow);
 
+  /* The ring of the text field, as .ga-focus in src/app/styles/index.css. */
   &:focus-within {
     box-shadow:
       0 rem(2px) rem(10px) var(--ga-composer-shadow),
-      0 0 0 2px var(--mantine-primary-color-filled);
+      0 0 0 2px var(--mantine-primary-color-filled),
+      0 0 0 5px var(--ga-focus-halo);
+  }
+
+  /* The send button has its own ring: no second one around the pill. */
+  &:has(.send:focus) {
+    box-shadow: 0 rem(2px) rem(10px) var(--ga-composer-shadow);
   }
 }
 
@@ -25,8 +32,7 @@
   flex-shrink: 0;
   margin-bottom: rem(2px);
 
-  &:disabled,
-  &[data-disabled] {
+  &:disabled {
     background: var(--ga-field-bg);
     color: var(--mantine-color-placeholder);
   }
