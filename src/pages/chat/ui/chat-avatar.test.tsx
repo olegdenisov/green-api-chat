@@ -60,8 +60,23 @@ describe("ChatAvatar", () => {
     };
     const first = color("79991234567");
 
-    expect(first).toContain("--avatar-bg");
+    expect(first).toMatch(/--avatar-bg:\s*var\(--ga-avatar-\d-bg\)/);
     expect(color("79991234567")).toBe(first);
+  });
+
+  it("uses the same colour token for the placeholder and the initials avatar of one chat", () => {
+    cleanup();
+    const placeholder = renderAvatar({
+      chatId: "79991234567",
+      title: "",
+    }).firstElementChild?.getAttribute("style");
+    cleanup();
+    const initials = renderAvatar({
+      chatId: "79991234567",
+      title: "Alice Bob",
+    }).firstElementChild?.getAttribute("style");
+
+    expect(initials).toBe(placeholder);
   });
 
   it("is hidden from assistive technology", () => {

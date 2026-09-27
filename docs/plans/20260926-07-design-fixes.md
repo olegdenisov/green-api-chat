@@ -368,13 +368,13 @@ export const theme = createTheme({
 - Modify: `src/pages/chat/ui/chat-avatar.tsx`
 - Modify: `src/pages/chat/ui/chat-avatar.test.tsx`
 
-- [ ] убрать `PLACEHOLDER_COLORS`, `color="initials"`, `autoContrast`; `colorFor(chatId)` →
+- [x] убрать `PLACEHOLDER_COLORS`, `color="initials"`, `autoContrast`; `colorFor(chatId)` →
       индекс 1..5 по тому же хешу
-- [ ] фон и цвет — `vars` с `--avatar-bg`/`--avatar-color` = `var(--ga-avatar-N-*)` (Solution
+- [x] фон и цвет — `vars` с `--avatar-bg`/`--avatar-color` = `var(--ga-avatar-N-*)` (Solution
       Overview); инициалы и заглушка для номера — как раньше
-- [ ] тесты (по `style` корня, как сейчас): один `chatId` — один и тот же токен; заглушка и
+- [x] тесты (по `style` корня, как сейчас): один `chatId` — один и тот же токен; заглушка и
       инициалы используют `--ga-avatar-*`; инициалы из названия как раньше
-- [ ] `make check` — зелёный перед задачей 4
+- [x] `make check` — зелёный перед задачей 4
 
 ### Task 4: Статусы доставки в модели и настройках инстанса
 **Model:** opus — модель данных, на которой строятся задачи 5–6
