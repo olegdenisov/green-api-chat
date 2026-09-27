@@ -1,7 +1,14 @@
-import type { MessageData, Notification } from "@/shared/api";
+import type {
+  IncomingMessageNotification,
+  MessageData,
+  Notification,
+  OutgoingMessageNotification,
+  OutgoingMessageStatusNotification,
+} from "@/shared/api";
 
 /** A text message from the notification queue, ready to be put into a chat. */
 export type ReceivedMessage = {
+  kind: "message";
   chatId: string;
   /** `senderData.chatName` when it is a non-empty string. */
   chatName?: string;
@@ -14,6 +21,17 @@ export type ReceivedMessage = {
   /** Milliseconds. */
   timestamp: number;
 };
+
+/** A delivery status of an outgoing message, addressed by its `idMessage`. */
+export type ReceivedStatus = {
+  kind: "status";
+  chatId: string;
+  /** `idMessage` of the sent message. */
+  id: string;
+  status: "delivered" | "read";
+};
+
+export type ParsedNotification = ReceivedMessage | ReceivedStatus;
 
 /** Private chat id: a positive integer as a string (groups are negative). */
 const PRIVATE_CHAT_ID = /^[1-9]\d*$/;
@@ -47,33 +65,13 @@ const readText = (messageData: Loose<MessageData>): string | null => {
   }
 };
 
-/**
- * Turns a notification body into a text message of a private chat. Everything else
- * (statuses, instance state, media, groups, malformed bodies) yields `null`. Pure, never
- * throws.
- */
-export function parseNotification(body: unknown): ReceivedMessage | null {
-  if (!isRecord(body)) return null;
-  const notification = body as Loose<Notification>;
+type MessageNotification = IncomingMessageNotification | OutgoingMessageNotification;
 
-  let direction: ReceivedMessage["direction"];
-  let viaApi = false;
-  const typeWebhook = notification.typeWebhook as Notification["typeWebhook"];
-  switch (typeWebhook) {
-    case "incomingMessageReceived":
-      direction = "in";
-      break;
-    case "outgoingMessageReceived":
-      direction = "out";
-      break;
-    case "outgoingAPIMessageReceived":
-      direction = "out";
-      viaApi = true;
-      break;
-    default:
-      return null;
-  }
-
+function parseMessage(
+  notification: Loose<MessageNotification>,
+  direction: ReceivedMessage["direction"],
+  viaApi: boolean,
+): ReceivedMessage | null {
   const { idMessage, timestamp, senderData, messageData } = notification;
   if (typeof idMessage !== "string" || idMessage === "") return null;
   if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) return null;
@@ -87,6 +85,7 @@ export function parseNotification(body: unknown): ReceivedMessage | null {
   if (text === null) return null;
 
   return {
+    kind: "message",
     chatId,
     ...(typeof chatName === "string" && chatName !== "" && { chatName }),
     id: idMessage,
@@ -95,4 +94,40 @@ export function parseNotification(body: unknown): ReceivedMessage | null {
     viaApi,
     timestamp: timestamp * 1000,
   };
+}
+
+/**
+ * Only `delivered`/`read` of a private chat: `failed`/`noAccount` have no `idMessage` in the
+ * docs, so there is no message to put them on.
+ */
+function parseStatus(
+  notification: Loose<OutgoingMessageStatusNotification>,
+): ReceivedStatus | null {
+  const { chatId, idMessage, status } = notification;
+  if (status !== "delivered" && status !== "read") return null;
+  if (typeof idMessage !== "string" || idMessage === "") return null;
+  if (typeof chatId !== "string" || !PRIVATE_CHAT_ID.test(chatId)) return null;
+  return { kind: "status", chatId, id: idMessage, status };
+}
+
+/**
+ * Turns a notification body into a text message of a private chat or a delivery status of an
+ * outgoing message. Everything else (other statuses, instance state, media, groups, malformed
+ * bodies) yields `null`. Pure, never throws.
+ */
+export function parseNotification(body: unknown): ParsedNotification | null {
+  if (!isRecord(body)) return null;
+  const typeWebhook = (body as Loose<Notification>).typeWebhook as Notification["typeWebhook"];
+  switch (typeWebhook) {
+    case "incomingMessageReceived":
+      return parseMessage(body as Loose<MessageNotification>, "in", false);
+    case "outgoingMessageReceived":
+      return parseMessage(body as Loose<MessageNotification>, "out", false);
+    case "outgoingAPIMessageReceived":
+      return parseMessage(body as Loose<MessageNotification>, "out", true);
+    case "outgoingMessageStatus":
+      return parseStatus(body as Loose<OutgoingMessageStatusNotification>);
+    default:
+      return null;
+  }
 }

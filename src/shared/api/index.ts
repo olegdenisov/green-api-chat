@@ -14,6 +14,7 @@ export type {
   MessageData,
   Notification,
   OutgoingMessageNotification,
+  OutgoingMessageStatusNotification,
   ReceivedNotification,
   SendMessageRequest,
   SendMessageResponse,

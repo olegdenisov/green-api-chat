@@ -4,12 +4,13 @@ import { describe, expect, it } from "vitest";
 import { activeChatIdAtom, chatsAtom, type Chat } from "@/entities/chat";
 import { messagesAtom, type Message } from "@/entities/message";
 
-import { applyReceivedMessage } from "./apply-notification";
-import type { ReceivedMessage } from "./parse-notification";
+import { applyMessageStatus, applyReceivedMessage } from "./apply-notification";
+import type { ReceivedMessage, ReceivedStatus } from "./parse-notification";
 
 const chatId = "10000000";
 
 const incoming: ReceivedMessage = {
+  kind: "message",
   chatId,
   chatName: "Василиса",
   id: "1763115112345",
@@ -20,6 +21,7 @@ const incoming: ReceivedMessage = {
 };
 
 const apiEvent: ReceivedMessage = {
+  kind: "message",
   chatId,
   id: "api-1",
   text: "ок",
@@ -246,6 +248,107 @@ describe("applyReceivedMessage: matching API sends", () => {
         { id: "api-1", status: "sent" },
         { id: "local-2", status: "failed" },
       ]);
+    });
+  });
+});
+
+describe("applyMessageStatus", () => {
+  const status = (value: ReceivedStatus["status"], id = "api-1"): ReceivedStatus => ({
+    kind: "status",
+    chatId,
+    id,
+    status: value,
+  });
+
+  const statusOf = (id = "api-1") => messagesOf().find((message) => message.id === id)?.status;
+
+  it("raises sent → delivered → read", () => {
+    context.start(() => {
+      messagesAtom.set({ [chatId]: [outgoing("api-1", "sent")] });
+
+      applyMessageStatus(status("delivered"));
+      expect(statusOf()).toBe("delivered");
+
+      applyMessageStatus(status("read"));
+      expect(statusOf()).toBe("read");
+    });
+  });
+
+  it("raises sent straight to read", () => {
+    context.start(() => {
+      messagesAtom.set({ [chatId]: [outgoing("api-1", "sent")] });
+      applyMessageStatus(status("read"));
+      expect(statusOf()).toBe("read");
+    });
+  });
+
+  it("keeps read when delivered comes after it", () => {
+    context.start(() => {
+      messagesAtom.set({ [chatId]: [outgoing("api-1", "sent")] });
+      applyMessageStatus(status("read"));
+      const snapshot = messagesAtom();
+
+      applyMessageStatus(status("delivered"));
+
+      expect(statusOf()).toBe("read");
+      expect(messagesAtom()).toBe(snapshot);
+    });
+  });
+
+  it("a repeated status changes nothing", () => {
+    context.start(() => {
+      messagesAtom.set({ [chatId]: [outgoing("api-1", "sent")] });
+      applyMessageStatus(status("delivered"));
+      const snapshot = messagesAtom();
+
+      applyMessageStatus(status("delivered"));
+
+      expect(messagesAtom()).toBe(snapshot);
+    });
+  });
+
+  it.each(["sending", "failed"] as const)("leaves a %s message alone", (current) => {
+    context.start(() => {
+      messagesAtom.set({ [chatId]: [outgoing("api-1", current)] });
+      const snapshot = messagesAtom();
+
+      applyMessageStatus(status("read"));
+
+      expect(messagesAtom()).toBe(snapshot);
+    });
+  });
+
+  it("leaves an incoming message alone", () => {
+    context.start(() => {
+      messagesAtom.set({ [chatId]: [{ ...outgoing("api-1", "sent"), direction: "in" }] });
+      const snapshot = messagesAtom();
+
+      applyMessageStatus(status("read"));
+
+      expect(messagesAtom()).toBe(snapshot);
+    });
+  });
+
+  it("an unknown id changes nothing and does not raise the chat", () => {
+    context.start(() => {
+      chatsAtom.set({ [chatId]: existingChat });
+      messagesAtom.set({ [chatId]: [outgoing("api-1", "sent")] });
+      const messages = messagesAtom();
+      const chats = chatsAtom();
+
+      applyMessageStatus(status("read", "unknown"));
+
+      expect(messagesAtom()).toBe(messages);
+      expect(chatsAtom()).toBe(chats);
+    });
+  });
+
+  it("an unknown chat is not created", () => {
+    context.start(() => {
+      applyMessageStatus(status("delivered"));
+
+      expect(messagesAtom()).toEqual({});
+      expect(chatsAtom()).toEqual({});
     });
   });
 });

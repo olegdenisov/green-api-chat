@@ -413,24 +413,24 @@ export const theme = createTheme({
 - Modify: `src/features/receive-messages/model/poll.test.ts` (импорт стр. 10; тест «deletes an
   ignored notification» стр. 143 — тело на `incomingImageMessage`)
 
-- [ ] `OutgoingMessageStatusNotification` (`idMessage?`) в `types.ts` и в union
+- [x] `OutgoingMessageStatusNotification` (`idMessage?`) в `types.ts` и в union
       `Notification`; комментарий union
-- [ ] фикстуры `delivered`, `read`, `failed`, `noAccount` дословно из документации, с
+- [x] фикстуры `delivered`, `read`, `failed`, `noAccount` дословно из документации, с
       `satisfies`
-- [ ] `parseNotification` → размеченный union (`kind`), ветка статуса по Technical Details;
+- [x] `parseNotification` → размеченный union (`kind`), ветка статуса по Technical Details;
       сужение по `typeWebhook` до деструктуризации полей сообщения
-- [ ] `applyMessageStatus` (`receiveMessages.applyStatus`): одно правило рангов; без
+- [x] `applyMessageStatus` (`receiveMessages.applyStatus`): одно правило рангов; без
       `receiveChat`/`touchChat`
-- [ ] `poll.ts`: экшен по `kind`; удаление из очереди — как для прочих уведомлений
-- [ ] тесты разбора: `delivered`/`read` → статус; `failed`, `noAccount`, неизвестный
+- [x] `poll.ts`: экшен по `kind`; удаление из очереди — как для прочих уведомлений
+- [x] тесты разбора: `delivered`/`read` → статус; `failed`, `noAccount`, неизвестный
       статус, группа, пустой/отсутствующий `idMessage` → `null`; сообщения — как раньше
-- [ ] тесты применения: `sent → delivered → read`; `read`, затем `delivered` — `read`;
+- [x] тесты применения: `sent → delivered → read`; `read`, затем `delivered` — `read`;
       повтор — без изменений; `sending`/`failed`/входящее — no-op; неизвестный id или чат —
       чат не создаётся, порядок списка (`lastMessageAt`) не меняется
-- [ ] тест цикла: `outgoingAPIMessageReceived` сопоставляет локальную отправку, затем
+- [x] тест цикла: `outgoingAPIMessageReceived` сопоставляет локальную отправку, затем
       `outgoingMessageStatus` делает её `delivered`; `failed` без `idMessage` удаляется из
       очереди и ничего не меняет
-- [ ] `make check` — зелёный перед задачей 6
+- [x] `make check` — зелёный перед задачей 6
 
 ### Task 6: Пузырь — SVG-статусы, цвета meta и мягкая ошибка
 **Model:** sonnet — вид и имена заданы планом, тесты по ролям
