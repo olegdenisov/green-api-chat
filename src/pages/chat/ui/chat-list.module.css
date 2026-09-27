@@ -26,9 +26,13 @@
     background: var(--ga-field-bg);
   }
 
+  /* The two layers of .ga-focus (src/app/styles/index.css), but inset: an outer ring would be
+     clipped by the scrolling nav and would overlap the neighbouring rows. */
   &:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 rem(2px) var(--mantine-primary-color-filled);
+    box-shadow:
+      inset 0 0 0 rem(2px) var(--mantine-primary-color-filled),
+      inset 0 0 0 rem(5px) var(--ga-focus-halo);
   }
 
   &[data-active] {

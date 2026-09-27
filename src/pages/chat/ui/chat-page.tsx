@@ -22,7 +22,7 @@ function isFocusLost(): boolean {
 
 /**
  * Chat screen: `sidebar | window`. On a narrow screen only one column is shown —
- * `data-view` switches it by the active chat. The connection strip sits above both
+ * `data-view` switches it by the active chat. The connection indicator sits above both
  * columns, so it is visible in either narrow-screen view.
  */
 export const ChatPage = reatomComponent(() => {

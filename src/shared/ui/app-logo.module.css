@@ -1,0 +1,12 @@
+/* The app logo: the message bubble in a soft square; size and radius come from the props. */
+.logo {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--app-logo-size);
+  height: var(--app-logo-size);
+  border-radius: var(--app-logo-radius);
+  background: var(--ga-primary-soft);
+  color: var(--ga-primary-soft-text);
+}

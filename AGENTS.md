@@ -136,8 +136,8 @@
 - Вёрстка — CSS Modules (`*.module.css`) рядом с компонентом. Цвета — только переменные
   Mantine и `--ga-*` из темы, хардкода цветов в модулях нет.
 - Тема — `src/app/providers/theme.ts`: палитра «Minimal Pastel» (макет 5a,
-  `docs/design/pastel-5a/`) — пастельные фоны и один насыщенный акцент `#6C5CE7`. `createTheme`: `primaryColor:
-"lavender"` (шкала `lavender`, `[6]` = `#6c5ce7`), `primaryShade: { light: 6, dark: 8 }`
+  `docs/design/pastel-5a/`) — пастельные фоны и один насыщенный акцент `#6C5CE7`.
+  `createTheme`: основной цвет — `lavender` (шкала `lavender`, `[6]` = `#6c5ce7`), `primaryShade: { light: 6, dark: 8 }`
   (не `dark: 3` — `primaryShade` красит все цвета, `red-filled` в dark стал бы нечитаемым),
   `defaultRadius: 14`; своя шкала `dark` с фиолетовым оттенком вместо нейтральной шкалы Mantine.
   Тёмный primary (`#b7adff`) — не через `primaryShade`, а переопределением
@@ -150,14 +150,17 @@
   `--ga-field-bg` (logout, «Назад», удаление чата). `--mantine-color-red-filled`/`-filled-hover`
   переопределены на `red-8`/`red-9` в обеих схемах (иначе в light `red-6` при
   `primaryShade.light: 6` даёт 3.3:1 для белого текста). `theme.components`: `ActionIcon`
-  радиус 12; `Input` — `defaultProps.variant: "filled"` + фон `--ga-field-bg` через `styles`
+  радиус 12 и размер 38 (исключение — кнопка отправки композера, 40); вариант `field`
+  типизирован расширением `ActionIconProps` в `src/app/providers/mantine.d.ts` (опечатка в
+  `variant` — ошибка `tsc`); `Input` — `defaultProps.variant: "filled"` + фон `--ga-field-bg`
+  через `styles`
   (не `vars` — типизированные `vars` `Input` не включают `--input-bg`; `--input-bd` не тронут,
   чтобы остались рамки фокуса/ошибки; `unstyled` — у композера — фон не переопределяется);
   остальным (`Button`, `Popover`, `Notification`, поля) радиус 14 даёт `defaultRadius`.
   `focusClassName: FOCUS_CLASS_NAME` (класс `ga-focus`) — кольцо фокуса в `index.css`
-  (`box-shadow` двумя слоями, primary + ореол `--ga-focus-halo`); строки списка — своё
-  внутреннее кольцо (`chat-list.module.css`, `inset`), поле композера — такое же двухслойное
-  кольцо на «пилюле» через `:focus-within`, кроме фокуса на кнопке отправки
+  (`box-shadow` двумя слоями, primary + ореол `--ga-focus-halo`); строки списка — те же два
+  слоя, но `inset` (`chat-list.module.css`: внешнее кольцо обрезал бы прокручиваемый `nav`),
+  поле композера — такое же двухслойное кольцо на «пилюле» через `:focus-within`, кроме фокуса на кнопке отправки
   (`:has(.send:focus)` — у неё своё кольцо).
   `cssVariablesResolver` задаёт токены `--ga-*` (одинаковые в обеих схемах — в `variables`,
   различающиеся — в `light`/`dark`): фон приложения/карточек/поля/границы (`--ga-app-bg`,
@@ -185,8 +188,8 @@
   `:root:not([data-mantine-color-scheme])`) — там же и в `index.html` (`theme-color`) и
   `public/favicon.svg` (`#6c5ce7`) цвета фона/текста обеих схем и логотипа продублированы (не через
   CSS-переменные, комментарий в `index.css` о дублировании). `render` из `@test/render` тему
-  не получает — тестам компонентов темы (резолвер, `Input` с ошибкой, `ActionIcon
-variant="field"`) нужен свой `MantineProvider theme={theme}`.
+  не получает — тестам компонентов темы (резолвер, `Input` с ошибкой, `ActionIcon` с вариантом
+  `field`) нужен свой `MantineProvider theme={theme}`.
 - Каркас (`ChatPage`, макет 5a): сайдбар и окно чата — «плавающие» карточки (`--ga-surface`,
   радиус 22, `overflow: hidden`) на фоне `--ga-app-bg` с отступом/зазором 12
   (`chat-page.module.css`, составной селектор `.page > .sidebar, .page > .window` — сильнее
@@ -200,9 +203,11 @@ variant="field"`) нужен свой `MantineProvider theme={theme}`.
 - Иконки — свои инлайн-SVG в `src/shared/ui/icons.tsx`, `strokeWidth` 1.8 (единый набор,
   пути сверены с Lucide — ISC, комментарий-ссылка в файле; `aria-hidden`, имя — у кнопки через
   `aria-label`); новых зависимостей и веб-шрифтов нет. Логотип приложения — `IconMessageCircle`:
-  в сайдбаре и на логине — в мягком квадрате (`--ga-primary-soft`/`-text`), в пустых
-  состояниях — сама иконка приглушённым цветом.
-- Общие UI-компоненты — сегмент `src/shared/ui` (файлы плоско, публичный API — `index.ts`).
+  в сайдбаре и на логине — компонент `AppLogo` из `shared/ui` (иконка в мягком квадрате
+  `--ga-primary-soft`/`-text`, пропы `size`/`radius`/`iconSize`), в пустых состояниях — сама
+  иконка приглушённым цветом.
+- Общие UI-компоненты — сегмент `src/shared/ui` (файлы плоско, публичный API — `index.ts`):
+  иконки и `AppLogo`.
   `AppTitle` (название приложения как `h1`) — единственный потребитель логин, поэтому живёт в
   `pages/login/ui`.
 - `src/shared/config` — сегмент без слайсов, файлы плоско (`persist.ts` — `PERSIST_TTL`),

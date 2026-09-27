@@ -8,7 +8,7 @@ import { IconLogout } from "@/shared/ui";
 export const LogoutButton = reatomComponent(
   () => (
     <Tooltip label="Выйти">
-      <ActionIcon variant="field" size={38} aria-label="Выйти" onClick={wrap(() => logout())}>
+      <ActionIcon variant="field" aria-label="Выйти" onClick={wrap(() => logout())}>
         <IconLogout />
       </ActionIcon>
     </Tooltip>

@@ -82,7 +82,6 @@ export const ChatWindow = reatomComponent(({ className }: { className?: string }
         {/* Only a narrow screen shows one column; there "back" returns to the list. */}
         <ActionIcon
           variant="field"
-          size={38}
           hiddenFrom="sm"
           aria-label="Назад к чатам"
           onClick={wrap(() => activeChatIdAtom.set(null))}
