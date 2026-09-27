@@ -81,16 +81,16 @@ export const ChatWindow = reatomComponent(({ className }: { className?: string }
       <header className={classes.header}>
         {/* Only a narrow screen shows one column; there "back" returns to the list. */}
         <ActionIcon
-          variant="subtle"
-          color="gray"
+          variant="field"
+          size={38}
           hiddenFrom="sm"
           aria-label="Назад к чатам"
           onClick={wrap(() => activeChatIdAtom.set(null))}
         >
           <IconArrowLeft />
         </ActionIcon>
-        <ChatAvatar chat={chat} size={40} />
-        <Title order={2} size="h4" fw={650} className={classes.title}>
+        <ChatAvatar chat={chat} size={42} radius={14} />
+        <Title order={2} className={classes.title}>
           {chat.title}
         </Title>
         <DeleteChatButton chatId={chat.chatId} />

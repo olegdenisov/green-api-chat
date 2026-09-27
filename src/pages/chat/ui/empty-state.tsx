@@ -1,6 +1,6 @@
 import { Text } from "@mantine/core";
 
-import { IconLogo } from "@/shared/ui";
+import { IconMessageCircle } from "@/shared/ui";
 
 import classes from "./empty-state.module.css";
 
@@ -8,7 +8,7 @@ import classes from "./empty-state.module.css";
 export function EmptyState({ children }: { children: string }) {
   return (
     <div className={classes.root}>
-      <IconLogo size={40} />
+      <IconMessageCircle size={40} />
       <Text c="dimmed" size="sm">
         {children}
       </Text>

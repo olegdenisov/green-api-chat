@@ -10,13 +10,14 @@
 .bubble {
   max-width: min(75%, rem(560px));
   padding: rem(6px) var(--mantine-spacing-sm);
-  border-radius: rem(16px) rem(16px) rem(16px) rem(4px);
+  border: rem(1px) solid var(--ga-border);
+  border-radius: rem(20px) rem(20px) rem(20px) rem(6px);
   background: var(--ga-bubble-in-bg);
   color: var(--ga-bubble-in-text);
-  box-shadow: 0 rem(1px) rem(1px) var(--ga-bubble-shadow);
 
   .row[data-direction="out"] & {
-    border-radius: rem(16px) rem(16px) rem(4px) rem(16px);
+    border: none;
+    border-radius: rem(20px) rem(20px) rem(6px) rem(20px);
     background: var(--ga-bubble-out-bg);
     color: var(--ga-bubble-out-text);
   }
@@ -28,8 +29,6 @@
    */
   .row[data-direction] &[data-failed] {
     background: var(--ga-bubble-failed-bg);
-    color: var(--ga-bubble-failed-text);
-    box-shadow: inset 0 0 0 rem(1px) var(--ga-bubble-failed-border);
   }
 }
 
@@ -52,7 +51,7 @@
   }
 
   .bubble[data-failed] & {
-    color: var(--ga-bubble-failed-meta);
+    color: var(--ga-bubble-out-meta);
   }
 }
 
@@ -60,10 +59,27 @@
   color: var(--ga-status-read);
 }
 
+.failed {
+  display: inline-flex;
+  align-items: center;
+  gap: rem(6px);
+}
+
+.failedText {
+  color: var(--ga-danger-text);
+  font-weight: 500;
+}
+
 .retry {
-  color: inherit;
   height: auto;
-  padding: 0;
+  padding: rem(2px) rem(8px);
+  border-radius: rem(999px);
+  background: var(--ga-surface);
+  color: var(--ga-danger-text);
   font-size: inherit;
-  text-decoration: underline;
+  font-weight: 500;
+
+  @mixin hover {
+    background: var(--ga-surface);
+  }
 }
