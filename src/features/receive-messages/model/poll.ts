@@ -4,7 +4,7 @@ import { abortVar, isAbort, sleep, wrap } from "@reatom/core";
 import { greenApiAtom, logout } from "@/entities/session";
 import { ApiError } from "@/shared/api";
 
-import { applyReceivedMessage } from "./apply-notification";
+import { applyMessageStatus, applyReceivedMessage } from "./apply-notification";
 import { parseNotification } from "./parse-notification";
 import { receiveStatusAtom } from "./status";
 
@@ -30,8 +30,9 @@ function backoffDelay(failures: number): number {
 /** A notification the layout throws on must not stop the FIFO queue: logged and deleted. */
 function applySafely(body: unknown): void {
   try {
-    const message = parseNotification(body);
-    if (message) applyReceivedMessage(message);
+    const parsed = parseNotification(body);
+    if (parsed?.kind === "message") applyReceivedMessage(parsed);
+    else if (parsed?.kind === "status") applyMessageStatus(parsed);
   } catch (error) {
     console.error("receive-messages: failed to apply a notification", error);
   }

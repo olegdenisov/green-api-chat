@@ -7,7 +7,12 @@ import { messagesAtom } from "@/entities/message";
 import { credentialsAtom, logout } from "@/entities/session";
 
 import { deleteNotificationResponse } from "@test/fixtures/green-api/delete-notification";
-import { outgoingMessageStatus } from "@test/fixtures/green-api/ignored-notifications";
+import { incomingImageMessage } from "@test/fixtures/green-api/ignored-notifications";
+import { outgoingApiMessage } from "@test/fixtures/green-api/outgoing-api-message";
+import {
+  outgoingMessageStatusDelivered,
+  outgoingMessageStatusFailed,
+} from "@test/fixtures/green-api/outgoing-message-status";
 import { receiveNotificationResponse } from "@test/fixtures/green-api/receive-notification";
 import {
   BASE,
@@ -43,7 +48,7 @@ const CHAT_ID = receiveNotificationResponse.body.senderData.chatId;
 const RECEIPT_ID = receiveNotificationResponse.receiptId;
 const RECEIVE_URL = `${BASE}/receiveNotification/${TOKEN}?receiveTimeout=20`;
 const DELETE_URL = `${BASE}/deleteNotification/${TOKEN}/${RECEIPT_ID}`;
-const ignored = { receiptId: 7, body: outgoingMessageStatus };
+const ignored = { receiptId: 7, body: incomingImageMessage };
 
 /** The polling in a cancellable frame, as the connect hook runs it. */
 let loop: Promise<void> = Promise.resolve();
@@ -152,6 +157,51 @@ describe("pollNotifications: queue", () => {
       expect(calledUrls()[1]).toBe(`${BASE}/deleteNotification/${TOKEN}/${ignored.receiptId}`);
       expect(messagesAtom()).toEqual({});
       expect(chatsAtom()).toEqual({});
+
+      await wrap(stop(running));
+    });
+  });
+
+  it("matches a local send by outgoingAPIMessageReceived, then raises it by its status", async () => {
+    const response = deferFetch();
+    await context.start(async () => {
+      credentialsAtom.set(creds);
+      const chatId = outgoingApiMessage.senderData.chatId;
+      const text = outgoingApiMessage.messageData.textMessageData.textMessage;
+      messagesAtom.set({
+        [chatId]: [
+          { id: "local-1", chatId, text, direction: "out", status: "sending", timestamp: 1 },
+        ],
+      });
+      const running = start();
+      await wrap(flush());
+
+      response.resolveNext({ receiptId: 1, body: outgoingApiMessage });
+      await wrap(flush());
+      expect(messagesAtom()[chatId]).toEqual([
+        expect.objectContaining({ id: outgoingApiMessage.idMessage, status: "sent" }),
+      ]);
+      response.resolveNext(deleteNotificationResponse);
+      await wrap(flush());
+
+      const delivered = {
+        ...outgoingMessageStatusDelivered,
+        idMessage: outgoingApiMessage.idMessage,
+      };
+      response.resolveNext({ receiptId: 2, body: delivered });
+      await wrap(flush());
+      expect(messagesAtom()[chatId]).toEqual([
+        expect.objectContaining({ id: outgoingApiMessage.idMessage, status: "delivered" }),
+      ]);
+      response.resolveNext(deleteNotificationResponse);
+      await wrap(flush());
+
+      const before = { messages: messagesAtom(), chats: chatsAtom() };
+      response.resolveNext({ receiptId: 3, body: outgoingMessageStatusFailed });
+      await wrap(flush());
+      expect(calledUrls().at(-1)).toBe(`${BASE}/deleteNotification/${TOKEN}/3`);
+      expect(messagesAtom()).toBe(before.messages);
+      expect(chatsAtom()).toBe(before.chats);
 
       await wrap(stop(running));
     });

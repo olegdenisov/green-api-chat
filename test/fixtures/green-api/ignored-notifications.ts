@@ -1,24 +1,10 @@
 // Notifications the app receives but does not show. Their kinds are outside the
-// `Notification` union (it lists supported kinds only), so they cannot `satisfies` it:
-// the status has no type at all, the media message checks everything but `messageData`.
-// The shapes are copied from the Telegram docs pages linked above each fixture.
+// `Notification` union (it lists supported kinds only), so they cannot `satisfies` it: the
+// media message checks everything but `messageData`. The shapes are copied from the Telegram
+// docs pages linked above each fixture. Ignored statuses (`failed`, `noAccount`) are in
+// `outgoing-message-status.ts`.
 // A group message fixture is `incomingGroupTextMessage` in `incoming-text-message.ts`.
 import type { IncomingMessageNotification } from "@/shared/api";
-
-// https://green-api.com/telegram/docs/api/receiving/notifications-format/statuses/OutgoingMessageStatus/
-/** Delivery status of a sent message: no `senderData`/`messageData`. */
-export const outgoingMessageStatus = {
-  typeWebhook: "outgoingMessageStatus",
-  chatId: "10000000",
-  instanceData: {
-    idInstance: 4100000000,
-    wid: "79876543210@c.us",
-    typeInstance: "telegram",
-  },
-  timestamp: 1755591519,
-  idMessage: "115054445839974415",
-  status: "delivered",
-};
 
 // https://green-api.com/telegram/docs/api/receiving/notifications-format/incoming-message/ImageMessage/
 /** Media: `typeWebhook` is supported, `typeMessage` is not (so only the rest is checked). */

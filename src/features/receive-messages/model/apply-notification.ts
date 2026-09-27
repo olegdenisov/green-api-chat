@@ -9,7 +9,7 @@ import {
   type Message,
 } from "@/entities/message";
 
-import type { ReceivedMessage } from "./parse-notification";
+import type { ReceivedMessage, ReceivedStatus } from "./parse-notification";
 
 /**
  * The oldest outgoing message of this send still waiting with the same text: `sending`
@@ -46,3 +46,23 @@ export const applyReceivedMessage = action((message: ReceivedMessage) => {
 
   touchChat(chatId, timestamp);
 }, "receiveMessages.apply");
+
+/** Rank of the statuses a notification may raise: a status only ever goes up. */
+const RANK = { sent: 1, delivered: 2, read: 3 } as const satisfies Partial<
+  Record<Message["status"], number>
+>;
+
+const isRanked = (status: Message["status"]): status is keyof typeof RANK => status in RANK;
+
+/**
+ * Raises an outgoing message found by `idMessage` to `delivered`/`read`. Only `sent`/`delivered`
+ * messages are raised, and only to a higher rank: a repeat from the queue or `delivered` after
+ * `read` changes nothing. Incoming, `sending`/`failed` (local id), unknown chat or id — no-op;
+ * the chat is neither created nor raised in the list.
+ */
+export const applyMessageStatus = action(({ chatId, id, status }: ReceivedStatus) => {
+  const message = messagesAtom()[chatId]?.find((item) => item.id === id);
+  if (!message || message.direction !== "out" || !isRanked(message.status)) return;
+  if (RANK[status] <= RANK[message.status]) return;
+  updateMessage(chatId, id, { status });
+}, "receiveMessages.applyStatus");

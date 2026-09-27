@@ -183,11 +183,33 @@ export type OutgoingMessageNotification = MessageNotificationBase & {
 };
 
 /**
- * Supported notification kinds only. Other `typeWebhook` values (statuses, instance
- * state, ...) do arrive at runtime; the union has no catch-all member so that `switch`
- * narrowing works, and consumers must handle unknown kinds in a `default` branch.
+ * Status of a sent message (Telegram docs, `outgoingMessageStatus`). Requires the
+ * `outgoingWebhook` setting. No `senderData`/`messageData`.
  */
-export type Notification = IncomingMessageNotification | OutgoingMessageNotification;
+export type OutgoingMessageStatusNotification = {
+  typeWebhook: "outgoingMessageStatus";
+  /** Telegram chat id; the `noAccount` doc example has a WhatsApp-style `…@c.us` id. */
+  chatId: string;
+  instanceData: InstanceData;
+  /** Unix time, seconds. */
+  timestamp: number;
+  /** Present for `delivered`/`read`; the `failed`/`noAccount` doc examples have none. */
+  idMessage?: string;
+  status: "delivered" | "read" | "failed" | "noAccount";
+  /** Error details, e.g. `media caption too long` for `failed`. */
+  description?: string;
+};
+
+/**
+ * Supported notification kinds only: messages and outgoing message statuses. Other
+ * `typeWebhook` values (instance state, ...) do arrive at runtime; the union has no catch-all
+ * member so that `switch` narrowing works, and consumers must handle unknown kinds in a
+ * `default` branch.
+ */
+export type Notification =
+  | IncomingMessageNotification
+  | OutgoingMessageNotification
+  | OutgoingMessageStatusNotification;
 
 /** `receiveNotification` body; an empty queue yields `null`. */
 export type ReceivedNotification = {

@@ -4,17 +4,21 @@ import {
   incomingGroupTextMessage,
   incomingTextMessage,
 } from "@test/fixtures/green-api/incoming-text-message";
-import {
-  incomingImageMessage,
-  outgoingMessageStatus,
-} from "@test/fixtures/green-api/ignored-notifications";
+import { incomingImageMessage } from "@test/fixtures/green-api/ignored-notifications";
 import { outgoingApiMessage } from "@test/fixtures/green-api/outgoing-api-message";
 import { outgoingMessage } from "@test/fixtures/green-api/outgoing-message";
+import {
+  outgoingMessageStatusDelivered,
+  outgoingMessageStatusFailed,
+  outgoingMessageStatusNoAccount,
+  outgoingMessageStatusRead,
+} from "@test/fixtures/green-api/outgoing-message-status";
 import { parseNotification } from "./parse-notification";
 
 describe("parseNotification", () => {
   it("parses an incoming textMessage", () => {
     expect(parseNotification(incomingTextMessage)).toEqual({
+      kind: "message",
       chatId: "10000000",
       chatName: "Василиса Премудрая",
       id: "1763115112345",
@@ -27,6 +31,7 @@ describe("parseNotification", () => {
 
   it("parses an incoming extendedTextMessage", () => {
     expect(parseNotification(incomingExtendedTextMessage)).toEqual({
+      kind: "message",
       chatId: "10000000",
       chatName: "Василиса",
       id: "1763115112345",
@@ -60,8 +65,7 @@ describe("parseNotification", () => {
       senderData: { ...incomingTextMessage.senderData, chatName: "" },
     };
     const message = parseNotification(body);
-    expect(message).not.toBeNull();
-    expect(message?.chatName).toBeUndefined();
+    expect(message).toMatchObject({ kind: "message", chatId: "10000000" });
     expect(message).not.toHaveProperty("chatName");
   });
 
@@ -72,11 +76,37 @@ describe("parseNotification", () => {
     });
   });
 
-  describe("ignores", () => {
-    it("a message status", () => {
-      expect(parseNotification(outgoingMessageStatus)).toBeNull();
+  describe("outgoingMessageStatus", () => {
+    it.each([
+      ["delivered", outgoingMessageStatusDelivered],
+      ["read", outgoingMessageStatusRead],
+    ] as const)("parses %s", (status, body) => {
+      expect(parseNotification(body)).toEqual({
+        kind: "status",
+        chatId: "10000000",
+        id: "115054445839974415",
+        status,
+      });
     });
 
+    it.each([
+      ["failed", outgoingMessageStatusFailed],
+      ["noAccount", outgoingMessageStatusNoAccount],
+      ["an unknown status", { ...outgoingMessageStatusDelivered, status: "played" }],
+      ["a group chat", { ...outgoingMessageStatusDelivered, chatId: "-10000000000000" }],
+      ["an empty idMessage", { ...outgoingMessageStatusDelivered, idMessage: "" }],
+      ["a non-string idMessage", { ...outgoingMessageStatusDelivered, idMessage: 42 }],
+      [
+        "a delivered status without idMessage",
+        { ...outgoingMessageStatusFailed, status: "delivered" },
+      ],
+      ["a non-string chatId", { ...outgoingMessageStatusDelivered, chatId: 10000000 }],
+    ])("ignores %s", (_, body) => {
+      expect(parseNotification(body)).toBeNull();
+    });
+  });
+
+  describe("ignores", () => {
     it("media", () => {
       expect(parseNotification(incomingImageMessage)).toBeNull();
     });
