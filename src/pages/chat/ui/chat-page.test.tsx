@@ -22,7 +22,7 @@ describe("ChatPage", () => {
   it("renders the sidebar and the window stub", () => {
     render(<ChatPage />);
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("GREEN-API chat");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Чаты");
     expect(screen.getByRole("button", { name: "Выйти" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Новый чат" })).toBeInTheDocument();
     expect(

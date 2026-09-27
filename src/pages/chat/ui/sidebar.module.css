@@ -2,8 +2,6 @@
   display: flex;
   min-height: 0;
   flex-direction: column;
-  border-right: rem(1px) solid var(--mantine-color-default-border);
-  background: var(--mantine-color-body);
 }
 
 .header {
@@ -14,8 +12,15 @@
 }
 
 .logo {
+  display: flex;
   flex-shrink: 0;
-  color: var(--mantine-primary-color-filled);
+  align-items: center;
+  justify-content: center;
+  width: rem(36px);
+  height: rem(36px);
+  border-radius: rem(12px);
+  background: var(--ga-primary-soft);
+  color: var(--ga-primary-soft-text);
 }
 
 .name {
@@ -28,7 +33,7 @@
 
 .form {
   padding: 0 var(--mantine-spacing-md) var(--mantine-spacing-sm);
-  border-bottom: rem(1px) solid var(--mantine-color-default-border);
+  border-bottom: rem(1px) solid var(--ga-border);
 
   /* Closed, the wrapper stays mounted (the `aria-controls` target of the "+") and is hidden by
      the `hidden` attribute: do not give `.form` a `display`, it would override that. */

@@ -27,10 +27,10 @@ beforeEach(stubFetch);
 afterEach(() => notifications.clean());
 
 describe("Sidebar", () => {
-  it("shows the app title as the page heading", () => {
+  it("shows «Чаты» as the page heading", () => {
     render(<Sidebar />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "GREEN-API chat" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Чаты" })).toBeInTheDocument();
   });
 
   it("has the logout button, the closed new-chat form and the chats navigation", () => {
