@@ -265,7 +265,7 @@ describe("message", () => {
             { ...reply, chatId: "other" },
             { ...reply, text: 1 },
             { ...reply, direction: "up" },
-            { ...reply, status: "read" },
+            { ...reply, status: "seen" },
             { ...reply, timestamp: "200" },
             { ...reply, attemptAt: Number.NaN },
             reply,
@@ -273,6 +273,13 @@ describe("message", () => {
           [other.chatId]: other,
         }),
       ).toEqual({ [hello.chatId]: [hello, reply] });
+    });
+
+    it("toMessages keeps delivered and read messages", () => {
+      const delivered: Message = { ...hello, id: "BAE1", status: "delivered" };
+      const read: Message = { ...hello, id: "BAE2", status: "read" };
+      const messages = { [hello.chatId]: [delivered, read] };
+      expect(toMessages(messages)).toBe(messages);
     });
 
     it("toMessages falls back to no messages on a non-object", () => {

@@ -232,7 +232,7 @@ describe("LoginForm", () => {
 
     expect(
       await screen.findByText(
-        "Настройки инстанса обновлены. Входящие сообщения начнут приходить в течение ~5 минут",
+        "Настройки инстанса обновлены. Новые сообщения и статусы начнут приходить в течение ~5 минут",
       ),
     ).toBeInTheDocument();
     expect(calledMethods()).toEqual(["getStateInstance", "getSettings", "setSettings"]);

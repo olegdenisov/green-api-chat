@@ -266,7 +266,7 @@ describe("loginForm submit", () => {
     });
   });
 
-  it("mentions the cleared webhookUrl in the toast", async () => {
+  it("says the instance was switched to this chat when webhookUrl was cleared", async () => {
     respondByMethod({
       ...ok,
       getSettings: { body: { ...getSettingsResponse, webhookUrl: "https://example.com/hook" } },
@@ -278,7 +278,9 @@ describe("loginForm submit", () => {
 
       expect(credentialsAtom()).toEqual(creds);
       expect(show).toHaveBeenCalledWith(
-        expect.objectContaining({ message: expect.stringContaining("webhookUrl очищен") }),
+        expect.objectContaining({
+          message: expect.stringContaining("прежний адрес для уведомлений отключён"),
+        }),
       );
     });
   });

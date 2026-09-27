@@ -32,6 +32,12 @@ describe("ensureNotificationSettings", () => {
     expect(api.setSettings.mock.calls[0]![0]).toEqual({ outgoingAPIMessageWebhook: "yes" });
   });
 
+  it("turns on outgoingWebhook for delivery statuses", async () => {
+    const api = fakeApi({ outgoingWebhook: "no" });
+    await expect(ensureNotificationSettings(api, {})).resolves.toBe("updated");
+    expect(api.setSettings.mock.calls[0]![0]).toEqual({ outgoingWebhook: "yes" });
+  });
+
   it("clears a non-empty webhookUrl", async () => {
     const api = fakeApi({ webhookUrl: "https://example.com/hook", incomingWebhook: "no" });
     await expect(ensureNotificationSettings(api, {})).resolves.toBe("webhookCleared");
