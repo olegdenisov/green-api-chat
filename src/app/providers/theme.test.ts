@@ -1,7 +1,7 @@
 import { DEFAULT_THEME, mergeMantineTheme } from "@mantine/core";
 import { describe, expect, it } from "vitest";
 
-import { cssVariablesResolver, theme } from "./theme";
+import { cssVariablesResolver, theme, variantColorResolver } from "./theme";
 
 // `cssVariablesResolver` (like `MantineProvider`) is called with the full theme, defaults
 // merged in — `theme` alone is a partial override and doesn't satisfy its type.
@@ -58,6 +58,58 @@ describe("theme", () => {
     expect(theme.primaryColor).toBe("lavender");
     expect(fullTheme.colors.lavender[6]).toBe("#6c5ce7");
     expect(fullTheme.colors.lavender[3]).toBe("#b7adff");
+  });
+});
+
+describe("variantColorResolver", () => {
+  it("is the theme's resolver", () => {
+    expect(fullTheme.variantColorResolver).toBe(variantColorResolver);
+  });
+
+  it.each([["lavender"], [undefined]])(
+    "puts --ga-on-primary text on the filled primary (color %s)",
+    (color) => {
+      const colors = fullTheme.variantColorResolver({ color, variant: "filled", theme: fullTheme });
+
+      expect(colors.color).toBe("var(--ga-on-primary)");
+      expect(colors.background).toBe("var(--mantine-color-lavender-filled)");
+    },
+  );
+
+  it("keeps white text on other filled colors", () => {
+    const colors = fullTheme.variantColorResolver({
+      color: "red",
+      variant: "filled",
+      theme: fullTheme,
+    });
+
+    expect(colors.color).toBe("var(--mantine-color-white)");
+    expect(colors.background).toBe("var(--mantine-color-red-filled)");
+  });
+
+  it("leaves other variants of the primary to Mantine", () => {
+    const colors = fullTheme.variantColorResolver({
+      color: "lavender",
+      variant: "light",
+      theme: fullTheme,
+    });
+
+    expect(colors.color).toBe("var(--mantine-color-lavender-light-color)");
+  });
+
+  it("resolves the field variant to the neutral field background", () => {
+    const colors = fullTheme.variantColorResolver({
+      color: "lavender",
+      variant: "field",
+      theme: fullTheme,
+    });
+
+    expect(colors).toEqual({
+      background: "var(--ga-field-bg)",
+      hover: "var(--mantine-color-default-hover)",
+      color: "var(--mantine-color-text)",
+      border: "none",
+    });
   });
 });
 

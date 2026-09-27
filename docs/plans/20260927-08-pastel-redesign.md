@@ -284,12 +284,12 @@ const dark: MantineColorsTuple = [
 - Modify: `src/app/providers/theme.test.ts`
 - Modify: `src/app/styles/index.css`
 
-- [ ] `variantColorResolver` (Technical Details): `filled` primary → `--ga-on-primary`; вариант `field` для `ActionIcon`; остальное — `defaultVariantColorsResolver`
-- [ ] `theme.components`: `ActionIcon` — radius 12; `Input` — `variant: "filled"` + `--input-bg: var(--ga-field-bg)` (не `--input-bd`); `Button`, `Popover`, `Notification` — радиусы из «Размеров»; только `var(...)`
-- [ ] `focusClassName` + класс в `index.css` с кольцом из Technical Details (сверить API `focusRing`/`focusClassName` в Mantine 9.6)
-- [ ] тесты: `fullTheme.variantColorResolver({ color: "lavender", variant: "filled", theme })` и без `color` → `color` = `var(--ga-on-primary)`; `color: "red"`, `filled` → белый текст (как дефолт); вариант `field` → фон `var(--ga-field-bg)`
-- [ ] тест: `TextInput` с `error` рендерит `data-error` и сообщение; рендер `ActionIcon variant="field"` не падает (через `@test/render` с темой — если `render` тему не получает, обернуть в `MantineProvider theme={theme}` в тесте)
-- [ ] `make check` — зелёный
+- [x] `variantColorResolver` (Technical Details): `filled` primary → `--ga-on-primary`; вариант `field` для `ActionIcon`; остальное — `defaultVariantColorsResolver`
+- [x] `theme.components`: `ActionIcon` — radius 12; `Input` — `variant: "filled"` + `--input-bg: var(--ga-field-bg)` (не `--input-bd`); `Button`, `Popover`, `Notification` — радиусы из «Размеров»; только `var(...)`
+- [x] `focusClassName` + класс в `index.css` с кольцом из Technical Details (сверить API `focusRing`/`focusClassName` в Mantine 9.6)
+- [x] тесты: `fullTheme.variantColorResolver({ color: "lavender", variant: "filled", theme })` и без `color` → `color` = `var(--ga-on-primary)`; `color: "red"`, `filled` → белый текст (как дефолт); вариант `field` → фон `var(--ga-field-bg)`
+- [x] тест: `TextInput` с `error` рендерит `data-error` и сообщение; рендер `ActionIcon variant="field"` не падает (через `@test/render` с темой — если `render` тему не получает, обернуть в `MantineProvider theme={theme}` в тесте)
+- [x] `make check` — зелёный
 
 ### Task 3: Иконки stroke 1.8 и недостающие (S)
 **Model:** sonnet — пути по Lucide, API экспорта сохраняется, тест ловит ошибки

@@ -1,4 +1,15 @@
-import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  createTheme,
+  defaultVariantColorsResolver,
+  Input,
+  Notification,
+  Popover,
+  type CSSVariablesResolver,
+  type MantineColorsTuple,
+  type VariantColorsResolver,
+} from "@mantine/core";
 
 // "Minimal Pastel" palette, mockup 5a (docs/design/pastel-5a/): pastel backgrounds and a single
 // saturated accent #6C5CE7. [6] = #6C5CE7 (primary, light), [3] = #B7ADFF (primary, dark — set
@@ -33,6 +44,32 @@ const dark: MantineColorsTuple = [
   "#121119",
 ];
 
+// Class of the focus ring for every focusable Mantine component (in place of
+// .mantine-focus-auto); the ring itself is in src/app/styles/index.css.
+export const FOCUS_CLASS_NAME = "ga-focus";
+
+// Mantine's resolver with two changes:
+// - `filled` in the primary colour: text is --ga-on-primary, not a hardcoded white — the dark
+//   primary (#b7adff) needs dark text (white on it is 2:1; `autoContrast` ignores the scheme);
+// - `field`: a neutral icon button on the field background (logout, «Назад», chat deletion).
+export const variantColorResolver: VariantColorsResolver = (input) => {
+  if (input.variant === "field") {
+    return {
+      background: "var(--ga-field-bg)",
+      hover: "var(--mantine-color-default-hover)",
+      color: "var(--mantine-color-text)",
+      border: "none",
+    };
+  }
+  // Components pass `color || theme.primaryColor`; the fallback covers direct calls.
+  const color = input.color ?? input.theme.primaryColor;
+  const colors = defaultVariantColorsResolver({ ...input, color });
+  if (input.variant === "filled" && color === input.theme.primaryColor) {
+    return { ...colors, color: "var(--ga-on-primary)" };
+  }
+  return colors;
+};
+
 export const theme = createTheme({
   primaryColor: "lavender",
   // `primaryShade` applies to every colour, not just the primary one: dark 3 would make
@@ -43,6 +80,24 @@ export const theme = createTheme({
   fontFamily:
     'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   defaultRadius: 14,
+  variantColorResolver,
+  focusClassName: FOCUS_CLASS_NAME,
+  components: {
+    ActionIcon: ActionIcon.extend({ defaultProps: { radius: 12 } }),
+    // `filled`: no border, primary border on focus and error border stay Mantine's
+    // (--input-bd is untouched). Only the background comes from the palette; `unstyled`
+    // (the composer) keeps its transparent one. `styles`, not `vars`: Input's typed vars
+    // don't include --input-bg; both end up in the wrapper's inline style.
+    Input: Input.extend({
+      defaultProps: { variant: "filled" },
+      styles: (_theme, props) => ({
+        wrapper: props.variant === "unstyled" ? {} : { "--input-bg": "var(--ga-field-bg)" },
+      }),
+    }),
+    Button: Button.extend({ defaultProps: { radius: 14 } }),
+    Popover: Popover.extend({ defaultProps: { radius: 14 } }),
+    Notification: Notification.extend({ defaultProps: { radius: 14 } }),
+  },
 });
 
 // Tokens Mantine has no equivalent for. CSS Modules use only Mantine variables and --ga-*.

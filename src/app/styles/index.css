@@ -20,3 +20,12 @@ body {
     color: #eeecf6;
   }
 }
+
+/* Focus ring of Mantine components (theme.focusClassName in src/app/providers/theme.ts): a
+   primary ring with a soft halo, instead of Mantine's offset outline. */
+.ga-focus:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--mantine-primary-color-filled),
+    0 0 0 5px var(--ga-bubble-out-bg);
+}
