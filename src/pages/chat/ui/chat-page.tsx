@@ -17,26 +17,31 @@ import classes from "./chat-page.module.css";
 export const ChatPage = reatomComponent(() => {
   const chat = activeChatAtom();
   const rootRef = useRef<HTMLDivElement>(null);
-  const lastChatId = useRef<string | null>(null);
+  // `undefined` until the first run: the chat open at mount is not a change.
+  const lastChatId = useRef<string | null | undefined>(undefined);
   const chatId = chat?.chatId ?? null;
 
-  // A chat is left ("back", delete): the column with the focused control goes away and the focus
-  // falls to <body>. Then the row of the left chat gets it, or the list if the row is gone
-  // (delete). A focus that is somewhere else already (another tab deleted the chat while the
-  // user types in the form) is left alone.
+  // The focus follows the active chat only when it is lost — fell to <body> because the focused
+  // control unmounted. A focus that is somewhere else already (a clicked row, the form while
+  // another tab deletes the chat) is left alone.
+  // - A chat is opened (the new-chat form closed after a submit, a row hidden on a narrow
+  //   screen): the message input gets it.
+  // - A chat is left ("back", delete): the row of the left chat gets it, or the list if the row
+  //   is gone (delete).
   useEffect(() => {
-    if (chatId !== null) {
-      lastChatId.current = chatId;
-      return;
-    }
-    const left = lastChatId.current;
-    lastChatId.current = null;
-    if (left === null) return;
+    const previous = lastChatId.current;
+    lastChatId.current = chatId;
+    if (previous === undefined || previous === chatId) return;
     const active = document.activeElement;
     if (active && active !== document.body) return;
     const root = rootRef.current;
+    if (chatId !== null) {
+      root?.querySelector<HTMLElement>('textarea[aria-label="Сообщение"]')?.focus();
+      return;
+    }
+    if (previous === null) return;
     // Quoted attribute value: only `"` and `\` need escaping (jsdom has no `CSS.escape`).
-    const value = left.replace(/["\\]/g, "\\$&");
+    const value = previous.replace(/["\\]/g, "\\$&");
     const row = root?.querySelector<HTMLElement>(`nav [data-chat-id="${value}"]`);
     (row ?? root?.querySelector<HTMLElement>("nav"))?.focus();
   }, [chatId]);

@@ -1,4 +1,5 @@
 import { notifications } from "@mantine/notifications";
+import { context } from "@reatom/core";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -23,8 +24,10 @@ describe("ChatPage", () => {
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("GREEN-API chat");
     expect(screen.getByRole("button", { name: "Выйти" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Номер телефона")).toBeInTheDocument();
-    expect(screen.getByText("Создайте чат по номеру телефона")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Новый чат" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Нажмите «+», чтобы начать чат по номеру телефона"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Выберите чат или создайте новый")).toBeInTheDocument();
     expect(pageRoot()).toHaveAttribute("data-view", "list");
     // The one `main` landmark also exists in the narrow list view, where the window is hidden.
@@ -34,13 +37,14 @@ describe("ChatPage", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("creates a chat by number: it appears in the list and opens", async () => {
+  it("creates a chat by number: it appears in the list, opens and gets the focus", async () => {
     // ChatPage alone does not poll: a receiveNotification call would fail the test.
     respondByMethod({ checkAccount: { body: checkAccountExists } });
     const user = userEvent.setup();
     const { frame } = render(<ChatPage />);
     frame.run(() => credentialsAtom.set(creds));
 
+    await user.click(screen.getByRole("button", { name: "Новый чат" }));
     await user.type(screen.getByLabelText("Номер телефона"), "+7 987 654-32-10{Enter}");
 
     const row = await screen.findByRole("button", { name: /@username/ });
@@ -48,7 +52,38 @@ describe("ChatPage", () => {
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("@username");
     expect(pageRoot()).toHaveAttribute("data-view", "chat");
     expect(frame.run(() => activeChatIdAtom())).toBe(checkAccountExists.chatId);
-    expect(screen.getByLabelText("Номер телефона")).toHaveValue("");
+    // The form closed with the field that had the focus: the message input gets it.
+    expect(screen.queryByLabelText("Номер телефона")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Новый чат" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    await waitFor(() => expect(screen.getByLabelText("Сообщение")).toHaveFocus());
+  });
+
+  it("keeps the focus on a clicked chat row", async () => {
+    const user = userEvent.setup();
+    const { frame } = render(<ChatPage />);
+    frame.run(() => chatsAtom.set({ "1": { chatId: "1", title: "Friend", lastMessageAt: 1 } }));
+
+    const row = await screen.findByRole("button", { name: /Friend/ });
+    await user.click(row);
+
+    expect(pageRoot()).toHaveAttribute("data-view", "chat");
+    expect(row).toHaveFocus();
+  });
+
+  it("does not focus the message input for a chat already open at mount", () => {
+    // A previous page load left the chat open (persisted to localStorage).
+    context.start(() => {
+      chatsAtom.set({ "1": { chatId: "1", title: "Friend", lastMessageAt: 1 } });
+      activeChatIdAtom.set("1");
+    });
+
+    render(<ChatPage />);
+
+    expect(pageRoot()).toHaveAttribute("data-view", "chat");
+    expect(screen.getByLabelText("Сообщение")).not.toHaveFocus();
   });
 
   it("switches data-view by the active chat", async () => {
@@ -102,15 +137,37 @@ describe("ChatPage", () => {
     frame.run(() => chatsAtom.set({ "1": { chatId: "1", title: "Friend", lastMessageAt: 1 } }));
 
     await user.click(await screen.findByRole("button", { name: /Friend/ }));
-    const phoneInput = screen.getByLabelText("Номер телефона");
-    await user.click(phoneInput);
-    expect(phoneInput).toHaveFocus();
+    const newChat = screen.getByRole("button", { name: "Новый чат" });
+    newChat.focus();
+    expect(newChat).toHaveFocus();
 
     // Not a click on "Назад" or "Удалить": e.g. the chat is removed from another tab.
     frame.run(() => activeChatIdAtom.set(null));
     await waitFor(() => expect(pageRoot()).toHaveAttribute("data-view", "list"));
 
-    expect(phoneInput).toHaveFocus();
+    expect(newChat).toHaveFocus();
+  });
+
+  it("does not steal focus when a chat opens while focus is elsewhere", async () => {
+    const { frame } = render(<ChatPage />);
+    frame.run(() => chatsAtom.set({ "1": { chatId: "1", title: "Friend", lastMessageAt: 1 } }));
+    const newChat = screen.getByRole("button", { name: "Новый чат" });
+    newChat.focus();
+
+    frame.run(() => activeChatIdAtom.set("1"));
+    await waitFor(() => expect(pageRoot()).toHaveAttribute("data-view", "chat"));
+
+    expect(newChat).toHaveFocus();
+  });
+
+  it("focuses the message input when a chat opens with the focus lost", async () => {
+    const { frame } = render(<ChatPage />);
+    frame.run(() => chatsAtom.set({ "1": { chatId: "1", title: "Friend", lastMessageAt: 1 } }));
+    expect(document.body).toHaveFocus();
+
+    frame.run(() => activeChatIdAtom.set("1"));
+
+    await waitFor(() => expect(screen.getByLabelText("Сообщение")).toHaveFocus());
   });
 
   it("treats a dangling active chat id as no chat", () => {

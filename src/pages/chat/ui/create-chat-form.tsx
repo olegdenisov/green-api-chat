@@ -38,6 +38,8 @@ export const CreateChatForm = reatomComponent(() => {
           inputMode="tel"
           autoComplete="off"
           aria-label="Номер телефона"
+          // The form is mounted by the "+" in the sidebar: the field is what the user came for.
+          autoFocus
           placeholder="+7 999 123-45-67"
           // Not `disabled`: that drops the focus, and after an error the number is edited again.
           readOnly={pending}
