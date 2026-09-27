@@ -3,7 +3,7 @@ import { wrap } from "@reatom/core";
 import { bindField, reatomComponent } from "@reatom/react";
 import type { FormEvent, KeyboardEvent } from "react";
 
-import { IconSend } from "@/shared/ui";
+import { IconArrowUp } from "@/shared/ui";
 
 import { draftField, sendDraft } from "../model/draft";
 
@@ -24,36 +24,39 @@ export const Composer = reatomComponent(() => {
         sendDraft();
       })}
     >
-      <Textarea
-        aria-label="Сообщение"
-        data-composer-input
-        placeholder="Сообщение"
-        autosize
-        minRows={1}
-        maxRows={6}
-        maxLength={MAX_LENGTH}
-        flex={1}
-        {...bindField(draftField)}
-        onKeyDown={wrap((event: KeyboardEvent<HTMLTextAreaElement>) => {
-          // Safari sends the Enter that confirms an IME composition with `isComposing: false`
-          // but `keyCode` 229.
-          const composing = event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
-          if (event.key !== "Enter" || event.shiftKey || composing) return;
-          event.preventDefault();
-          sendDraft();
-        })}
-      />
-      <ActionIcon
-        type="submit"
-        size={36}
-        radius="xl"
-        variant="filled"
-        aria-label="Отправить"
-        disabled={blank}
-        className={classes.send}
-      >
-        <IconSend size={18} />
-      </ActionIcon>
+      <div className={classes.pill}>
+        <Textarea
+          aria-label="Сообщение"
+          data-composer-input
+          placeholder="Напишите сообщение…"
+          variant="unstyled"
+          autosize
+          minRows={1}
+          maxRows={6}
+          maxLength={MAX_LENGTH}
+          flex={1}
+          {...bindField(draftField)}
+          onKeyDown={wrap((event: KeyboardEvent<HTMLTextAreaElement>) => {
+            // Safari sends the Enter that confirms an IME composition with `isComposing: false`
+            // but `keyCode` 229.
+            const composing = event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
+            if (event.key !== "Enter" || event.shiftKey || composing) return;
+            event.preventDefault();
+            sendDraft();
+          })}
+        />
+        <ActionIcon
+          type="submit"
+          size={40}
+          radius={14}
+          variant="filled"
+          aria-label="Отправить"
+          disabled={blank}
+          className={classes.send}
+        >
+          <IconArrowUp size={20} />
+        </ActionIcon>
+      </div>
     </form>
   );
 }, "chatPage.Composer");

@@ -102,4 +102,10 @@ describe("Composer", () => {
 
     expect(input()).toHaveAttribute("maxLength", "4096");
   });
+
+  it("shows the message placeholder", () => {
+    renderComposer();
+
+    expect(input()).toHaveAttribute("placeholder", "Напишите сообщение…");
+  });
 });

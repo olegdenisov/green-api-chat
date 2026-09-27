@@ -1,20 +1,33 @@
 .composer {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  background: var(--ga-feed-bg);
+}
+
+.pill {
   display: flex;
   align-items: flex-end;
   gap: var(--mantine-spacing-xs);
-  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
-  border-top: rem(1px) solid var(--mantine-color-default-border);
-  background: var(--mantine-color-body);
+  padding: rem(6px) rem(6px) rem(6px) var(--mantine-spacing-md);
+  border: rem(1px) solid var(--ga-border);
+  border-radius: rem(18px);
+  background: var(--ga-surface);
+  box-shadow: 0 rem(2px) rem(10px) var(--ga-composer-shadow);
+
+  &:focus-within {
+    box-shadow:
+      0 rem(2px) rem(10px) var(--ga-composer-shadow),
+      0 0 0 2px var(--mantine-primary-color-filled);
+  }
 }
 
-/* Aligns the round button with the bottom line of a one-row textarea (`--input-height-sm`). */
+/* Aligns the button with the bottom line of a one-row textarea. */
 .send {
   flex-shrink: 0;
   margin-bottom: rem(2px);
 
   &:disabled,
   &[data-disabled] {
-    background: var(--ga-send-disabled-bg);
-    color: var(--ga-send-disabled-icon);
+    background: var(--ga-field-bg);
+    color: var(--mantine-color-placeholder);
   }
 }

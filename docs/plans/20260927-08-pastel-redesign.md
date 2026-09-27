@@ -373,11 +373,11 @@ const dark: MantineColorsTuple = [
 - Modify: `src/pages/chat/ui/composer.module.css`
 - Modify: `src/pages/chat/ui/composer.test.tsx`
 
-- [ ] зона композера — feed-bg; форма — «пилюля» surface, радиус 18, тень `0 2px 10px var(--ga-composer-shadow)` + ring 1px `--ga-border`; на `:focus-within` — кольцо фокуса
-- [ ] поле `variant="unstyled"`, плейсхолдер «Напишите сообщение…» (`aria-label="Сообщение"` не меняется)
-- [ ] кнопка отправки 40/14 `filled` с `IconArrowUp`; disabled — field-bg + иконка `--mantine-color-placeholder`
-- [ ] тесты: «Отправить» disabled на пустом черновике, отправка по Enter и кнопкой — как раньше
-- [ ] `make check` — зелёный
+- [x] зона композера — feed-bg; форма — «пилюля» surface, радиус 18, тень `0 2px 10px var(--ga-composer-shadow)` + ring 1px `--ga-border`; на `:focus-within` — кольцо фокуса
+- [x] поле `variant="unstyled"`, плейсхолдер «Напишите сообщение…» (`aria-label="Сообщение"` не меняется)
+- [x] кнопка отправки 40/14 `filled` с `IconArrowUp`; disabled — field-bg + иконка `--mantine-color-placeholder`
+- [x] тесты: «Отправить» disabled на пустом черновике, отправка по Enter и кнопкой — как раньше
+- [x] `make check` — зелёный
 
 ### Task 8: Логин, индикатор соединения, удаление старых иконок (S)
 **Model:** sonnet — рестайл по заданным токенам, тексты и роли покрыты тестами
