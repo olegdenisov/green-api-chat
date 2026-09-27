@@ -267,13 +267,14 @@ const dark: MantineColorsTuple = [
 - Modify: `index.html`
 - Modify: `public/favicon.svg`
 
-- [ ] перенести `handoff/*` в `docs/design/pastel-5a/` (файлы не в git: обычный перенос + `git add`), удалить `handoff/`
-- [ ] шкалы `lavender` и `dark` из Technical Details, `primaryColor: "lavender"`, `primaryShade: { light: 6, dark: 8 }`, `defaultRadius: 14`; комментарий о палитре 5a вместо №4705
-- [ ] `cssVariablesResolver`: токены из таблицы, включая `--mantine-color-error`/`-placeholder` и `--mantine-color-lavender-filled`/`-filled-hover` в `dark`; `--ga-bubble-out-text` — из `variables` в `light`/`dark` (ink); `--ga-avatar-1-bg` — из `light`/`dark` в `variables`; старые токены, которые ещё читают модули, — со значениями новой палитры
-- [ ] `index.css`: фон страницы и dark до монтирования — app-bg `#121119` / текст `#eeecf6` (то же, что корень чата и `theme-color`, без вспышки); `index.html` `theme-color` `#f7f5fc`/`#121119`; `favicon.svg` `#6c5ce7`; комментарии о дублировании обновить
-- [ ] тесты темы: `primaryColor` — `lavender`, `[6]` = `#6c5ce7`, `[3]` = `#b7adff`; текст dark `#eeecf6`; пять пар аватаров в `variables`; ключи `light`/`dark` совпадают и не пересекаются с `variables`; удалить тест «gives the first avatar a lighter tint in dark»; `dark["--mantine-color-default-hover"] !== colors.dark[6]`
-- [ ] тест контраста (хелпер WCAG, ≥ 4.5, обе схемы): text/surface, dimmed/surface, dimmed/feed-bg, dimmed/primary-soft, error/surface, error/field-bg, bubble-in-text/bubble-in-bg, bubble-out-text/bubble-out-bg, bubble-out-meta/bubble-out-bg, bubble-out-meta/bubble-failed-bg, danger-text/bubble-failed-bg, danger-text/surface, primary-soft-text/primary-soft, day-text/day-bg, warning-text/warning-bg, on-primary/primary filled и filled-hover, белый на red-filled, `lavender-4`/surface (ссылка в dark), пять пар аватаров
-- [ ] `make check` — зелёный
+- [x] перенести `handoff/*` в `docs/design/pastel-5a/` (файлы не в git: обычный перенос + `git add`), удалить `handoff/`
+- [x] шкалы `lavender` и `dark` из Technical Details, `primaryColor: "lavender"`, `primaryShade: { light: 6, dark: 8 }`, `defaultRadius: 14`; комментарий о палитре 5a вместо №4705
+- [x] `cssVariablesResolver`: токены из таблицы, включая `--mantine-color-error`/`-placeholder` и `--mantine-color-lavender-filled`/`-filled-hover` в `dark`; `--ga-bubble-out-text` — из `variables` в `light`/`dark` (ink); `--ga-avatar-1-bg` — из `light`/`dark` в `variables`; старые токены, которые ещё читают модули, — со значениями новой палитры
+- [x] `index.css`: фон страницы и dark до монтирования — app-bg `#121119` / текст `#eeecf6` (то же, что корень чата и `theme-color`, без вспышки); `index.html` `theme-color` `#f7f5fc`/`#121119`; `favicon.svg` `#6c5ce7`; комментарии о дублировании обновить
+- [x] тесты темы: `primaryColor` — `lavender`, `[6]` = `#6c5ce7`, `[3]` = `#b7adff`; текст dark `#eeecf6`; пять пар аватаров в `variables`; ключи `light`/`dark` совпадают и не пересекаются с `variables`; удалить тест «gives the first avatar a lighter tint in dark»; `dark["--mantine-color-default-hover"] !== colors.dark[6]`
+- [x] тест контраста (хелпер WCAG, ≥ 4.5, обе схемы): text/surface, dimmed/surface, dimmed/feed-bg, dimmed/primary-soft, error/surface, error/field-bg, bubble-in-text/bubble-in-bg, bubble-out-text/bubble-out-bg, bubble-out-meta/bubble-out-bg, bubble-out-meta/bubble-failed-bg, danger-text/bubble-failed-bg, danger-text/surface, primary-soft-text/primary-soft, day-text/day-bg, warning-text/warning-bg, on-primary/primary filled и filled-hover, белый на red-filled, `lavender-4`/surface (ссылка в dark), пять пар аватаров
+- [x] `make check` — зелёный
+- [x] ➕ `--mantine-color-red-filled`/`-filled-hover` → red-8/red-9 в обеих схемах: при `primaryShade.light: 6` red-filled в light — red-6 `#fa5252` (белый — 3.3:1); red-8 даёт 4.51:1
 
 ### Task 2: Компоненты Mantine: резолвер вариантов, поля, фокус (M)
 **Model:** opus — механизм Mantine, где ошибка не видна в собственных проверках (белый текст на светлом primary, пропавшие рамки ошибок)

@@ -10,12 +10,13 @@ body {
   margin: 0;
 }
 
-/* Hardcoded: Mantine's CSS variables are not injected yet. The values duplicate
-   --mantine-color-body and --mantine-color-text (dark) from src/app/providers/theme.ts and the
-   theme-color in index.html; change them together. */
+/* Hardcoded: Mantine's CSS variables are not injected yet. The values duplicate --ga-app-bg
+   (the chat root's background, so there is no flash) and --mantine-color-text of the dark
+   scheme from src/app/providers/theme.ts, and the dark theme-color in index.html; change them
+   together. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-mantine-color-scheme]) body {
-    background-color: #1a1c2b;
-    color: #ecebf5;
+    background-color: #121119;
+    color: #eeecf6;
   }
 }
