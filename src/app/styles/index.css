@@ -10,12 +10,12 @@ body {
   margin: 0;
 }
 
-/* Hardcoded: Mantine's CSS variables are not injected yet. The values duplicate --ga-feed-bg and
-   --ga-bubble-in-text (dark) from src/app/providers/theme.ts and the theme-color in
-   index.html; change them together. */
+/* Hardcoded: Mantine's CSS variables are not injected yet. The values duplicate
+   --mantine-color-body and --mantine-color-text (dark) from src/app/providers/theme.ts and the
+   theme-color in index.html; change them together. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-mantine-color-scheme]) body {
-    background-color: #141518;
-    color: #f1f3f5;
+    background-color: #1a1c2b;
+    color: #ecebf5;
   }
 }
