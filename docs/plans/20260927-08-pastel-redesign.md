@@ -356,14 +356,14 @@ const dark: MantineColorsTuple = [
 - Modify: `src/features/delete-chats/ui/delete-chat-button.tsx`
 - Modify: `src/features/delete-chats/ui/delete-chat-button.test.tsx`
 
-- [ ] шапка: surface, нижняя граница `--ga-border`, аватар 42 / radius 14, имя 16/650 (`Title order={2}` остаётся); «Назад» и удаление — `ActionIcon variant="field"` 38/12; `DeleteChatButton` нейтральная, красная — только «Удалить» в поповере
-- [ ] лента — feed-bg; плашка дня — pill day-bg / day-text, радиус 999; пустые состояния — `IconMessageCircle` вместо `IconLogo`, dimmed
-- [ ] пузыри: радиус 20 с хвостом 6; входящие — bubble-in-bg + рамка `--ga-border`; исходящие — bubble-out-bg / bubble-out-text; мета без `opacity` (цвет `-meta`), 11.5–12; без теней
-- [ ] статусы: `sending` — `IconClock`, `sent` — `IconCheck`, `delivered` — `IconChecks` цвета меты, `read` — `IconChecks` `--ga-status-read`; `role="img"` + `aria-label` без изменений
-- [ ] failed: фон bubble-failed-bg, мета bubble-out-meta, видимый текст «Не отправлено» (`--ga-danger-text`, вместо `IconAlert` с `role="img"`) + pill «Повторить» (surface-фон, `--ga-danger-text`, `IconRotateCcw`, радиус 999)
-- [ ] тесты пузыря (`message-bubble.test.tsx:72,104`): «Не отправлено» — `getByText`; статусы — по `role="img"` и имени; «Повторить» вызывает повтор; устаревший `sending` показывается как failed
-- [ ] `chat-window.test.tsx:186`: `queryByText("Не отправлено")` вместо `queryByRole("img", …)` (иначе проверка пустая); тест кнопки удаления — имя и подтверждение без изменений
-- [ ] `make check` — зелёный
+- [x] шапка: surface, нижняя граница `--ga-border`, аватар 42 / radius 14, имя 16/650 (`Title order={2}` остаётся); «Назад» и удаление — `ActionIcon variant="field"` 38/12; `DeleteChatButton` нейтральная, красная — только «Удалить» в поповере
+- [x] лента — feed-bg; плашка дня — pill day-bg / day-text, радиус 999; пустые состояния — `IconMessageCircle` вместо `IconLogo`, dimmed
+- [x] пузыри: радиус 20 с хвостом 6; входящие — bubble-in-bg + рамка `--ga-border`; исходящие — bubble-out-bg / bubble-out-text; мета без `opacity` (цвет `-meta`), 11.5–12; без теней
+- [x] статусы: `sending` — `IconClock`, `sent` — `IconCheck`, `delivered` — `IconChecks` цвета меты, `read` — `IconChecks` `--ga-status-read`; `role="img"` + `aria-label` без изменений
+- [x] failed: фон bubble-failed-bg, мета bubble-out-meta, видимый текст «Не отправлено» (`--ga-danger-text`, вместо `IconAlert` с `role="img"`) + pill «Повторить» (surface-фон, `--ga-danger-text`, `IconRotateCcw`, радиус 999)
+- [x] тесты пузыря (`message-bubble.test.tsx:72,104`): «Не отправлено» — `getByText`; статусы — по `role="img"` и имени; «Повторить» вызывает повтор; устаревший `sending` показывается как failed
+- [x] `chat-window.test.tsx:186`: `queryByText("Не отправлено")` вместо `queryByRole("img", …)` (иначе проверка пустая); тест кнопки удаления — имя и подтверждение без изменений
+- [x] `make check` — зелёный
 
 ### Task 7: Композер-«пилюля» (S)
 **Model:** sonnet — стили заданы, поведение Enter/отправки покрыто тестами

@@ -4,7 +4,7 @@ import { reatomComponent } from "@reatom/react";
 import { useEffect, useState } from "react";
 
 import { isSendingStale, type Message, sendingStaleAt } from "@/entities/message";
-import { IconAlert, IconCheck, IconChecks, IconClock } from "@/shared/ui";
+import { IconCheck, IconChecks, IconClock, IconRotateCcw } from "@/shared/ui";
 
 import { formatTime } from "../lib/format-time";
 import { retryChatMessage } from "../model/send-message";
@@ -52,15 +52,12 @@ const OutgoingStatus = reatomComponent(
     // `failed` already covers the `failed` status; the check narrows the type for `STATUS_VIEW`.
     if (failed || message.status === "failed") {
       return (
-        <span>
-          <span role="img" aria-label="Не отправлено">
-            <IconAlert size={14} />
-          </span>{" "}
-          ·{" "}
+        <span className={classes.failed}>
+          <span className={classes.failedText}>Не отправлено</span>
           <Button
             variant="transparent"
-            color="gray"
             size="compact-xs"
+            leftSection={<IconRotateCcw size={12} />}
             className={classes.retry}
             onClick={wrap(() => void retryChatMessage(message.chatId, message.id))}
           >

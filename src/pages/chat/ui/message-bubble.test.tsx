@@ -69,7 +69,7 @@ describe("MessageBubble", () => {
     const attemptAt = now - SEND_TIMEOUT - 1;
     render(<MessageBubble message={{ ...outgoing, status: "sending", attemptAt }} />);
 
-    expect(screen.getByRole("img", { name: "Не отправлено" })).toBeInTheDocument();
+    expect(screen.getByText("Не отправлено")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Повторить" })).toBeInTheDocument();
   });
 
@@ -101,7 +101,7 @@ describe("MessageBubble", () => {
       messagesAtom.set({ "1": [failed] });
     });
 
-    expect(screen.getByRole("img", { name: "Не отправлено" })).toBeInTheDocument();
+    expect(screen.getByText("Не отправлено")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Повторить" }));
 
     await waitFor(() =>
