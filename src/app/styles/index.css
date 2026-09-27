@@ -27,9 +27,12 @@ body {
 }
 
 /* Focus ring of Mantine components (theme.focusClassName in src/app/providers/theme.ts): a
-   primary ring with a soft halo, instead of Mantine's offset outline. */
+   primary ring with a soft halo, instead of Mantine's offset outline. The transparent outline
+   is invisible normally, but forced-colors mode (Windows High Contrast) drops box-shadow and
+   paints the outline in a system colour, so the focus stays visible there. */
 .ga-focus:focus-visible {
-  outline: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow:
     0 0 0 2px var(--mantine-primary-color-filled),
     0 0 0 5px var(--ga-focus-halo);

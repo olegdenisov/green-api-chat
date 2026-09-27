@@ -161,7 +161,9 @@
   (`box-shadow` двумя слоями, primary + ореол `--ga-focus-halo`); строки списка — те же два
   слоя, но `inset` (`chat-list.module.css`: внешнее кольцо обрезал бы прокручиваемый `nav`),
   поле композера — такое же двухслойное кольцо на «пилюле» через `:focus-within`, кроме фокуса на кнопке отправки
-  (`:has(.send:focus)` — у неё своё кольцо).
+  (`:has(.send:focus)` — у неё своё кольцо). Во всех трёх кольцах вместо `outline: none` —
+  прозрачный `outline` (у строк — с `outline-offset` внутрь): режим `forced-colors` (высокая
+  контрастность Windows) убирает `box-shadow` и рисует этот `outline` системным цветом.
   `cssVariablesResolver` задаёт токены `--ga-*` (одинаковые в обеих схемах — в `variables`,
   различающиеся — в `light`/`dark`): фон приложения/карточек/поля/границы (`--ga-app-bg`,
   `--ga-surface`, `--ga-feed-bg`, `--ga-field-bg`, `--ga-border`), текст на primary
