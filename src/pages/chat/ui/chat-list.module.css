@@ -27,12 +27,12 @@
   }
 
   &[data-active] {
-    background: var(--mantine-primary-color-filled);
-    color: var(--mantine-color-white);
+    background: var(--ga-row-active-bg);
+    color: var(--mantine-color-text);
+    box-shadow: inset rem(3px) 0 0 var(--ga-row-active-bar);
 
-    /* The accent outline would vanish on the accent background. */
     &:focus-visible {
-      outline-color: var(--mantine-color-white);
+      outline-color: var(--mantine-primary-color-filled);
     }
   }
 }
@@ -64,15 +64,16 @@
 .preview {
   color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-sm);
-
-  .item[data-active] & {
-    color: var(--mantine-color-white);
-  }
 }
 
 .time {
   flex-shrink: 0;
   font-size: var(--mantine-font-size-xs);
+
+  .item[data-active] & {
+    color: var(--ga-row-active-time);
+    font-weight: 600;
+  }
 }
 
 /* Reserves the line of a chat without messages, so rows keep one height. */

@@ -99,15 +99,15 @@ describe("ChatList", () => {
     expect(within(bob).queryByText(/Вы:/)).not.toBeInTheDocument();
   });
 
-  it("shows no preview for a chat without messages", async () => {
+  it("shows «Нет сообщений» for a chat without messages", async () => {
     const { frame } = render(<ChatList />);
     frame.run(() => {
       chatsAtom.set({ "1": { chatId: "1", title: "Alice", lastMessageAt: 2 } });
     });
 
     const alice = await screen.findByRole("button", { name: /Alice/ });
+    expect(within(alice).getByText("Нет сообщений")).toBeInTheDocument();
     expect(alice).not.toHaveTextContent(/Вы:/);
-    expect(within(alice).getByText("Alice")).toBeInTheDocument();
   });
 
   it("carries the chat id on the row", async () => {

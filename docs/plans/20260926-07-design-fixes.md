@@ -348,18 +348,18 @@ export const theme = createTheme({
 - Modify: `src/features/receive-messages/ui/connection-indicator.module.css`
 - Modify: `src/features/auth/ui/login-form.tsx`
 
-- [ ] активная строка — тинт + полоса, `.time` активной — `--ga-row-active-time`/600,
+- [x] активная строка — тинт + полоса, `.time` активной — `--ga-row-active-time`/600,
       превью остаётся `dimmed`
-- [ ] превью чата без сообщений — «Нет сообщений» (приглушённо, `.preview` уже `dimmed`)
-- [ ] лента `.feed > :first-child { margin-top: auto }`
-- [ ] шапки: `.logo`, `AppTitle` 650 + letter-spacing, `size={rem(20)}` в сайдбаре,
+- [x] превью чата без сообщений — «Нет сообщений» (приглушённо, `.preview` уже `dimmed`)
+- [x] лента `.feed > :first-child { margin-top: auto }`
+- [x] шапки: `.logo`, `AppTitle` 650 + letter-spacing, `size={rem(20)}` в сайдбаре,
       `Title fw={650}` в окне чата; `DeleteChatButton` — `ActionIcon color="gray"`
-- [ ] `.send` disabled — токены; индикатор соединения — `--ga-day-*`
-- [ ] логин: `Fieldset m={0}`
-- [ ] тесты: у чата без сообщений в строке «Нет сообщений», у чата с сообщением — превью
+- [x] `.send` disabled — токены; индикатор соединения — `--ga-day-*`
+- [x] логин: `Fieldset m={0}`
+- [x] тесты: у чата без сообщений в строке «Нет сообщений», у чата с сообщением — превью
       («Вы: …» для исходящего); существующие тесты `DeleteChatButton`/`ChatWindow`/логина
       зелёные (имена кнопок не менялись)
-- [ ] `make check` — зелёный перед задачей 3
+- [x] `make check` — зелёный перед задачей 3
 
 ### Task 3: Аватары на цветах палитры
 **Model:** sonnet — схема токенов и способ применения заданы планом

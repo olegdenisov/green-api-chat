@@ -25,7 +25,7 @@ export function DeleteChatButton({ chatId }: { chatId: string }) {
       <Popover.Target>
         <ActionIcon
           variant="subtle"
-          color="red"
+          color="gray"
           size="lg"
           aria-label="Удалить чат"
           onClick={() => setOpened((value) => !value)}

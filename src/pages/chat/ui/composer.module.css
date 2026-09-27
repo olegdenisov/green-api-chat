@@ -11,4 +11,10 @@
 .send {
   flex-shrink: 0;
   margin-bottom: rem(2px);
+
+  &:disabled,
+  &[data-disabled] {
+    background: var(--ga-send-disabled-bg);
+    color: var(--ga-send-disabled-icon);
+  }
 }
