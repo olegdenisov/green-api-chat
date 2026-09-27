@@ -8,7 +8,12 @@ export type Message = {
   chatId: string;
   text: string;
   direction: "in" | "out";
-  status: "sending" | "sent" | "failed";
+  /**
+   * `sending`/`failed` — local, before GREEN-API answered; `sent` — accepted by GREEN-API;
+   * `delivered`/`read` — from `outgoingMessageStatus` notifications, only ever raised
+   * (`sent < delivered < read`). Incoming messages are always `sent`.
+   */
+  status: "sending" | "sent" | "delivered" | "read" | "failed";
   /** ms. */
   timestamp: number;
   /** ms, start of the last send attempt; outgoing messages only. */
@@ -25,7 +30,13 @@ export const SEND_TIMEOUT = 30_000;
 // Typed `unknown[]` so that `.includes()` accepts the unchecked stored value; `satisfies` still
 // checks the literals against `Message`.
 const DIRECTIONS: readonly unknown[] = ["in", "out"] satisfies Message["direction"][];
-const STATUSES: readonly unknown[] = ["sending", "sent", "failed"] satisfies Message["status"][];
+const STATUSES: readonly unknown[] = [
+  "sending",
+  "sent",
+  "delivered",
+  "read",
+  "failed",
+] satisfies Message["status"][];
 
 function isTime(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);

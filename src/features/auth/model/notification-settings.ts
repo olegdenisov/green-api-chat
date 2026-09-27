@@ -3,11 +3,15 @@ import { ApiError, type GreenApi, type RequestOptions, type SettingsPatch } from
 /** `webhookCleared` — updated, and a non-empty `webhookUrl` was cleared (the user must know). */
 type NotificationSettingsResult = "ok" | "updated" | "webhookCleared" | "failed";
 
-/** Settings that must be `yes` for incoming/outgoing messages to reach the notification queue. */
+/**
+ * Settings that must be `yes` for incoming/outgoing messages and delivery statuses
+ * (`outgoingMessageStatus`) to reach the notification queue.
+ */
 const REQUIRED_FLAGS = [
   "incomingWebhook",
   "outgoingMessageWebhook",
   "outgoingAPIMessageWebhook",
+  "outgoingWebhook",
 ] as const;
 
 /** Toast shown after login for each result except `ok`. */
@@ -17,12 +21,13 @@ export const SETTINGS_TOASTS: Record<
 > = {
   updated: {
     color: "green",
-    message: "Настройки инстанса обновлены. Входящие сообщения начнут приходить в течение ~5 минут",
+    message:
+      "Настройки инстанса обновлены. Новые сообщения и статусы начнут приходить в течение ~5 минут",
   },
   webhookCleared: {
     color: "green",
     message:
-      "Настройки инстанса обновлены, webhookUrl очищен: уведомления теперь читает этот чат. Входящие сообщения начнут приходить в течение ~5 минут",
+      "Инстанс переключён на этот чат: прежний адрес для уведомлений отключён. Новые сообщения и статусы начнут приходить в течение ~5 минут",
   },
   failed: {
     color: "yellow",

@@ -386,12 +386,12 @@ export const theme = createTheme({
 - Modify: `src/features/auth/model/notification-settings.test.ts`
 - Modify: `src/features/auth/model/login-form.test.ts` (стр. 281 — текст тоста)
 
-- [ ] `Message["status"]` и `STATUSES`: `delivered`, `read`; JSDoc
-- [ ] `outgoingWebhook` в `REQUIRED_FLAGS`; новые тексты тостов `updated`/`webhookCleared`
-- [ ] тесты `toMessages`: `delivered`/`read` проходят, неизвестный статус отбрасывается
-- [ ] тесты `ensureNotificationSettings`: `outgoingWebhook: "no"` → в патче; все `yes` →
+- [x] `Message["status"]` и `STATUSES`: `delivered`, `read`; JSDoc
+- [x] `outgoingWebhook` в `REQUIRED_FLAGS`; новые тексты тостов `updated`/`webhookCleared`
+- [x] тесты `toMessages`: `delivered`/`read` проходят, неизвестный статус отбрасывается
+- [x] тесты `ensureNotificationSettings`: `outgoingWebhook: "no"` → в патче; все `yes` →
       `"ok"`; `login-form.test.ts` — новый текст тоста
-- [ ] `make check` — зелёный перед задачей 5
+- [x] `make check` — зелёный перед задачей 5
 
 ### Task 5: Тип, разбор и применение `outgoingMessageStatus`
 **Model:** opus — порядок уведомлений и монотонность, ошибка проходит свои проверки
