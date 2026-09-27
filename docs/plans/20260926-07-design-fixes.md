@@ -499,12 +499,12 @@ export const theme = createTheme({
 ### Task 8: Verify acceptance criteria
 **Model:** sonnet — checks the result against the plan, fixes gaps
 
-- [ ] все пункты Overview реализованы; в модулях и TSX нет хардкода цветов (grep
+- [x] все пункты Overview реализованы; в модулях и TSX нет хардкода цветов (grep
       `#[0-9a-fA-F]{3,6}` в `src/**/*.module.css` и `src/**/*.tsx`)
-- [ ] edge cases: старые сообщения из `localStorage` читаются; статус для удалённого чата не
+- [x] edge cases: старые сообщения из `localStorage` читаются; статус для удалённого чата не
       создаёт чат; логаут закрывает форму нового чата
-- [ ] `make check`
-- [ ] `make build`
+- [x] `make check`
+- [x] `make build`
 
 ### Task 9: [Final] Update documentation
 **Model:** sonnet — docs describe built behavior
