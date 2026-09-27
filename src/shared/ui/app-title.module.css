@@ -1,4 +1,5 @@
 /* Overrides Mantine Title defaults (heading font-weight). */
 .title {
-  font-weight: 400;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }

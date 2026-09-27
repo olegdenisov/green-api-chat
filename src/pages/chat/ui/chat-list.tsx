@@ -43,7 +43,11 @@ export const ChatList = reatomComponent(() => {
                   <span className={classes.time}>{formatChatTime(chat.lastMessageAt, now)}</span>
                 </span>
                 <span className={classes.preview}>
-                  {last && (last.direction === "out" ? `Вы: ${last.text}` : last.text)}
+                  {last
+                    ? last.direction === "out"
+                      ? `Вы: ${last.text}`
+                      : last.text
+                    : "Нет сообщений"}
                 </span>
               </span>
             </button>

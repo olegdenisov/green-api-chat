@@ -1,3 +1,5 @@
+import { rem } from "@mantine/core";
+
 import { LogoutButton } from "@/features/auth";
 import { AppTitle, IconLogo } from "@/shared/ui";
 
@@ -12,7 +14,7 @@ export function Sidebar({ className }: { className?: string }) {
     <aside className={className ? `${classes.sidebar} ${className}` : classes.sidebar}>
       <header className={classes.header}>
         <IconLogo size={28} className={classes.logo} />
-        <AppTitle size="h3" className={classes.name} />
+        <AppTitle size={rem(20)} className={classes.name} />
         <LogoutButton />
       </header>
       <div className={classes.form}>

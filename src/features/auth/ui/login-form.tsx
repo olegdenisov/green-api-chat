@@ -36,7 +36,7 @@ export const LoginForm = reatomComponent(() => {
       })}
     >
       <Stack>
-        <Fieldset variant="unstyled" disabled={pending}>
+        <Fieldset variant="unstyled" m={0} disabled={pending}>
           <Stack>
             <TextInput
               label="idInstance"

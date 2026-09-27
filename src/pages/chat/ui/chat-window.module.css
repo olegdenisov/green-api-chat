@@ -35,6 +35,12 @@
   gap: rem(6px);
   overflow-y: auto;
   padding: var(--mantine-spacing-md);
+
+  /* Pins a short feed to the bottom; an overflowing one still scrolls to its start
+     (unlike `justify-content: flex-end`, which would not). */
+  & > :first-child {
+    margin-top: auto;
+  }
 }
 
 .day {

@@ -90,7 +90,7 @@ export const ChatWindow = reatomComponent(({ className }: { className?: string }
           <IconArrowLeft />
         </ActionIcon>
         <ChatAvatar chat={chat} size={40} />
-        <Title order={2} size="h4" className={classes.title}>
+        <Title order={2} size="h4" fw={650} className={classes.title}>
           {chat.title}
         </Title>
         <DeleteChatButton chatId={chat.chatId} />
