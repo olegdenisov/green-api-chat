@@ -5,10 +5,10 @@ import { render } from "@test/render";
 
 import { ChatAvatar } from "./chat-avatar";
 
-function renderAvatar(chat: { chatId: string; title: string }) {
+function renderAvatar(chat: { chatId: string; title: string }, radius?: number) {
   render(
     <div data-testid="host">
-      <ChatAvatar chat={chat} />
+      <ChatAvatar chat={chat} radius={radius} />
     </div>,
   );
   return screen.getByTestId("host");
@@ -99,5 +99,21 @@ describe("ChatAvatar", () => {
     const host = renderAvatar({ chatId: "1", title: "Alice" });
 
     expect(host.firstElementChild).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("defaults to a rounded-square radius", () => {
+    const host = renderAvatar({ chatId: "1", title: "Alice" });
+
+    expect(host.firstElementChild).toHaveStyle({
+      "--avatar-radius": "calc(1rem * var(--mantine-scale))",
+    });
+  });
+
+  it("passes a custom radius through to --avatar-radius", () => {
+    const host = renderAvatar({ chatId: "1", title: "Alice" }, 14);
+
+    expect(host.firstElementChild).toHaveStyle({
+      "--avatar-radius": "calc(0.875rem * var(--mantine-scale))",
+    });
   });
 });

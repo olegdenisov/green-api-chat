@@ -335,11 +335,11 @@ const dark: MantineColorsTuple = [
 - Modify: `src/pages/chat/ui/chat-avatar.test.tsx`
 - Modify: `src/pages/chat/ui/chat-list.test.tsx`
 
-- [ ] строки: радиус 16, отступы по макету, hover — field-bg; активная — фон primary-soft без смены цвета текста и без полосы; время активной — primary-soft-text, неактивной — dimmed; имя 15/600, превью 13.5 dimmed; фокус — внутреннее кольцо (`inset 0 0 0 2px var(--mantine-primary-color-filled)`)
-- [ ] аватар: проп `radius` (по умолчанию 16) и `size` (по умолчанию 46); `variant="filled"` + `vars` пастельных пар; `autoContrast` не используется; хеш `colorFor` не менять
-- [ ] тест аватара: один `chatId` — одна пара с инициалами и без; разные `chatId` — разные пары (как сейчас); `radius` доходит до `--avatar-radius`
-- [ ] тест списка: активная строка — `aria-current="true"`, остальное без изменений
-- [ ] `make check` — зелёный
+- [x] строки: радиус 16, отступы по макету, hover — field-bg; активная — фон primary-soft без смены цвета текста и без полосы; время активной — primary-soft-text, неактивной — dimmed; имя 15/600, превью 13.5 dimmed; фокус — внутреннее кольцо (`inset 0 0 0 2px var(--mantine-primary-color-filled)`)
+- [x] аватар: проп `radius` (по умолчанию 16) и `size` (по умолчанию 46); `variant="filled"` + `vars` пастельных пар; `autoContrast` не используется; хеш `colorFor` не менять
+- [x] тест аватара: один `chatId` — одна пара с инициалами и без; разные `chatId` — разные пары (как сейчас); `radius` доходит до `--avatar-radius`
+- [x] тест списка: активная строка — `aria-current="true"`, остальное без изменений
+- [x] `make check` — зелёный
 
 ### Task 6: Окно чата — шапка, пузыри, статусы, плашка дня (M)
 **Model:** sonnet — вид статусов и цвета заданы планом, роли покрыты тестами
