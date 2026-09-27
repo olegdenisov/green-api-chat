@@ -37,15 +37,6 @@ export function IconArrowLeft(props: IconProps) {
   );
 }
 
-export function IconSend(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M22 2 11 13" />
-      <path d="M22 2 15 22l-4-9-9-4 20-7Z" />
-    </Icon>
-  );
-}
-
 export function IconTrash(props: IconProps) {
   return (
     <Icon {...props}>
@@ -77,15 +68,6 @@ export function IconLogout(props: IconProps) {
   );
 }
 
-/** Own app logo (a chat bubble), not a trademark of any messenger. */
-export function IconLogo(props: IconProps) {
-  return (
-    <Icon {...props} stroke="none" fill="currentColor">
-      <path d="M12 2C6.48 2 2 6.03 2 11c0 2.5 1.12 4.75 2.94 6.38L4 22l4.45-2.07A10.9 10.9 0 0 0 12 20c5.52 0 10-4.03 10-9s-4.48-9-10-9Z" />
-    </Icon>
-  );
-}
-
 /** A message sending: a clock face. */
 export function IconClock(props: IconProps) {
   return (
@@ -111,17 +93,6 @@ export function IconChecks(props: IconProps) {
     <Icon {...props}>
       <path d="M18 6 7 17l-5-5" />
       <path d="m22 10-7.5 7.5L13 16" />
-    </Icon>
-  );
-}
-
-/** A message not sent: an alert. */
-export function IconAlert(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 8v5" />
-      <path d="M12 16h.01" />
     </Icon>
   );
 }

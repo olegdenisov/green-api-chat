@@ -1,11 +1,25 @@
+/* A pill centred above the cards, inset the same 12px as the cards themselves
+   (chat-page.module.css). `align-self` (the cross axis of .root's flex column) is what
+   centres it — no wrapper markup needed, and it takes no space at all while `null`. */
 .indicator {
-  display: flex;
+  display: inline-flex;
+  align-self: center;
   align-items: center;
-  justify-content: center;
   gap: var(--mantine-spacing-xs);
-  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
-  border-bottom: rem(1px) solid var(--mantine-color-default-border);
-  /* Peach from the palette, in place of Mantine's yellow — it stood out from the rest. */
-  background: var(--ga-notice-bg);
-  color: var(--ga-notice-text);
+  margin: rem(12px) rem(12px) 0;
+  padding: rem(8px) rem(16px);
+  border-radius: 999px;
+  background: var(--ga-warning-bg);
+  color: var(--ga-warning-text);
+}
+
+/* Narrow screen: the cards lose their padding/radius — the pill follows, as a strip
+   spanning the full width instead of floating above them. */
+@media (width < $mantine-breakpoint-sm) {
+  .indicator {
+    align-self: stretch;
+    justify-content: center;
+    margin: 0;
+    border-radius: 0;
+  }
 }
