@@ -50,7 +50,7 @@ export const CreateChatForm = reatomComponent(() => {
           flex={1}
           {...phoneProps}
         />
-        <ActionIcon type="submit" variant="filled" size={38} loading={pending} aria-label="Создать">
+        <ActionIcon type="submit" variant="filled" loading={pending} aria-label="Создать">
           <IconArrowRight />
         </ActionIcon>
       </Group>

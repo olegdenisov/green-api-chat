@@ -1,3 +1,4 @@
+export { AppLogo } from "./app-logo";
 export {
   IconArrowLeft,
   IconArrowRight,

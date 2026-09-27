@@ -32,7 +32,7 @@ describe("theme components", () => {
     expect(wrapper?.style.getPropertyValue("--input-bg")).toBe("");
   });
 
-  it("renders ActionIcon variant='field' with the field background and radius 12", () => {
+  it("renders ActionIcon variant='field' with the field background, radius 12 and size 38", () => {
     renderWithTheme(
       <ActionIcon variant="field" aria-label="Выйти">
         x
@@ -42,6 +42,7 @@ describe("theme components", () => {
     const button = screen.getByRole("button", { name: "Выйти" });
     expect(button.style.getPropertyValue("--ai-bg")).toBe("var(--ga-field-bg)");
     expect(button.style.getPropertyValue("--ai-radius")).toBe(rem(12));
+    expect(button.style.getPropertyValue("--ai-size")).toBe(rem(38));
     expect(button).toHaveClass(FOCUS_CLASS_NAME);
   });
 

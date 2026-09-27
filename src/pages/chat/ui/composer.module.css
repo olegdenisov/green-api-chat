@@ -17,8 +17,8 @@
   &:focus-within {
     box-shadow:
       0 rem(2px) rem(10px) var(--ga-composer-shadow),
-      0 0 0 2px var(--mantine-primary-color-filled),
-      0 0 0 5px var(--ga-focus-halo);
+      0 0 0 rem(2px) var(--mantine-primary-color-filled),
+      0 0 0 rem(5px) var(--ga-focus-halo);
   }
 
   /* The send button has its own ring: no second one around the pill. */

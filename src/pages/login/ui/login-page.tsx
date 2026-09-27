@@ -1,7 +1,7 @@
 import { Anchor, Paper, Text } from "@mantine/core";
 
 import { LoginForm } from "@/features/auth";
-import { IconMessageCircle } from "@/shared/ui";
+import { AppLogo } from "@/shared/ui";
 
 import { AppTitle } from "./app-title";
 import classes from "./login-page.module.css";
@@ -12,9 +12,7 @@ export function LoginPage() {
   return (
     <main className={classes.page}>
       <Paper p="xl" radius={22} className={classes.card}>
-        <div className={classes.logo}>
-          <IconMessageCircle size={28} />
-        </div>
+        <AppLogo size={56} radius={16} iconSize={28} className={classes.logo} />
         <AppTitle className={classes.title} />
         <Text size="sm" c="dimmed" className={classes.hint}>
           Возьмите idInstance и apiTokenInstance в{" "}

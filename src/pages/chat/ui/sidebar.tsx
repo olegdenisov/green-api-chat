@@ -1,10 +1,10 @@
-import { ActionIcon, rem, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Title, Tooltip } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { reatomComponent } from "@reatom/react";
 import { useId, useRef, type KeyboardEvent } from "react";
 
 import { LogoutButton } from "@/features/auth";
-import { IconMessageCircle, IconPlus } from "@/shared/ui";
+import { AppLogo, IconPlus } from "@/shared/ui";
 
 import { createChatForm, createChatOpenAtom } from "../model/create-chat";
 import { ChatList } from "./chat-list";
@@ -32,17 +32,14 @@ export const Sidebar = reatomComponent(({ className }: { className?: string }) =
   return (
     <aside className={className ? `${classes.sidebar} ${className}` : classes.sidebar}>
       <header className={classes.header}>
-        <div className={classes.logo}>
-          <IconMessageCircle size={20} />
-        </div>
-        <Title order={1} size={rem(18)} fw={650} className={classes.name}>
+        <AppLogo size={36} radius={12} iconSize={20} />
+        <Title order={1} className={classes.name}>
           Чаты
         </Title>
         <Tooltip label="Новый чат">
           <ActionIcon
             ref={toggleRef}
             variant={open ? "light" : "filled"}
-            size={38}
             aria-label="Новый чат"
             aria-expanded={open}
             aria-controls={formId}

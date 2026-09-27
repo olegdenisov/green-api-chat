@@ -11,22 +11,12 @@
   padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
 }
 
-.logo {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: rem(36px);
-  height: rem(36px);
-  border-radius: rem(12px);
-  background: var(--ga-primary-soft);
-  color: var(--ga-primary-soft-text);
-}
-
 .name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  font-size: rem(18px);
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

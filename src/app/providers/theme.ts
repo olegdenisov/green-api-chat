@@ -81,7 +81,7 @@ export const theme = createTheme({
   variantColorResolver,
   focusClassName: FOCUS_CLASS_NAME,
   components: {
-    ActionIcon: ActionIcon.extend({ defaultProps: { radius: 12 } }),
+    ActionIcon: ActionIcon.extend({ defaultProps: { radius: 12, size: 38 } }),
     // `filled`: no border, primary border on focus and error border stay Mantine's
     // (--input-bd is untouched). Only the background comes from the palette; `unstyled`
     // (the composer) keeps its transparent one. `styles`, not `vars`: Input's typed vars
