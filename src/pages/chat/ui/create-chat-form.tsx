@@ -1,7 +1,7 @@
 import { ActionIcon, Group, TextInput } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { bindField, reatomComponent } from "@reatom/react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { IconArrowRight, IconSearch } from "@/shared/ui";
 
@@ -28,7 +28,7 @@ export const CreateChatForm = reatomComponent(() => {
   return (
     <form
       noValidate
-      onSubmit={wrap((event: FormEvent<HTMLFormElement>) => {
+      onSubmit={wrap((event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         // The rejection is kept in `submit.error()` and rendered under the field.
         createChatForm.submit().catch(() => {});

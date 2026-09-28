@@ -1,7 +1,7 @@
 import { ActionIcon, Textarea } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { bindField, reatomComponent } from "@reatom/react";
-import type { FormEvent, KeyboardEvent } from "react";
+import type { KeyboardEvent, SubmitEvent } from "react";
 
 import { IconArrowUp } from "@/shared/ui";
 
@@ -19,7 +19,7 @@ export const Composer = reatomComponent(() => {
   return (
     <form
       className={classes.composer}
-      onSubmit={wrap((event: FormEvent<HTMLFormElement>) => {
+      onSubmit={wrap((event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         sendDraft();
       })}

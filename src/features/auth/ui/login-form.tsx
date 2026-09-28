@@ -1,7 +1,7 @@
 import { Alert, Button, Fieldset, PasswordInput, Stack, TextInput } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { bindField, reatomComponent } from "@reatom/react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { resolveApiUrl } from "@/shared/api";
 
@@ -29,7 +29,7 @@ export const LoginForm = reatomComponent(() => {
   return (
     <form
       noValidate
-      onSubmit={wrap((event: FormEvent<HTMLFormElement>) => {
+      onSubmit={wrap((event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         // The rejection is kept in `submit.error()` and rendered below.
         loginForm.submit().catch(() => {});
