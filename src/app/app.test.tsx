@@ -392,7 +392,8 @@ describe("App", () => {
       render(<App />);
 
       expect(await screen.findByText("Сессия недействительна, войдите заново")).toBeInTheDocument();
-      expect(idInput()).toHaveValue("");
+      // The toast is shown from the model before the login screen re-renders.
+      expect(await screen.findByLabelText("idInstance")).toHaveValue("");
       expect(chatStub()).not.toBeInTheDocument();
       expect(calledMethods()).toEqual(["receiveNotification"]);
       context.start(() => expect(credentialsAtom()).toBeNull());
