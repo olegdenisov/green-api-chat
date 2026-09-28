@@ -19,6 +19,8 @@ export function DeleteChatButton({ chatId }: { chatId: string }) {
       onChange={setOpened}
       position="bottom-end"
       withArrow
+      // По центру кнопки: у края стрелка попадает на скругление радиуса 14.
+      arrowPosition="center"
       trapFocus
       returnFocus
     >
